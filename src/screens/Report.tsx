@@ -4,6 +4,7 @@ import { CheckCircle2, Droplets, Zap } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
 import { CORREGIMIENTOS } from '../data/services';
+import { makeDemoScene } from '../data/demo';
 import { ago } from '../data/format';
 import { useApp } from '../state/AppContext';
 import { font, radius, space, type } from '../theme/tokens';
@@ -28,7 +29,9 @@ async function loadReports(): Promise<LocalReport[]> {
 }
 
 export function Report() {
-  const { c, t, lang, now } = useApp();
+  const { c, t, lang, now, demoEnabled, demoScenario } = useApp();
+  const demo = makeDemoScene(now, demoScenario);
+  const demoCommunityCount = demoScenario === 'everyday' ? 0 : demoScenario === 'recovery' ? 2 : 5 + Math.floor(now / (5 * 60 * 1000)) % 4;
   const [service, setService] = useState<'electricity' | 'water'>('electricity');
   const [where, setWhere] = useState('Pueblo Nuevo');
   const [note, setNote] = useState('');
@@ -65,6 +68,19 @@ export function Report() {
         </Txt>
       </View>
 
+      {demoEnabled ? (
+        <Card style={{ gap: space.sm }}>
+          <Txt size={type.label} weight="bold">{t('demoBanner')}</Txt>
+          <Txt size={type.title} weight="semibold">
+            {t('demoNeighborReports', { n: demoCommunityCount })}
+          </Txt>
+          <Txt size={type.body} tone="muted">
+            {demo.water === 'interrupted' ? t('demoWaterInterrupted') :
+              demo.power === 'interrupted' ? t('demoPowerInterrupted') : t('demoNormal')}
+          </Txt>
+          <Txt size={type.caption + 1} tone="muted">{t('demoNotice')}</Txt>
+        </Card>
+      ) : null}
       {saved ? (
         <Card>
           <View style={styles.row}>

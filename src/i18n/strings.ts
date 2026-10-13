@@ -133,6 +133,7 @@ const es = {
   demoSource: 'SIMULACIÓN · no verificado',
   demoTripTitle: 'Mi trayecto de ejemplo',
   demoSourceLabel: 'Las fuentes reales siguen desconectadas',
+  demoNeighborReports: '{n} reportes vecinales simulados',
   version: 'Prototipo v0.2b (vista previa)',
   // v0.2b refinement
   stale: 'Desactualizado',
@@ -357,6 +358,7 @@ const en: Record<StringKey, string> = {
   demoSource: 'SIMULATION · unverified',
   demoTripTitle: 'Example commute',
   demoSourceLabel: 'Real sources remain disconnected',
+  demoNeighborReports: '{n} simulated neighbor reports',
   version: 'Prototype v0.2b (preview)',
   stale: 'Stale',
   tabMobility: 'Transit',
