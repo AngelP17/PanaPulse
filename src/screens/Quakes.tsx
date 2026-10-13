@@ -1,127 +1,216 @@
-import { X } from 'lucide-react-native';
-import React, { useMemo } from 'react';
+import { Activity, Clock3, X } from 'lucide-react-native';
+import React, { useMemo, useState } from 'react';
 import { Linking, Modal, Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ago, clock, dayKey, dayLabel, dayStamp, pct, place } from '../data/format';
 import type { Quake } from '../data/usgs';
+import { filterQuakes, SeismicMagnitudeFilter } from '../data/seismicView';
 import { LIVE_MAX_AGE_MS } from '../data/glance';
+import { SectionHeading } from '../components/section';
+import { PressScale } from '../components/motion';
 import { useApp } from '../state/AppContext';
 import { radius, space, type } from '../theme/tokens';
 import { Button, Card, SourceLine, Tile, TileGrid, Txt, styles } from '../components/ui';
 
+/**
+ * Seismic chapter, rebuilt around one genuine featured observation, official
+ * issued forecast windows, and a browsable event catalog. No invented events.
+ */
 export function Quakes({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
   const { c, t, lang, seismic, now } = useApp();
+  const [minimum, setMinimum] = useState<SeismicMagnitudeFilter>('all');
+  const filtered = useMemo(() => filterQuakes(seismic.earthquakes, minimum),
+    [seismic.earthquakes, minimum]);
+  const latest = filtered[0] ?? null;
+  const rest = filtered.slice(1);
   const groups = useMemo(() => {
     const out: { key: string; label: string; items: Quake[] }[] = [];
-    for (const q of seismic.earthquakes) {
-      const k = dayKey(q.time);
-      let g = out.find((x) => x.key === k);
-      if (!g) out.push((g = { key: k, label: dayLabel(q.time, now, lang), items: [] }));
-      g.items.push(q);
+    for (const quake of rest) {
+      const key = dayKey(quake.time);
+      let group = out.find((item) => item.key === key);
+      if (!group) {
+        group = { key, label: dayLabel(quake.time, now, lang), items: [] };
+        out.push(group);
+      }
+      group.items.push(quake);
     }
     return out;
-  }, [seismic, now, lang]);
+  }, [rest, lang, now]);
 
-  const f = seismic.forecast;
-  const isCurrent = seismic.mode === 'live' && Math.abs(now - seismic.fetchedAt) <= LIVE_MAX_AGE_MS;
+  const forecast = seismic.forecast;
+  const isCurrent = seismic.mode === 'live' && now >= seismic.fetchedAt
+    && now - seismic.fetchedAt <= LIVE_MAX_AGE_MS;
+  const dataTime = dayStamp(seismic.fetchedAt, lang);
+  const options: { value: SeismicMagnitudeFilter; label: string }[] = [
+    { value: 'all', label: t('seismicFilterAll') },
+    { value: 5, label: 'M5+' },
+    { value: 6, label: 'M6+' },
+  ];
 
   return (
     <View style={{ gap: space.md }}>
-      <View style={{ paddingHorizontal: space.xs, gap: 2 }}>
+      <View style={{ gap: space.xs, paddingHorizontal: space.xs }}>
         <Txt size={type.hero - 10} weight="bold" accessibilityRole="header">
           {t('quakesTitle')}
         </Txt>
         <Txt size={type.label} tone="muted">
-          {t('quakesSub', { n: seismic.earthquakes.length })}
+          {t(isCurrent ? 'seismicLiveDataset' : 'seismicArchivedDataset', { time: dataTime })}
         </Txt>
       </View>
 
-      {f ? (
-        <Card>
-          <Txt size={type.title} weight="semibold">
-            {t('forecastTable')}
-          </Txt>
-          <View style={{ gap: 2 }}>
-            <View style={[styles.row, { paddingHorizontal: space.sm }]}>
-              <Txt size={type.caption} tone="faint" weight="semibold" style={{ flex: 1.3 }}>
-                {t('magnitude').toUpperCase()}
-              </Txt>
-              {['next24', 'nextWeek', 'nextMonth'].map((k) => (
-                <Txt key={k} size={type.caption} tone="faint" weight="semibold" style={{ flex: 1, textAlign: 'right' }}>
-                  {t(k as any).toUpperCase()}
-                </Txt>
+      <View style={{ gap: space.sm }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}
+          accessibilityLabel={t('seismicFilterTitle')}
+          contentContainerStyle={{ gap: space.xs, alignItems: 'center', paddingRight: space.md }}>
+          {options.map(({ value, label }) => {
+            const active = minimum === value;
+            return (
+              <PressScale key={String(value)} accessibilityRole="button"
+                accessibilityLabel={label} accessibilityState={{ selected: active }}
+                onPress={() => setMinimum(value)}
+                style={{
+                  minHeight: 44, minWidth: 65, paddingHorizontal: space.md,
+                  borderRadius: radius.pill, borderWidth: 1, borderColor: c.line,
+                  backgroundColor: active ? c.navActive : c.tileStrong,
+                  alignItems: 'center', justifyContent: 'center',
+                }}>
+                <Txt size={type.label} weight="semibold"
+                  style={{ color: active ? c.navActiveInk : c.ink }}>{label}</Txt>
+              </PressScale>
+            );
+          })}
+        </ScrollView>
+        <Txt size={type.label} tone="muted" style={{ paddingHorizontal: space.xs }}>
+          {t('seismicFilterResults', { n: filtered.length })}
+        </Txt>
+      </View>
+
+      {latest ? (
+        <Card style={{ padding: space.xl, gap: space.md }}>
+          <View style={[styles.row, { gap: space.sm }]}>
+            <Activity size={19} color={c.ink} />
+            <Txt size={type.label} weight="semibold" tone="muted" style={{ flex: 1 }}>
+              {t('seismicLatest')}
+            </Txt>
+          </View>
+          <View style={{ gap: space.xs }}>
+            <Txt size={type.hero + 5} weight="bold" numeric
+              style={{ letterSpacing: -1.5 }} accessibilityRole="header">
+              M{latest.mag.toFixed(1)}
+            </Txt>
+            <Txt size={type.title + 3} weight="semibold">
+              {place(latest.place, lang)}
+            </Txt>
+            <Txt size={type.label} tone="muted" numeric>
+              {dayStamp(latest.time, lang)}
+            </Txt>
+          </View>
+          <Button label={t('heroQuakeAction')} variant="solid"
+            onPress={() => onOpenQuake(latest.id)} />
+          <SourceLine source="USGS" kind={isCurrent ? 'official' : 'stale'} detail={dataTime} />
+        </Card>
+      ) : (
+        <Card style={{ gap: space.sm }}>
+          <Clock3 size={22} color={c.muted} />
+          <Txt size={type.title} weight="semibold">{t('seismicNoMatches')}</Txt>
+          <Txt size={type.body} tone="muted">{t('seismicNoMatchesHint')}</Txt>
+        </Card>
+      )}
+
+      {forecast ? (
+        <>
+          <SectionHeading title={t('forecastTable')}
+            subtitle={t(isCurrent ? 'seismicForecastLiveHint' : 'seismicForecastArchivedHint')} />
+          <Card style={{ gap: space.md }}>
+            <View style={[styles.row, { paddingHorizontal: space.xs, gap: space.xs }]}>
+              <Txt size={type.caption} tone="muted" weight="semibold"
+                style={{ flex: 1.15 }}>{t('magnitude')}</Txt>
+              {(isCurrent ? ['next24', 'nextWeek', 'nextMonth']
+                : ['seismicFirstDay', 'seismicFirstWeek', 'seismicFirstMonth']).map((key) => (
+                <Txt key={key} size={type.caption} tone="muted" weight="semibold"
+                  style={{ flex: 1, textAlign: 'right' }}>{t(key as 'next24')}</Txt>
               ))}
             </View>
-            {[5, 6, 7].map((m) => (
-              <View key={m} style={[styles.row, { backgroundColor: c.tile, borderRadius: 14, paddingHorizontal: space.sm, minHeight: 46 }]}>
-                <Txt size={type.body} weight="bold" style={{ flex: 1.3 }}>
-                  M{m}+
-                </Txt>
-                {['1 Day', '1 Week', '1 Month'].map((label) => {
-                  const b = f.windows.find((w) => w.label === label)?.bins.find((x) => x.magnitude === m);
+            {[5, 6, 7].map((magnitude) => (
+              <View key={magnitude} style={[styles.row, {
+                backgroundColor: c.tile, borderRadius: radius.tile, paddingHorizontal: space.sm,
+                paddingVertical: space.sm, minHeight: 50, gap: space.xs,
+              }]}>
+                <Txt size={type.body} weight="bold" style={{ flex: 1.15 }}>M{magnitude}+</Txt>
+                {['1 Day', '1 Week', '1 Month'].map((window) => {
+                  const bin = forecast.windows.find((w) => w.label === window)
+                    ?.bins.find((item) => item.magnitude === magnitude);
                   return (
-                    <Txt key={label} size={type.body} weight="semibold" numeric style={{ flex: 1, textAlign: 'right' }}>
-                      {b ? pct(b.probability) : '–'}
+                    <Txt key={window} size={type.label} weight="semibold" numeric
+                      style={{ flex: 1, textAlign: 'right' }}>
+                      {bin ? pct(bin.probability) : '–'}
                     </Txt>
                   );
                 })}
               </View>
             ))}
-          </View>
-          <Txt size={type.label} tone="muted">
-            {t('forecastCaveat')}
-          </Txt>
-          {!isCurrent ? <Txt size={type.label} tone="muted">{t('archivedForecastWarning')}</Txt> : null}
-          <SourceLine source="USGS OAF" kind={isCurrent ? 'official' : 'stale'} detail={`${t('issued')} ${dayStamp(f.creationTime, lang)}`} />
-        </Card>
+            <Txt size={type.label} tone="muted">{t('forecastCaveat')}</Txt>
+            {!isCurrent ? (
+              <Txt size={type.label} tone="muted">{t('archivedForecastWarning')}</Txt>
+            ) : null}
+            <SourceLine source="USGS OAF" kind={isCurrent ? 'official' : 'stale'}
+              detail={`${t('issued')} ${dayStamp(forecast.creationTime, lang)}`} />
+          </Card>
+        </>
       ) : null}
 
-      {groups.map((g) => (
-        <Card key={g.key} style={{ gap: space.xs }}>
-          <Txt size={type.body} weight="semibold" tone="muted" style={{ marginBottom: 4 }}>
-            {g.label} · {g.items.length}
-          </Txt>
-          {g.items.map((q) => (
-            <QuakeRow key={q.id} q={q} onPress={() => onOpenQuake(q.id)} />
+      {rest.length ? (
+        <>
+          <SectionHeading title={t('seismicMoreEvents')}
+            subtitle={t('seismicMoreEventsHint')} />
+          {groups.map((group) => (
+            <Card key={group.key} style={{ gap: space.xs }}>
+              <Txt size={type.label} weight="semibold" tone="muted">
+                {group.label} · {group.items.length}
+              </Txt>
+              {group.items.map((quake) => (
+                <QuakeRow key={quake.id} q={quake} onPress={() => onOpenQuake(quake.id)} />
+              ))}
+            </Card>
           ))}
-        </Card>
-      ))}
-      <SourceLine source="USGS" kind={isCurrent ? 'official' : 'stale'}
-        detail={isCurrent ? t('updated', { ago: ago(seismic.fetchedAt, now, lang) }) : t('archivedUSGSData', { time: dayStamp(seismic.fetchedAt, lang) })} />
+        </>
+      ) : null}
+
+      {!filtered.length ? (
+        <Button label={t('seismicResetFilter')} onPress={() => setMinimum('all')} />
+      ) : null}
+      <Txt size={type.caption + 1} tone="muted" style={{ paddingHorizontal: space.xs }}>
+        {t('seismicCatalogScope')}
+      </Txt>
     </View>
   );
 }
 
 function QuakeRow({ q, onPress }: { q: Quake; onPress: () => void }) {
   const { c, lang } = useApp();
-  const strong = q.mag >= 6;
   return (
-    <Pressable
-      accessibilityRole="button"
+    <Pressable accessibilityRole="button"
       accessibilityLabel={`M${q.mag.toFixed(1)}, ${place(q.place, lang)}, ${clock(q.time, lang)}`}
       onPress={onPress}
-      style={({ pressed }) => [styles.row, { backgroundColor: c.tile, borderRadius: radius.tile, padding: space.sm, paddingHorizontal: space.md, minHeight: 56, opacity: pressed ? 0.75 : 1 }]}
-    >
-      <View
-        style={{
-          width: 48,
-          height: 34,
-          borderRadius: 12,
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: strong ? c.alert : c.tileStrong,
-        }}
-      >
-        <Txt size={type.body} weight="bold" numeric style={{ color: strong ? c.officialInk : c.ink }}>
-          {q.mag.toFixed(1)}
+      style={({ pressed }) => [styles.row, {
+        backgroundColor: c.tile, borderRadius: radius.tile, padding: space.sm,
+        paddingHorizontal: space.md, minHeight: 64, gap: space.sm,
+        opacity: pressed ? 0.75 : 1,
+      }]}>
+      <View style={{
+        minWidth: 60, height: 40, borderRadius: 13, alignItems: 'center', justifyContent: 'center',
+        backgroundColor: c.tileStrong,
+      }}>
+        <Txt size={type.body} weight="bold" numeric>M{q.mag.toFixed(1)}</Txt>
+      </View>
+      <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+        <Txt size={type.body} weight="semibold" numberOfLines={2}>
+          {place(q.place, lang)}
+        </Txt>
+        <Txt size={type.caption + 1} tone="muted" numeric>
+          {clock(q.time, lang)}
         </Txt>
       </View>
-      <Txt size={type.body} style={{ flex: 1 }} numberOfLines={2}>
-        {place(q.place, lang)}
-      </Txt>
-      <Txt size={type.label} tone="muted" numeric>
-        {clock(q.time, lang)}
-      </Txt>
     </Pressable>
   );
 }
