@@ -1,0 +1,39 @@
+{
+  "type": "FeatureCollection",
+  "metadata": {
+    "fixture_source": "USGS significant_month.geojson observed 2026-10-12",
+    "note": "Minimal regression fixture: publicly reported values, trimmed to fields used in v0"
+  },
+  "features": [
+    {
+      "type": "Feature", "id": "us6000u18k",
+      "properties": {
+        "mag": 7.7, "place": "12 km WSW of Pitaloza Arriba, Panama",
+        "time": 1791568566036, "updated": 1791834499503,
+        "status": "reviewed", "alert": "red", "tsunami": 0,
+        "types": ",dyfi,event-sequence,finite-fault,general-text,ground-failure,losspager,moment-tensor,oaf,origin,phase-data,shakemap,"
+      },
+      "geometry": {"type": "Point", "coordinates": [-80.769, 7.5868, 12.647]}
+    },
+    {
+      "type": "Feature", "id": "us6000u19w",
+      "properties": {
+        "mag": 6.6, "place": "14 km W of Río Grande, Panama",
+        "time": 1791577539080, "updated": 1791666545458,
+        "status": "reviewed", "alert": "yellow", "tsunami": 1,
+        "types": ",dyfi,ground-failure,impact-link,losspager,moment-tensor,origin,phase-data,shakemap,"
+      },
+      "geometry": {"type": "Point", "coordinates": [-81.4687, 7.7176, 10]}
+    },
+    {
+      "type": "Feature", "id": "us6000u1cf",
+      "properties": {
+        "mag": 6.0, "place": "7 km N of La Tronosa, Panama",
+        "time": 1791605641786, "updated": 1791760360409,
+        "status": "reviewed", "alert": "yellow", "tsunami": 0,
+        "types": ",dyfi,ground-failure,losspager,moment-tensor,origin,phase-data,shakemap,"
+      },
+      "geometry": {"type": "Point", "coordinates": [-80.5985, 7.5068, 10]}
+    }
+  ]
+}

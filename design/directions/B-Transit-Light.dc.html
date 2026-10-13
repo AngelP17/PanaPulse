@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>PanaPulse B Línea, Movilidad claro</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@600;700;800&amp;family=Manrope:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#2F5FD0}a:hover{color:#1F45A3}
+.chip{display:inline-flex;align-items:center;gap:4px;font:700 11px/1 Manrope,sans-serif;letter-spacing:.4px;padding:4px 7px;border-radius:999px;white-space:nowrap}
+</style>
+</helmet>
+<div style="width: 412px; height: 915px; position: relative; overflow: hidden; box-sizing: border-box; font-family: Manrope, sans-serif; color: #0F1E33; background: radial-gradient(60% 30% at 92% 4%, rgba(47,95,208,0.14), rgba(47,95,208,0) 70%), radial-gradient(110% 30% at 50% 106%, rgba(238,180,130,0.30), rgba(238,180,130,0) 70%), linear-gradient(165deg, #F3F6FA 0%, #ECF3F2 55%, #F6F1E8 100%);">
+  <div style="padding: 20px 20px 0; display: flex; flex-direction: column; gap: 16px;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span style="font: 800 32px/1.1 'Schibsted Grotesk', sans-serif; letter-spacing: -0.8px; flex-grow: 1;">Movilidad</span>
+      <button aria-label="Preguntar a PanaPulse" style="height: 44px; padding: 0 14px; border-radius: 14px; border: 0; background: rgba(47,95,208,0.10); color: #2F5FD0; font: 700 14px Manrope, sans-serif;">Preguntar</button>
+    </div>
+
+    <div style="border-radius: 26px; background: rgba(255,255,255,0.86); border: 1px solid rgba(255,255,255,0.9); box-shadow: 0 14px 32px rgba(30,60,100,0.12); padding: 18px; display: flex; flex-direction: column; gap: 4px;">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; padding-bottom: 10px;">
+        <span style="font: 800 18px 'Schibsted Grotesk', sans-serif;">Tu trayecto</span>
+        <span style="font: 600 12px Manrope, sans-serif; color: rgba(15,30,51,0.64);">Ruta de ejemplo</span>
+      </div>
+      <div style="display: flex; gap: 14px;">
+        <div style="display: flex; flex-direction: column; align-items: center; width: 22px;">
+          <span style="width: 20px; height: 20px; border-radius: 10px; background: #2F5FD0;"></span>
+          <span style="width: 4px; height: 52px; background: #2F5FD0;"></span>
+          <span style="width: 16px; height: 16px; border-radius: 8px; border: 3px solid #2F5FD0; background: #FFFFFF; box-sizing: border-box;"></span>
+          <span style="width: 4px; height: 52px; background: repeating-linear-gradient(180deg, #2F5FD0 0 6px, transparent 6px 11px);"></span>
+          <span style="width: 20px; height: 20px; border-radius: 10px; border: 4px solid #2F5FD0; background: #FFFFFF; box-sizing: border-box;"></span>
+        </div>
+        <div style="display: flex; flex-direction: column; flex-grow: 1;">
+          <div style="height: 20px; display: flex; align-items: center;"><span style="font: 700 15px Manrope, sans-serif;">Casa · Pueblo Nuevo</span></div>
+          <div style="height: 52px; display: flex; align-items: center;"><span style="font: 600 13px Manrope, sans-serif; color: rgba(15,30,51,0.64);">Metro Línea 1 · sin feed en vivo</span></div>
+          <div style="height: 16px; display: flex; align-items: center;"><span style="font: 700 14px Manrope, sans-serif;">Transbordo</span></div>
+          <div style="height: 52px; display: flex; align-items: center;"><span style="font: 600 13px Manrope, sans-serif; color: rgba(15,30,51,0.64);">MiBus · sin feed en vivo</span></div>
+          <div style="height: 20px; display: flex; align-items: center;"><span style="font: 700 15px Manrope, sans-serif;">Trabajo · Albrook</span></div>
+        </div>
+      </div>
+      <span style="font: 600 13px/1.45 Manrope, sans-serif; color: rgba(15,30,51,0.72); padding: 12px 0 6px;">No mostramos horarios ni llegadas: Metro y MiBus no publican datos abiertos en vivo.</span>
+      <a href="https://www.google.com/maps/dir/?api=1&amp;origin=Pueblo+Nuevo,+Panam%C3%A1&amp;destination=Albrook,+Panam%C3%A1&amp;travelmode=transit" style="height: 48px; border-radius: 14px; background: #2F5FD0; color: #FFFFFF; font: 700 15px Manrope, sans-serif; display: flex; align-items: center; justify-content: center; text-decoration: none;">Abrir en Google Maps</a>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <span style="font: 700 16px Manrope, sans-serif; padding: 0 4px;">Líneas</span>
+      <div style="border-radius: 22px; background: rgba(255,255,255,0.78); border: 1px solid rgba(15,30,51,0.08); overflow: hidden;">
+        <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; min-height: 52px;">
+          <span style="width: 34px; height: 34px; border-radius: 17px; border: 3px solid #2F5FD0; box-sizing: border-box; font: 800 12px Manrope, sans-serif; color: #2F5FD0; display: flex; align-items: center; justify-content: center;">L1</span>
+          <span style="font: 700 15px Manrope, sans-serif; flex-grow: 1;">Metro Línea 1</span>
+          <span class="chip" style="border: 1.5px solid rgba(15,30,51,0.4); color: rgba(15,30,51,0.7);">SIN DATOS</span>
+        </div>
+        <div style="height: 1px; background: rgba(15,30,51,0.07); margin-left: 62px;"></div>
+        <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; min-height: 52px;">
+          <span style="width: 34px; height: 34px; border-radius: 17px; border: 3px solid #2F5FD0; box-sizing: border-box; font: 800 12px Manrope, sans-serif; color: #2F5FD0; display: flex; align-items: center; justify-content: center;">L2</span>
+          <span style="font: 700 15px Manrope, sans-serif; flex-grow: 1;">Metro Línea 2</span>
+          <span class="chip" style="border: 1.5px solid rgba(15,30,51,0.4); color: rgba(15,30,51,0.7);">SIN DATOS</span>
+        </div>
+        <div style="height: 1px; background: rgba(15,30,51,0.07); margin-left: 62px;"></div>
+        <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; min-height: 52px;">
+          <span style="width: 34px; height: 34px; border-radius: 17px; border: 3px solid #2F5FD0; box-sizing: border-box; color: #2F5FD0; display: flex; align-items: center; justify-content: center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><rect x="4" y="3" width="16" height="15" rx="3"></rect><path d="M4 11h16M8 21v-3M16 21v-3"></path></svg></span>
+          <span style="font: 700 15px Manrope, sans-serif; flex-grow: 1;">MiBus</span>
+          <span class="chip" style="border: 1.5px solid rgba(15,30,51,0.4); color: rgba(15,30,51,0.7);">SIN DATOS</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="border-radius: 22px; border: 1.5px dashed rgba(15,30,51,0.22); padding: 16px; display: flex; flex-direction: column; gap: 10px;">
+      <span style="font: 700 15px Manrope, sans-serif;">Avisos oficiales</span>
+      <span style="font: 600 13px/1.45 Manrope, sans-serif; color: rgba(15,30,51,0.72);">Todavía no leemos los avisos del Metro ni de MiBus. Revisa sus canales oficiales.</span>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <a href="https://www.elmetrodepanama.com/" style="height: 40px; padding: 0 14px; border-radius: 12px; border: 1px solid rgba(47,95,208,0.35); font: 700 13px Manrope, sans-serif; display: flex; align-items: center; text-decoration: none; background: rgba(255,255,255,0.7);">Metro de Panamá ↗</a>
+        <a href="https://www.mibus.com.pa/" style="height: 40px; padding: 0 14px; border-radius: 12px; border: 1px solid rgba(47,95,208,0.35); font: 700 13px Manrope, sans-serif; display: flex; align-items: center; text-decoration: none; background: rgba(255,255,255,0.7);">MiBus ↗</a>
+      </div>
+    </div>
+  </div>
+
+  <nav aria-label="Navegación principal" style="position: absolute; left: 0; right: 0; bottom: 0; height: 80px; background: rgba(255,255,255,0.96); border-top: 1px solid rgba(15,30,51,0.08); display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: center; padding-bottom: 8px; box-sizing: border-box;">
+    <a href="B-Home-Light.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: rgba(15,30,51,0.66); font: 600 12px Manrope, sans-serif;"><span style="height: 8px;"></span><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"></path></svg>Inicio</a>
+    <a href="#" aria-current="page" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #2F5FD0; font: 700 12px Manrope, sans-serif;"><span style="width: 52px; height: 4px; border-radius: 2px; background: #2F5FD0; margin-bottom: 4px;"></span><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" aria-hidden="true"><rect x="5" y="3" width="14" height="14" rx="3"></rect><path d="M5 11h14M8 21l2-4M16 21l-2-4"></path></svg>Movilidad</a>
+    <a href="#" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: rgba(15,30,51,0.66); font: 600 12px Manrope, sans-serif;"><span style="height: 8px;"></span><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"></path></svg>Sismos</a>
+    <a href="#" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: rgba(15,30,51,0.66); font: 600 12px Manrope, sans-serif;"><span style="height: 8px;"></span><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 10v4l12 5V5L4 10zM16 9a4 4 0 0 1 0 6"></path></svg>Reportes</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":412,"height":915}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

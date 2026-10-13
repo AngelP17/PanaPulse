@@ -1,0 +1,12 @@
+# Claude Code request: PanaPulse design recovery
+
+The latest PanaPulse three-theme mockup became too generic. I asked you to avoid copying Hark, NOT to remove the atmospheric, polished visual treatment that I liked. Do a focused visual design recovery before changing any source files.
+
+1. Read the attached `PANAPULSE_DESIGN_RECOVERY.md`, `DESIGN.md`, `CLAUDE.md`, the theme tokens, and existing Home/Transit/Quakes screens. Compare against my attached Hark inspiration screenshots, the earlier PanaPulse version, and the current three-theme version.
+2. Audit which of these repositories have actually been *activated*, not merely cloned: `expo/skills`, `GrubbyLee/design-guide`, `miqdadbadjuber/anti-slop`, `Leonxlnx/taste-skill`, `LeoStehlik/no-slop-ui`, `funboy322/avoid-ai-design`, `Netxeo/skill-file-design`, `lotfb86/web-design-skills`, `alchaincyf/huashu-design`. Locate each local `SKILL.md` actually present and report present/active/missing with exact paths. Do not invent having read a skill. Do not download or execute external installation scripts without confirmation.
+3. Identify any conflicts: especially `no-slop-ui`'s bans on atmospheric gradients, rounded focal cards and pill treatments. Treat our PanaPulse design and Expo native rules as higher priority. Use `anti-slop` primarily for honesty and interface completeness, not for flattening the brand. Use `design-guide` for the review and Expo's official skills for code.
+4. Diagnose the current design with specific issues from the screenshot: generic flat cards; weak theme distinction; oversized dominance of a single earthquake number; tiny low-contrast metadata; five-status rail too small to be useful; lack of daily Metro/MiBus prominence. Preserve USGS accuracy and explicit unknown states.
+5. Present TWO coherent visual variations to approve, both distinct from Hark but with cinematic atmosphere, readable spacious cards, restrained depth and a unique PanaPulse pulse motif. Use actual screen compositions with real empty states, not marketing moodboards or fake metrics.
+6. Await my selection, then implement in Expo Router + React Native using the existing tokens/components. Preserve full English/Spanish translation and Auto/Light/Dark. Verify on Android emulator at 412x915 and 360 dp in light/dark, and report tests and screenshots honestly.
+
+Do not rewrite the backend, invent live Metro/MiBus arrivals, or add subscriptions while completing this design task.

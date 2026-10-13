@@ -1,0 +1,133 @@
+{
+ "ensa": {
+  "source": "https://ensa.com.pa/mantenimientos-programados/",
+  "fetchedAt": 1791849960000,
+  "notices": [
+   {
+    "provider": "ENSA",
+    "district": "Chepo",
+    "corregimiento": "Chepo",
+    "place": "Tierra Prometida Carretera Vieja",
+    "start": 1791813600000,
+    "end": 1791828000000,
+    "task": "Mejoras a la red electrica",
+    "affected": 18
+   },
+   {
+    "provider": "ENSA",
+    "district": "Panama",
+    "corregimiento": "Juan Diaz",
+    "place": "Ciudad Radial",
+    "start": 1791813600000,
+    "end": 1791828000000,
+    "task": "Mantenimiento a la red electrica",
+    "affected": 2
+   },
+   {
+    "provider": "ENSA",
+    "district": "San Miguelito",
+    "corregimiento": "Jose Domingo Espinar",
+    "place": "Altos Del Crisol",
+    "start": 1791900000000,
+    "end": 1791914400000,
+    "task": "Poda preventiva",
+    "affected": 49
+   },
+   {
+    "provider": "ENSA",
+    "district": "Colon",
+    "corregimiento": "Barrio Norte",
+    "place": "Barrio Norte",
+    "start": 1791903600000,
+    "end": 1791918000000,
+    "task": "Mantenimiento a la red eléctrica",
+    "affected": 126
+   },
+   {
+    "provider": "ENSA",
+    "district": "Panama",
+    "corregimiento": "San Martin",
+    "place": "La Mesa",
+    "start": 1791982800000,
+    "end": 1792004400000,
+    "task": "Poda preventiva",
+    "affected": 17
+   },
+   {
+    "provider": "ENSA",
+    "district": "Panama",
+    "corregimiento": "Tocumen",
+    "place": "Tapia",
+    "start": 1791982800000,
+    "end": 1792011600000,
+    "task": "Poda preventiva",
+    "affected": 4
+   },
+   {
+    "provider": "ENSA",
+    "district": "Panama",
+    "corregimiento": "Juan Diaz",
+    "place": "Nuevo Hipodromo",
+    "start": 1791986400000,
+    "end": 1792008000000,
+    "task": "Poda preventiva",
+    "affected": 34
+   },
+   {
+    "provider": "ENSA",
+    "district": "Panama",
+    "corregimiento": "24 De Diciembre",
+    "place": "Nuevo Tocumen",
+    "start": 1791990000000,
+    "end": 1792004400000,
+    "task": "Mantenimiento a la red eléctrica",
+    "affected": 42
+   },
+   {
+    "provider": "ENSA",
+    "district": "Panama",
+    "corregimiento": "Parque Lefevre",
+    "place": "Parque Industrial",
+    "start": 1792162800000,
+    "end": 1792177200000,
+    "task": "Mantenimiento a la red eléctrica",
+    "affected": 2
+   },
+   {
+    "provider": "ENSA",
+    "district": "San Miguelito",
+    "corregimiento": "Mateo Iturralde",
+    "place": "San Miguel",
+    "start": 1792422000000,
+    "end": 1792436400000,
+    "task": "Mantenimiento a la red electrica",
+    "affected": 12
+   }
+  ]
+ },
+ "naturgy": {
+  "source": "https://www.naturgy.com.pa/cronogramas-mantenimiento/",
+  "fetchedAt": 1791849960000,
+  "publishedThrough": 1791781140000,
+  "notices": []
+ },
+ "edemetPanamaDistrict": {
+  "source": "https://www.naturgy.com.pa/hogar/distribucion-de-electricidad/zonas-de-concesion/",
+  "corregimientos": [
+   "San Felipe",
+   "El Chorrillo",
+   "Santa Ana",
+   "Calidonia",
+   "Curundú",
+   "Betania",
+   "Bella Vista",
+   "Pueblo Nuevo",
+   "San Francisco",
+   "Parque Lefevre",
+   "Ancón"
+  ]
+ },
+ "borderAreas": [
+  "Parque Lefevre"
+ ]
+}

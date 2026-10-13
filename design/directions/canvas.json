@@ -1,0 +1,15 @@
+{"v":3,"createdOnFiles":{"v":1,"at":"2026-10-13T00:20:00Z"},"title":"PanaPulse Directions","launch":{"view":"canvas"},"pages":[],
+"boards":{
+"Main.dc.html":{"x":0,"y":0,"w":412,"h":915,"title":"A · Bahía — Inicio (oscuro)","radius":36},
+"A-Home-Light.dc.html":{"x":492,"y":0,"w":412,"h":915,"title":"A · Bahía — Inicio (claro)","radius":36},
+"A-Transit-Dark.dc.html":{"x":984,"y":0,"w":412,"h":915,"title":"A · Bahía — Movilidad (oscuro)","radius":36},
+"B-Home-Dark.dc.html":{"x":0,"y":1340,"w":412,"h":915,"title":"B · Línea — Inicio (oscuro)","radius":36},
+"B-Home-Light.dc.html":{"x":492,"y":1340,"w":412,"h":915,"title":"B · Línea — Inicio (claro)","radius":36},
+"B-Transit-Light.dc.html":{"x":984,"y":1340,"w":412,"h":915,"title":"B · Línea — Movilidad (claro)","radius":36}
+},
+"order":["Main.dc.html","A-Home-Light.dc.html","A-Transit-Dark.dc.html","B-Home-Dark.dc.html","B-Home-Light.dc.html","B-Transit-Light.dc.html"],
+"notes":{
+"titleA":{"x":0,"y":-300,"text":"A · Bahía — the bay at night, pulse as horizon","kind":"title1","maxW":1396},
+"titleB":{"x":0,"y":1040,"text":"B · Línea — your day as a transit line","kind":"title1","maxW":1396}
+},
+"designSystems":[]}
