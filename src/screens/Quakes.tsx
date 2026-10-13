@@ -4,13 +4,13 @@ import { Linking, Modal, Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ago, clock, dayKey, dayLabel, dayStamp, pct, place } from '../data/format';
 import type { Quake } from '../data/usgs';
-import { DemoQuakes } from './DemoScreens';
+import { LIVE_MAX_AGE_MS } from '../data/glance';
 import { useApp } from '../state/AppContext';
 import { radius, space, type } from '../theme/tokens';
 import { Button, Card, SourceLine, Tile, TileGrid, Txt, styles } from '../components/ui';
 
 export function Quakes({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
-  const { c, t, lang, seismic, now, demoEnabled } = useApp();
+  const { c, t, lang, seismic, now } = useApp();
   const groups = useMemo(() => {
     const out: { key: string; label: string; items: Quake[] }[] = [];
     for (const q of seismic.earthquakes) {
@@ -23,7 +23,7 @@ export function Quakes({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
   }, [seismic, now, lang]);
 
   const f = seismic.forecast;
-  if (demoEnabled) return <DemoQuakes />;
+  const isCurrent = seismic.mode === 'live' && Math.abs(now - seismic.fetchedAt) <= LIVE_MAX_AGE_MS;
 
   return (
     <View style={{ gap: space.md }}>
@@ -71,7 +71,8 @@ export function Quakes({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
           <Txt size={type.label} tone="muted">
             {t('forecastCaveat')}
           </Txt>
-          <SourceLine source="USGS OAF" kind="official" detail={`${t('issued')} ${dayStamp(f.creationTime, lang)}`} />
+          {!isCurrent ? <Txt size={type.label} tone="muted">{t('archivedForecastWarning')}</Txt> : null}
+          <SourceLine source="USGS OAF" kind={isCurrent ? 'official' : 'stale'} detail={`${t('issued')} ${dayStamp(f.creationTime, lang)}`} />
         </Card>
       ) : null}
 
@@ -85,7 +86,8 @@ export function Quakes({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
           ))}
         </Card>
       ))}
-      <SourceLine source="USGS" kind="official" detail={t('updated', { ago: ago(seismic.fetchedAt, now, lang) })} />
+      <SourceLine source="USGS" kind={isCurrent ? 'official' : 'stale'}
+        detail={isCurrent ? t('updated', { ago: ago(seismic.fetchedAt, now, lang) }) : t('archivedUSGSData', { time: dayStamp(seismic.fetchedAt, lang) })} />
     </View>
   );
 }
