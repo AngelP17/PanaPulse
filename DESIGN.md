@@ -30,14 +30,15 @@ PanaPulse is a premium, bilingual consumer companion for life in Panama, not an 
 
 Every data element includes source and update context; statuses distinguish official, community, stale, example and unavailable.
 
-### Source-first preview rules
+### Complete-product interactive preview
 
-- Preview mode fills **only unconnected/missing sources**. Real current and stale official data always take priority.
-- USGS actual earthquakes and aftershock products remain sourced in every mode; do not substitute fictional quakes on Home or Sismos.
-- A stale USGS snapshot stays readable with its original date and source, never with a live claim.
-- Only simulated elements carry local SIMULADO / SIMULATED tags. Never label the entire app as simulated when some data is real.
-- Community examples never mix with saved user reports or imply an actual count. Chat stays sourced from real data.
-- Implement this precedence through `src/data/sourcePolicy.ts`; do not add competing full-screen demo switches. Empty data is NOT proof that service is operating. Do not show fake transit ETAs, fake outage totals or unsourced aftershock probabilities. No advertisements or paywalls on emergency information.
+- **When preview is enabled, it is a full, coherent product walkthrough.** Show the complete functionality and dynamic scenario values across Home, Services, Mobility, Reports, and chat rather than empty real-source placeholders.
+- Show **one concise, persistent** VISTA PREVIA / PREVIEW indicator under the app header, with the scenario name. Avoid repeating DEMO, SIN DATOS, unavailable-feed disclaimers or caution paragraphs inside every example card. Keep current real-source health accessible in Settings.
+- The selected scenario (Everyday, Disruptions, Recovery) controls example utility and transit conditions, arrival countdowns and neighborhood activity everywhere. Chat answers those questions from the SAME scenario rather than contradicting the interface.
+- Users may save/remove the example commute and create preview reports. Changes must propagate to other preview screens; preview reports are not uploaded or stored as real reports.
+- **USGS quake and forecast values stay real.** In preview, historical USGS records have their true times/source and are displayed separately; never invent a recent earthquake, alter USGS issue times or present expired aftershock windows as future.
+- Preview OFF always restores the strict, source-first live experience. Missing data is unknown, not normal. Official and stale data provenance remains explicit.
+- `src/data/sourcePolicy.ts` applies to production source precedence, not to replacing the entire visual product walkthrough. This preview is not live operator telemetry or an emergency-information substitute.
 
 ## Changes that need explicit approval
 
