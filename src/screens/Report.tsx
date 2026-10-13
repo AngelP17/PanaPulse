@@ -159,21 +159,21 @@ export function Report() {
         </Card>
       )}
 
-      {mine.length > 0 ? (
-        <Card style={{ gap: space.xs }}>
-          <Txt size={type.body} weight="semibold">
-            {t('myReports')}
-          </Txt>
-          {mine.slice(0, 5).map((r) => (
-            <View key={r.at} style={[styles.row, { backgroundColor: c.tile, borderRadius: radius.tile, padding: space.sm, paddingHorizontal: space.md, minHeight: 52 }]}>
-              {r.service === 'electricity' ? <Zap size={18} color={c.muted} /> : <Droplets size={18} color={c.muted} />}
-              <Txt size={type.body} style={{ flex: 1 }} numberOfLines={1}>
-                {r.corregimiento}
-              </Txt>
-              <Txt size={type.label} tone="muted">
-                {ago(r.at, now, lang)}
-              </Txt>
-              <StatusChip kind="community" />
+      {!demoEnabled && mine.length > 0 ? (
+        <Card style={{ gap: space.sm }}>
+          <Txt size={type.title} weight="semibold">{t('myReports')}</Txt>
+          <Txt size={type.caption + 1} tone="muted">{t('neighborMyLocalOnly')}</Txt>
+          {mine.slice(0, 10).map((r, index) => (
+            <View key={`${r.at}-${index}`}
+              style={{ borderBottomWidth: 1, borderBottomColor: c.line, paddingVertical: space.sm, gap: space.xs }}>
+              <View style={styles.row}>
+                {r.service === 'electricity'
+                  ? <Zap size={18} color={c.ink} />
+                  : <Droplets size={18} color={c.ink} />}
+                <Txt size={type.body} weight="semibold" style={{ flex: 1 }}>{r.corregimiento}</Txt>
+                <Txt size={type.label} tone="muted">{ago(r.at, now, lang)}</Txt>
+              </View>
+              {r.note ? <Txt size={type.body}>{r.note}</Txt> : null}
             </View>
           ))}
         </Card>
