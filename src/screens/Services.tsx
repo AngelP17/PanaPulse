@@ -26,9 +26,9 @@ export function Services() {
         <Txt size={type.body} tone="muted">{ZONE} · {t('serviceScope')}</Txt>
       </View>
       {demoEnabled ? <DemoControls /> : null}
-      <SectionHeading title={t(demoEnabled && !current ? 'power' : 'scheduledMaintenance')}
-        subtitle={t(demoEnabled && !current ? 'demoRealtimeDescription' : 'scheduledOnlyCaption')} />
-      {demoEnabled && !current ? <DemoUtilityCard service="power" state={demo.power} /> : (
+      <SectionHeading title={t(demoEnabled && state !== 'ready' ? 'power' : 'scheduledMaintenance')}
+        subtitle={t(demoEnabled && state !== 'ready' ? 'demoRealtimeDescription' : 'scheduledOnlyCaption')} />
+      {demoEnabled && state !== 'ready' ? <DemoUtilityCard service="power" state={demo.power} /> : (
       <Card>
         <CardHeader icon={<Zap size={19} color={c.stale} />} title={t('power')}
           right={<StatusChip kind={current && notices.length ? 'official' : 'unavailable'} />} />

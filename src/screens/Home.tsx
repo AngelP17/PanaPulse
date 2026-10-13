@@ -82,10 +82,10 @@ export function Home({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
   }
   if (power === 'scheduled') {
     pills.push({ kind: 'official', label: cuts === 0 ? t('chipPowerNone') : cuts === 1 ? t('chipPowerCut') : t('chipPowerCuts', { n: cuts }), onPress: () => go('services') });
-  } else if (power === 'stale' && !demoEnabled) {
+  } else if (power === 'stale') {
     pills.push({ kind: 'stale', label: t('chipPowerStale'), onPress: () => go('services') });
   }
-  if (demoEnabled && power !== 'scheduled') {
+  if (demoEnabled && power === 'none') {
     pills.push({ kind: 'demo', label: t('demoStatusPower', {
       status: demoUtilityCopy(demo.power, 'power', t),
     }), onPress: () => go('services') });
@@ -151,7 +151,7 @@ export function Home({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
 
       {/* Contextual utility: scheduled power notices for the area */}
       <SectionHeading title={t('categoryServices')} subtitle={t('servicesSummaryHint')} />
-      {demoEnabled && power !== 'scheduled' ? (
+      {demoEnabled && power === 'none' ? (
         <DemoUtilityCard service="power" state={demo.power} onDetails={() => go('services')} />
       ) : (
       <Card>
