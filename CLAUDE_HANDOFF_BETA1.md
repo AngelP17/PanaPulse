@@ -65,6 +65,7 @@ Validate the resulting screenshots. If a new layout is objectively worse, revert
 ## Next focused premium enhancements (one PR per screen group)
 
 **First, integration correctness.**
+0. **Known P0 conflict:** current main's PreviewHome and preview Services may hide real current/stale power notices even though the standalone live Services screen is source-first. Do not treat PR #8's chat-only precedence as enough. Derive one shared visible source selection used by Home, Services AND Ask, with tests for real-current, real-stale, missing-in-preview and missing-in-live. Do not show preview power as an actual outage.
 A. Merge and test PRs #8 and #9 with this branch through a separate integration PR; run all CI and re-check real source data. The power/preview/chat precedence must agree across Home and Ask.
 B. Install applicable TasteSkill and run a written audit, but do not let random art directions discard Porcelana.
 

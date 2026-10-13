@@ -1,5 +1,7 @@
 # Codex agent instructions
 
+**Before Beta 1 work:** read CLAUDE_HANDOFF_BETA1.md, design/ART_DIRECTION_BETA1.md and docs/BETA1_READINESS.md. Preserve approved Porcelana/Hark-quality direction; do not run default TasteSkill v2's anti-gradient website rules over native app screens.
+
 This is the existing Expo SDK 57 + Python FastAPI PanaPulse project, not a rewrite request.
 
 Read `DESIGN.md`, `docs/BRAND.md`, `src/theme/tokens.ts`, `docs/ANTISLOP-RN.md`, and `docs/DATA_SOURCES.md` before editing.
