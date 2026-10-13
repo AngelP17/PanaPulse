@@ -39,3 +39,8 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+.reference-skills/
+dist/
+*.db
+backend/*.egg-info
