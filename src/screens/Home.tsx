@@ -1,178 +1,162 @@
-import { Activity, Droplets, Megaphone, TrainFront, Zap } from 'lucide-react-native';
+import { Activity, Clock, Megaphone, TriangleAlert, Zap } from 'lucide-react-native';
 import React, { useMemo } from 'react';
-import { Linking, Pressable, View } from 'react-native';
-import { PulseRail } from '../components/pulse';
-import { Button, Card, CardHeader, SourceLine, StatusChip, Tile, TileGrid, Txt, styles } from '../components/ui';
-import { ago, clock, dayStamp, longDate, pct, place } from '../data/format';
-import { bin } from '../data/usgs';
-import { powerFeedState, usePowerMaintenance } from '../data/maintenance';
+import { ScrollView, View } from 'react-native';
+import { Eyebrow, HeroCard, OfflineLine, PillKind, StatusPill } from '../components/glance';
 import { SectionHeading } from '../components/section';
+import { Button, Card, CardHeader, SourceLine, Txt, styles } from '../components/ui';
+import { ago, clock, dayKey, dayStamp, place } from '../data/format';
+import { joinList, locality, offlineSources, OfflineSource, seismicHero } from '../data/glance';
+import { powerFeedState, usePowerMaintenance } from '../data/maintenance';
 import { useApp } from '../state/AppContext';
-import { radius, space, type } from '../theme/tokens';
+import { space, type } from '../theme/tokens';
 
-const MAPS_TRIP =
-  'https://www.google.com/maps/dir/?api=1&origin=Pueblo+Nuevo,+Panam%C3%A1&destination=Albrook,+Panam%C3%A1&travelmode=transit';
+const ZONE = 'Pueblo Nuevo';
 
+/**
+ * Home answers three things at a glance: is anything wrong near me, how sure are we, what to check next.
+ * Order: area summary, one hero, up to three status chips, one offline line, one utility card, one secondary card.
+ */
 export function Home({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
   const { c, t, lang, seismic, now, go } = useApp();
-  const { data: maintenance, state: maintenanceState } = usePowerMaintenance('Pueblo Nuevo');
-  const plannedCuts = maintenance?.notices ?? [];
+  const { data: maintenance, state: maintenanceState } = usePowerMaintenance(ZONE);
   const power = powerFeedState(maintenance, maintenanceState);
-  const currentSource = power === 'scheduled';
-  const f = seismic.forecast;
-  const main = useMemo(() => seismic.earthquakes.find((q) => q.id === f?.mainshockId) ?? null, [seismic, f]);
-  const recent = seismic.earthquakes.slice(0, 3);
-  const d6 = bin(f, '1 Day', 6);
-  const w6 = bin(f, '1 Week', 6);
-  const d7 = bin(f, '1 Day', 7);
-  const w7 = bin(f, '1 Week', 7);
+  const cuts = maintenance?.notices.length ?? 0;
+  const hero = useMemo(() => seismicHero(seismic, now), [seismic, now]);
 
-  const dataNote =
-    seismic.mode === 'live'
-      ? t('liveNote', { time: clock(seismic.fetchedAt, lang) })
-      : t('snapshotNote', { time: dayStamp(seismic.fetchedAt, lang) });
+  // Same-day times read as a clock; anything older carries its day so it can't pass for today.
+  const when = (ms: number) => (dayKey(ms) === dayKey(now) ? clock(ms, lang) : dayStamp(ms, lang));
+
+  const heroProps = (() => {
+    if (hero.kind === 'notable') {
+      const q = hero.quake;
+      const mag = q.mag.toFixed(1);
+      const loc = locality(q.place);
+      return {
+        icon: hero.severe ? <TriangleAlert size={16} color={c.alert} strokeWidth={2.4} /> : <Activity size={16} color={c.muted} strokeWidth={2.4} />,
+        headline: loc ? t('heroQuakeNear', { mag, place: loc }) : t('heroQuakeAt', { mag, place: place(q.place, lang) }),
+        alertLine: hero.severe ? t('heroPager', { level: t(q.alert === 'red' ? 'pagerRed' : 'pagerOrange') }) : undefined,
+        detail: dayKey(q.time) === dayKey(now) ? t('heroRecordedAt', { time: clock(q.time, lang) }) : t('heroRecordedOn', { date: dayStamp(q.time, lang) }),
+        verification: 'official' as const,
+        provenance: t('heroProvenance', { time: when(seismic.fetchedAt) }),
+        action: t('heroQuakeAction'),
+        onAction: () => onOpenQuake(q.id),
+      };
+    }
+    if (hero.kind === 'calm') {
+      const q = hero.latest;
+      return {
+        icon: <Activity size={16} color={c.muted} strokeWidth={2.4} />,
+        headline: t('heroCalmHeadline'),
+        detail: t('heroCalmDetail'),
+        extra: q ? t('heroCalmLatest', { mag: q.mag.toFixed(1), place: place(q.place, lang), when: ago(q.time, now, lang) }) : undefined,
+        verification: 'official' as const,
+        provenance: t('heroProvenance', { time: when(seismic.fetchedAt) }),
+        action: t('heroCalmAction'),
+        onAction: () => go('quakes'),
+      };
+    }
+    return {
+      icon: <Clock size={16} color={c.stale} strokeWidth={2.4} />,
+      headline: t('heroStaleHeadline'),
+      detail: t('heroStaleDetail'),
+      verification: 'stale' as const,
+      provenance: t('heroStaleProvenance', { time: dayStamp(seismic.fetchedAt, lang) }),
+      action: t('heroStaleAction'),
+      onAction: () => go('quakes'),
+    };
+  })();
+
+  // Only statuses the data supports, at most three. A missing feed never becomes a chip.
+  const pills: { kind: PillKind; label: string; onPress: () => void }[] = [];
+  if (seismic.forecast) {
+    pills.push({ kind: hero.kind === 'stale' ? 'stale' : 'forecast', label: t('chipAftershocks'), onPress: () => go('quakes') });
+  }
+  if (power === 'scheduled') {
+    pills.push({ kind: 'official', label: cuts === 0 ? t('chipPowerNone') : cuts === 1 ? t('chipPowerCut') : t('chipPowerCuts', { n: cuts }), onPress: () => go('services') });
+  } else if (power === 'stale') {
+    pills.push({ kind: 'stale', label: t('chipPowerStale'), onPress: () => go('services') });
+  }
+
+  const offline = offlineSources(power);
+  const sourceName: Record<OfflineSource, string> = { power: t('power'), water: t('water'), metro: 'Metro', mibus: 'MiBus' };
+  const offlineGoesTo = offline.some((s) => s === 'power' || s === 'water') ? 'services' : 'mobility';
+
+  const powerHeadline =
+    power === 'scheduled' ? (cuts === 0 ? t('scheduledEmpty') : cuts === 1 ? t('scheduledZoneOne') : t('scheduledZoneCount', { n: cuts }))
+    : power === 'stale' ? t('powerStale')
+    : maintenanceState === 'loading' ? t('loadingMaintenance')
+    : t('powerNoFeed');
 
   return (
     <View style={{ gap: space.md }}>
-      <View style={{ paddingHorizontal: space.xs, gap: 2 }}>
-        <Txt size={type.label} weight="semibold" tone="muted">
-          {t('myZone')}
-        </Txt>
+      {/* Area summary */}
+      <View style={{ paddingHorizontal: space.xs, gap: 4 }}>
+        <Eyebrow>{t('areaEyebrow')}</Eyebrow>
         <Txt size={type.hero} weight="bold" accessibilityRole="header" style={{ letterSpacing: -1 }}>
-          Pueblo Nuevo
+          {ZONE}
         </Txt>
-        <Txt size={type.caption + 1} tone="muted" numeric>
-          {dataNote}
+        <Txt size={type.label} tone="muted" numeric>
+          {t('lastData', { time: when(seismic.fetchedAt) })}
         </Txt>
       </View>
 
-      {/* Signature: the area's pulse, one line through five services. */}
-      <Card featured>
-        <CardHeader icon={<Activity size={18} color={c.accent} />} title={t('pulseTitle')} />
-        <PulseRail
-          nodes={[
-            { label: t('power'), status: power === 'scheduled' ? (plannedCuts.length ? t('scheduledBrief') : t('pulseNoPlans')) : power === 'stale' ? t('pulsePowerStale') : t('pulseNone'), state: power },
-            { label: t('water'), status: t('pulseNone'), state: 'none' },
-            { label: 'Metro', status: t('pulseNoFeed'), state: 'none' },
-            { label: 'MiBus', status: t('pulseNoFeed'), state: 'none' },
-            { label: t('pulseQuakes'), status: f ? t('pulseActive') : t('pulseNone'), state: f ? 'live' : 'none', intensity: w6 ? Math.min(1, w6.probability / 0.4) : 0 },
-          ]}
-        />
-        <Txt size={type.caption + 1} tone="muted">
-          {t('pulseLegend')}
-        </Txt>
-      </Card>
+      {/* Alert hero: one primary card */}
+      <HeroCard eyebrow={t('heroEyebrow')} {...heroProps} />
 
-      <SectionHeading title={t('categoryServices')} subtitle={t('categoryServicesHint')} />
-      {/* Separate floating cards for power and water, each with its own verification line. */}
-      <View style={{ flexDirection: 'row', gap: space.sm }}>
-        <Card style={{ flex: 1, minWidth: 0, padding: space.md, gap: space.xs }}>
-          <View style={styles.row}>
-            <Zap size={18} color={power === 'stale' ? c.stale : power === 'scheduled' ? c.ink : c.muted} />
-            <Txt size={type.body} weight="bold">
-              {t('power')}
-            </Txt>
-          </View>
-          <Txt size={type.label} tone="muted" numberOfLines={1}>
-            {t('powerCardProvider')}
-          </Txt>
-          <Txt size={type.title} weight="bold" style={{ color: power === 'stale' ? c.stale : power === 'scheduled' ? c.ink : c.muted }}>
-            {power === 'scheduled'
-              ? plannedCuts.length ? t('scheduledCount', { n: plannedCuts.length }) : t('noPlannedNotices')
-              : power === 'stale' ? t('powerStale') : t('pulseNone')}
-          </Txt>
-          <StatusChip kind={power === 'scheduled' ? 'official' : power === 'stale' ? 'stale' : 'unavailable'} />
-          <Txt size={type.caption} tone="muted">
-            {power === 'scheduled' ? t('maintenanceOnly') : power === 'stale' ? t('maintenanceUnavailable') : t('powerNoFeed')}
-          </Txt>
-        </Card>
-        <Card style={{ flex: 1, minWidth: 0, padding: space.md, gap: space.xs }}>
-          <View style={styles.row}>
-            <Droplets size={18} color={c.muted} />
-            <Txt size={type.body} weight="bold">
-              {t('water')}
-            </Txt>
-          </View>
-          <Txt size={type.label} tone="muted">
-            IDAAN
-          </Txt>
-          <Txt size={type.title} weight="bold" tone="muted">
-            {t('waterCardState')}
-          </Txt>
-          <View style={{ gap: 6 }}>
-            <View style={[styles.row, { gap: 6 }]}>
-              <StatusChip kind="unavailable" />
-            </View>
-            <Txt size={type.caption} tone="muted">
-              {t('waterOfficial')}
-            </Txt>
-            <Txt size={type.caption} tone="muted">
-              {t('waterCommunity')}
-            </Txt>
-          </View>
-        </Card>
-      </View>
-
-      <Button label={t('serviceDetails')} onPress={() => go('services')} />
-
-      <SectionHeading title={t('categoryMobility')} subtitle={t('categoryMobilityHint')} />
-      {/* Everyday use: the commute, as a station timeline. No invented times. */}
-      <Card style={{ backgroundColor: c.card }}>
-        <CardHeader
-          icon={<TrainFront size={18} color={c.ink} />}
-          title={t('tripTitle')}
-          right={
-            <Txt size={type.caption + 1} tone="muted">
-              {t('tripExample')}
-            </Txt>
-          }
-        />
-        <View style={{ flexDirection: 'row', gap: space.md }}>
-          <View style={{ alignItems: 'center', width: 20 }}>
-            <View style={{ width: 18, height: 18, borderRadius: 9, backgroundColor: c.accent }} />
-            <View style={{ width: 4, height: 44, backgroundColor: c.accent, opacity: 0.85 }} />
-            <View style={{ width: 18, height: 18, borderRadius: 9, borderWidth: 4, borderColor: c.accent }} />
-          </View>
-          <View style={{ flex: 1, justifyContent: 'space-between' }}>
-            <Txt size={type.body} weight="bold" style={{ lineHeight: 18 }}>
-              {t('tripHome')}
-            </Txt>
-            <Txt size={type.label} tone="muted">
-              {t('tripLeg')}
-            </Txt>
-            <Txt size={type.body} weight="bold" style={{ lineHeight: 18 }}>
-              {t('tripWork')}
-            </Txt>
-          </View>
-        </View>
-        <Txt size={type.label} tone="muted">
-          {t('tripNote')}
-        </Txt>
-        <Button label={t('tripMaps')} variant="solid" onPress={() => Linking.openURL(MAPS_TRIP).catch(() => {})} />
-      </Card>
-
-      <SectionHeading title={t('categorySeismic')} subtitle={t('categorySeismicHint')} />
-      {f ? (
-        <Card>
-          <CardHeader icon={<Activity size={18} color={c.ink} />} title={t('aftershocks')} />
-          {main ? (
-            <Txt size={type.body} tone="muted">
-              {t('aftershockLead', { mag: main.mag.toFixed(1), date: longDate(main.time, lang) })}
-            </Txt>
-          ) : null}
-          <TileGrid>
-            <Tile label={`M6+ · ${t('nextWeek')}`} value={w6 ? pct(w6.probability) : '–'} />
-            <Tile label={`M6+ · ${t('next24')}`} value={d6 ? pct(d6.probability) : '–'} />
-          </TileGrid>
-          <Txt size={type.label} tone="muted">
-            {t('forecastCaveat')}
-          </Txt>
-          <Button label={t('seeAll')} onPress={() => go('quakes')} />
-          <SourceLine source="USGS" kind="official" detail={`${t('issued')} ${dayStamp(f.creationTime, lang)} · ${t('updated', { ago: ago(seismic.fetchedAt, now, lang) })}`} />
-        </Card>
+      {/* Status chips: meaningful, plain-language, at most three */}
+      {pills.length ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          accessibilityLabel={t('chipsLabel')}
+          style={{ marginHorizontal: -space.md }}
+          contentContainerStyle={{ gap: space.xs, paddingHorizontal: space.md }}
+        >
+          {pills.slice(0, 3).map((p) => (
+            <StatusPill key={p.label} {...p} />
+          ))}
+        </ScrollView>
       ) : null}
 
-      <Button label={t('reportCta')} icon={<Megaphone size={18} color={c.community} />} onPress={() => go('report')} />
+      {/* Every unavailable feed in one quiet line */}
+      {offline.length ? (
+        <OfflineLine
+          text={t('offlineLine', { sources: joinList(offline.map((s) => sourceName[s]), t('listAnd')) })}
+          action={t('offlineAction')}
+          onAction={() => go(offlineGoesTo)}
+        />
+      ) : null}
+
+      {/* Contextual utility: scheduled power notices for the area */}
+      <SectionHeading title={t('categoryServices')} subtitle={t('servicesSummaryHint')} />
+      <Card>
+        <CardHeader icon={<Zap size={18} color={c.ink} />} title={t('scheduledTitle')} />
+        <Txt size={type.title + 3} weight="bold" style={{ color: power === 'stale' ? c.stale : power === 'scheduled' ? c.ink : c.muted }}>
+          {powerHeadline}
+        </Txt>
+        <Txt size={type.label} tone="muted">
+          {t('scheduledDisclaimer')}
+        </Txt>
+        <Button label={t('viewServices')} onPress={() => go('services')} />
+        <SourceLine
+          source={maintenance?.coverage.name ?? t('powerCardProvider')}
+          kind={power === 'scheduled' ? 'official' : power === 'stale' ? 'stale' : 'unavailable'}
+        />
+      </Card>
+
+      {/* Secondary: community report */}
+      <Card>
+        <View style={styles.row}>
+          <Megaphone size={20} color={c.community} />
+          <Txt size={type.title} weight="bold" style={{ flex: 1 }} accessibilityRole="header">
+            {t('reportHomeTitle')}
+          </Txt>
+        </View>
+        <Txt size={type.body} tone="muted">
+          {t('reportHomeHint')}
+        </Txt>
+        <Button label={t('reportHomeAction')} onPress={() => go('report')} />
+      </Card>
     </View>
   );
 }
