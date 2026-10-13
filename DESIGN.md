@@ -28,3 +28,11 @@ Source · verification chip · "actualizado hace N min". Missing data is shown a
 ## Banned here
 Purple-blue hero gradients on white, glassmorphism blur stacks, emoji icons, 2×3 fake-metric grids,
 sparkle/AI badges, invented sample stats, confetti or celebratory haptics, ads on emergency screens.
+
+## Skill precedence (set 2026-10-12 after the v0.3 regression)
+1. The user's direction and reference screenshots. 2. This file and `src/theme/tokens.ts`.
+3. Expo official skills (`.claude/skills/expo-*`) for implementation.
+4. anti-slop for honesty: no fabricated data, real empty/loading/error/stale states, accessible controls, no filler.
+5. Everything else is reference only. `no-slop-ui` lives in `docs/reference-skills/` and is NOT active: its bans on
+   gradients, large radii, pills and atmospheric styling contradict this direction and must not be applied.
+The v0.3 flat redesign (tag `v0.3-parked`) is the cautionary example: anti-slop's own "Sterile Default".

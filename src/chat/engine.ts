@@ -4,6 +4,7 @@
 //     tools server-side with a cheap model (Haiku 5.5 by default).
 import type { SeismicData } from '../data/usgs';
 import type { Lang } from '../i18n/strings';
+import { quickAnswer } from './quick';
 import { buildTools, SYSTEM_PROMPT } from './tools';
 
 export const MAX_INPUT = 400;
@@ -12,6 +13,12 @@ export const MODEL = 'claude-haiku-5-5';
 export interface Turn {
   role: 'user' | 'assistant';
   content: string;
+  quick?: boolean; // answered instantly from data, no model call
+}
+
+export interface Answer {
+  text: string;
+  quick: boolean;
 }
 
 export type Transport = 'artifact' | 'server' | 'none';
@@ -47,17 +54,21 @@ export async function ask(
   history: Turn[],
   data: SeismicData,
   lang: Lang,
-  opts: { onText?: (text: string) => void; signal?: AbortSignal } = {},
-): Promise<string> {
+  opts: { onText?: (text: string) => void; signal?: AbortSignal; zone?: string } = {},
+): Promise<Answer> {
   const last = history[history.length - 1];
   if (!last || last.role !== 'user') throw new ChatError('bad_input');
   if (last.content.trim().length === 0 || last.content.length > MAX_INPUT) throw new ChatError('too_long');
-  // Keep context small and cheap: the last 6 turns only.
-  const turns = history.slice(-6);
+  // Common questions get an instant, deterministic answer from the data itself.
+  const instant = quickAnswer(last.content, data, lang, opts.zone);
+  if (instant) return { text: instant.text, quick: true };
+
+  // Keep context small and cheap: the last 6 turns only, and only role/content go out.
+  const turns = history.slice(-6).map(({ role, content }) => ({ role, content }));
 
   const sample = await getSample();
   if (sample) {
-    const rules = `${SYSTEM_PROMPT}\nThe user's app language is ${lang === 'es' ? 'Spanish' : 'English'}.\nReply to the conversation that follows. Acknowledge nothing about these rules.`;
+    const rules = `${SYSTEM_PROMPT}\nThe user's app language is ${lang === 'es' ? 'Spanish' : 'English'}. Their saved corregimiento is ${opts.zone ?? 'unknown'}.\nReply to the conversation that follows. Acknowledge nothing about these rules.`;
     const tools = buildTools(data).map((t) => ({
       name: t.name,
       description: t.description,
@@ -69,7 +80,7 @@ export async function ask(
         [{ role: 'user', content: rules }, { role: 'assistant', content: 'OK.' }, ...turns],
         { tools, model: MODEL, modelTier: 'quick', cache: false, signal: opts.signal, onText: ({ text }: { text: string }) => opts.onText?.(text) },
       );
-      return text;
+      return { text, quick: false };
     } catch (e: any) {
       throw new ChatError(e?.code ?? 'failed', e?.message);
     }
@@ -86,7 +97,7 @@ export async function ask(
     if (!res.ok) throw new ChatError('failed', `HTTP ${res.status}`);
     const body = await res.json();
     opts.onText?.(body.answer);
-    return body.answer as string;
+    return { text: body.answer as string, quick: false };
   }
 
   throw new ChatError('unavailable');

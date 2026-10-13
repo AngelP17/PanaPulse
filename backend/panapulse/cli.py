@@ -15,7 +15,8 @@ from .models import Base, SourceSnapshot, make_session_factory
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="PanaPulse USGS v0")
-    parser.add_argument("command", choices=["init-db", "ingest", "replay"])
+    parser.add_argument("command", choices=["init-db", "ingest", "replay", "utilities"])
+    parser.add_argument("--source", choices=["ensa", "naturgy"], help="Utility source for the utilities command")
     parser.add_argument("--snapshot-id", type=int, help="Snapshot ID for replay (required with replay)")
     parser.add_argument("--no-details", action="store_true", help="Disable OAF product lookups")
     parser.add_argument("--verbose", action="store_true")
@@ -29,6 +30,17 @@ def main() -> None:
         print("Created or verified prototype schema")
         return
     Base.metadata.create_all(engine)
+    if args.command == "utilities":
+        from .utilities import UtilityIngestor
+        sources = [args.source] if args.source else ["ensa", "naturgy"]
+        failed = False
+        for src in sources:
+            try:
+                print(json.dumps(UtilityIngestor(sessions).run(src)))
+            except Exception:
+                logging.exception("%s failed; existing notices retained", src)
+                failed = True
+        sys.exit(1 if failed else 0)
     if args.command == "replay":
         if args.snapshot_id is None:
             parser.error("replay requires --snapshot-id")

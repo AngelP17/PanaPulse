@@ -83,6 +83,23 @@ class AftershockForecast(Base):
     captured_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class UtilityNotice(Base):
+    """A scheduled maintenance interruption published by ENSA or Naturgy. Never inferred."""
+    __tablename__ = "utility_notices"
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)  # content hash of provider/area/time
+    provider: Mapped[str] = mapped_column(String(20), nullable=False)
+    district: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    corregimiento: Mapped[str] = mapped_column(String(120), nullable=False, index=True)
+    place: Mapped[str] = mapped_column(String(500), nullable=False)
+    starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    ends_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    task: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    affected: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    source_url: Mapped[str] = mapped_column(String(700), nullable=False)
+    captured_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
 def make_session_factory(database_url: str):
     kwargs = {"pool_pre_ping": True}
     if database_url.startswith("sqlite"):

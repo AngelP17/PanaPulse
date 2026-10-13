@@ -40,8 +40,8 @@ export const Chat = React.forwardRef<ChatHandle, { onBusy: (b: boolean) => void 
       setDraft(null);
       ctl.current = new AbortController();
       try {
-        const answer = await ask(history, seismic, lang, { signal: ctl.current.signal, onText: setDraft });
-        setTurns([...history, { role: 'assistant', content: answer }]);
+        const answer = await ask(history, seismic, lang, { signal: ctl.current.signal, onText: setDraft, zone: 'Pueblo Nuevo' });
+        setTurns([...history, { role: 'assistant', content: answer.text, quick: answer.quick }]);
       } catch (e) {
         const code = e instanceof ChatError ? e.code : 'failed';
         if (code === 'cancelled') return;

@@ -72,8 +72,10 @@ def test_recent_quakes_window_and_strongest(db):
 
 
 def test_services_never_claim_a_status(db):
-    out = DataTools(db).run("get_service_status", {"service": "electricity", "corregimiento": "Pueblo Nuevo"})
+    out = DataTools(db).run("get_service_status", {"service": "water", "corregimiento": "Pueblo Nuevo"})
     assert out["state"] == "unknown" and out["source_connected"] is False
+    no_zone = DataTools(db).run("get_service_status", {"service": "electricity"})
+    assert no_zone["state"] == "unknown" and "corregimiento" in no_zone["instruction"]
     assert DataTools(db).run("get_service_status", {"service": "gas"})["error"] == "unknown service"
     assert DataTools(db).run("drop_tables", {})["error"].startswith("unknown tool")
 

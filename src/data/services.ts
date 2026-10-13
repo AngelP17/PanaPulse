@@ -15,10 +15,10 @@ export interface ServiceStatus {
 export const SERVICES: Record<ServiceId, ServiceStatus> = {
   electricity: {
     id: 'electricity',
-    provider: 'Naturgy / ENSA',
+    provider: 'Naturgy or ENSA (coverage depends on the area; not mapped yet)',
     state: 'unknown',
     verification: 'unavailable',
-    officialUrl: 'https://www.ensa.com.pa/',
+    officialUrl: 'https://www.naturgy.com.pa/ | https://www.ensa.com.pa/',
     reason: 'Utility interruption notices are not ingested yet (feasibility test pending).',
   },
   water: {
@@ -61,5 +61,5 @@ export const SINAPROC_URL = 'https://www.sinaproc.gob.pa/';
 export const CORREGIMIENTOS = [
   'Ancón', 'Bella Vista', 'Betania', 'Calidonia', 'Curundú', 'El Chorrillo', 'Juan Díaz',
   'Parque Lefevre', 'Pueblo Nuevo', 'Río Abajo', 'San Felipe', 'San Francisco', 'Santa Ana',
-  'Tocumen', 'Pedregal', 'Las Cumbres', 'Chilibre', 'Pacora',
+  'Tocumen', 'Pedregal', 'Las Cumbres', 'Chilibre', 'Pacora', 'San Martín', '24 de Diciembre',
 ];
