@@ -6,9 +6,10 @@ import { SectionHeading } from '../components/section';
 import { Button, Card, CardHeader, SourceLine, Txt, styles } from '../components/ui';
 import { ago, clock, dayKey, dayStamp, place } from '../data/format';
 import { joinList, locality, offlineSources, OfflineSource, seismicHero } from '../data/glance';
+import { DemoCommuteCard, DemoControls, DemoUtilityCard, demoUtilityCopy } from './DemoScreens';
 import { makeDemoScene } from '../data/demo';
-import { DemoHome } from './DemoScreens';
 import { powerFeedState, usePowerMaintenance } from '../data/maintenance';
+import { powerSurfaceSource } from '../data/sourcePolicy';
 import { useApp } from '../state/AppContext';
 import { space, type } from '../theme/tokens';
 
@@ -21,8 +22,10 @@ const ZONE = 'Pueblo Nuevo';
 export function Home({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
   const { c, t, lang, seismic, now, go, demoEnabled, demoScenario } = useApp();
   const demo = makeDemoScene(now, demoScenario);
+  const latestRecorded = seismic.earthquakes.length ? [...seismic.earthquakes].sort((a, b) => b.time - a.time)[0] : null;
   const { data: maintenance, state: maintenanceState } = usePowerMaintenance(ZONE);
   const power = powerFeedState(maintenance, maintenanceState);
+  const powerSurface = powerSurfaceSource(power, demoEnabled);
   const cuts = maintenance?.notices.length ?? 0;
   const hero = useMemo(() => seismicHero(seismic, now), [seismic, now]);
 
@@ -63,6 +66,11 @@ export function Home({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
       headline: t('heroStaleHeadline'),
       detail: t('heroStaleDetail'),
       verification: 'stale' as const,
+      extra: latestRecorded ? t('heroLastRecorded', {
+        mag: latestRecorded.mag.toFixed(1),
+        place: place(latestRecorded.place, lang),
+        when: dayStamp(latestRecorded.time, lang),
+      }) : undefined,
       provenance: t('heroStaleProvenance', { time: dayStamp(seismic.fetchedAt, lang) }),
       action: t('heroStaleAction'),
       onAction: () => go('quakes'),
@@ -79,6 +87,16 @@ export function Home({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
   } else if (power === 'stale') {
     pills.push({ kind: 'stale', label: t('chipPowerStale'), onPress: () => go('services') });
   }
+  if (powerSurface === 'example') {
+    pills.push({ kind: 'demo', label: t('demoStatusPower', {
+      status: demoUtilityCopy(demo.power, 'power', t),
+    }), onPress: () => go('services') });
+  }
+  if (demoEnabled && pills.length < 3) {
+    pills.push({ kind: 'demo', label: t('demoStatusWater', {
+      status: demoUtilityCopy(demo.water, 'water', t),
+    }), onPress: () => go('services') });
+  }
 
   const offline = offlineSources(power);
   const sourceName: Record<OfflineSource, string> = { power: t('power'), water: t('water'), metro: 'Metro', mibus: 'MiBus' };
@@ -90,17 +108,9 @@ export function Home({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
     : maintenanceState === 'loading' ? t('loadingMaintenance')
     : t('powerNoFeed');
 
-  // In preview mode, replace real-source cards instead of stacking fictional data above missing feeds.
-  if (demoEnabled) return <DemoHome />;
-
   return (
     <View style={{ gap: space.md }}>
-      {demoEnabled ? (
-        <View style={{ backgroundColor: c.tileStrong, borderRadius: 18, padding: space.md, gap: 4 }}>
-          <Txt size={type.label} weight="bold">{t('demoBanner')}</Txt>
-          <Txt size={type.caption + 1} tone="muted">{t('demoBannerDetail')}</Txt>
-        </View>
-      ) : null}
+      {/* Actual USGS information always leads, including in preview mode. */}
       {/* Area summary */}
       <View style={{ paddingHorizontal: space.xs, gap: 4 }}>
         <Eyebrow>{t('areaEyebrow')}</Eyebrow>
@@ -133,25 +143,20 @@ export function Home({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
       {/* Every unavailable feed in one quiet line */}
       {offline.length ? (
         <OfflineLine
-          text={t('offlineLine', { sources: joinList(offline.map((s) => sourceName[s]), t('listAnd')) })}
+          text={t(demoEnabled ? 'previewSourceCoverage' : 'offlineLine', {
+            sources: joinList(offline.map((s) => sourceName[s]), t('listAnd')),
+          })}
           action={t('offlineAction')}
-          onAction={() => go(offlineGoesTo)}
+          onAction={() => go(demoEnabled ? 'settings' : offlineGoesTo)}
         />
       ) : null}
 
-      {demoEnabled ? (
-        <Card style={{ gap: space.sm }}>
-          <Txt size={type.label} weight="bold">{t('demoTripTitle')}</Txt>
-          <Txt size={type.title} weight="semibold">{t('tripHome')} → {t('tripWork')}</Txt>
-          <Txt size={type.body} weight="semibold">
-            {t('metroL1')} · {t('demoEta', { n: demo.transit[0].arrivalMinutes })}
-          </Txt>
-          <Txt size={type.caption + 1} tone="muted">{t('demoArrival')} · {t('demoSource')}</Txt>
-          <Button label={t('tabMobility')} onPress={() => go('mobility')} />
-        </Card>
-      ) : null}
+      {demoEnabled ? <DemoControls /> : null}
       {/* Contextual utility: scheduled power notices for the area */}
       <SectionHeading title={t('categoryServices')} subtitle={t('servicesSummaryHint')} />
+      {powerSurface === 'example' ? (
+        <DemoUtilityCard service="power" state={demo.power} onDetails={() => go('services')} />
+      ) : (
       <Card>
         <CardHeader icon={<Zap size={18} color={c.ink} />} title={t('scheduledTitle')} />
         <Txt size={type.title + 3} weight="bold" style={{ color: power === 'stale' ? c.stale : power === 'scheduled' ? c.ink : c.muted }}>
@@ -166,6 +171,13 @@ export function Home({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
           kind={power === 'scheduled' ? 'official' : power === 'stale' ? 'stale' : 'unavailable'}
         />
       </Card>
+      )}
+      {demoEnabled ? (
+        <>
+          <SectionHeading title={t('categoryMobility')} subtitle={t('demoRealtimeDescription')} />
+          <DemoCommuteCard onDetails={() => go('mobility')} />
+        </>
+      ) : null}
 
       {/* Secondary: community report */}
       <Card>

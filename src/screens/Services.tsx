@@ -4,8 +4,9 @@ import { Linking, View } from 'react-native';
 import { Button, Card, CardHeader, StatusChip, Txt } from '../components/ui';
 import { SectionHeading } from '../components/section';
 import { makeDemoScene } from '../data/demo';
-import { DemoServices } from './DemoScreens';
+import { DemoControls, DemoUtilityCard } from './DemoScreens';
 import { usePowerMaintenance, powerFeedState } from '../data/maintenance';
+import { powerSurfaceSource } from '../data/sourcePolicy';
 import { useApp } from '../state/AppContext';
 import { radius, space, type } from '../theme/tokens';
 
@@ -13,41 +14,23 @@ const ZONE = 'Pueblo Nuevo';
 export function Services() {
   const { c, t, lang, go, demoEnabled, demoScenario, now } = useApp();
   const demo = makeDemoScene(now, demoScenario);
-  const demoPowerText = demo.power === 'interrupted' ? t('demoPowerInterrupted') : demo.power === 'recovering' ? t('demoPowerRecovering') : t('demoPowerScheduled');
-  const demoWaterText = demo.water === 'interrupted' ? t('demoWaterInterrupted') : demo.water === 'recovering' ? t('demoWaterRecovering') : t('demoWaterNormal');
   const { data, state } = usePowerMaintenance(ZONE);
-  const current = powerFeedState(data, state) === 'scheduled';
+  const powerSource = powerSurfaceSource(powerFeedState(data, state), demoEnabled);
+  const current = powerSource === 'official';
   const notices = data?.notices ?? [];
   const fmt = new Intl.DateTimeFormat(lang === 'es' ? 'es-PA' : 'en-US', {
     timeZone: 'America/Panama', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit',
   });
-  if (demoEnabled) return <DemoServices />;
   return (
     <View style={{ gap: space.md }}>
       <View style={{ paddingHorizontal: space.xs, gap: space.xs }}>
         <Txt size={type.hero - 10} weight="bold" accessibilityRole="header">{t('categoryServices')}</Txt>
         <Txt size={type.body} tone="muted">{ZONE} · {t('serviceScope')}</Txt>
       </View>
-      {demoEnabled ? (
-        <Card style={{ gap: space.sm }}>
-          <Txt size={type.label} weight="bold">{t('demoBanner')}</Txt>
-          <Txt size={type.caption + 1} tone="muted">{t('demoBannerDetail')}</Txt>
-          <View style={{ flexDirection: 'row', gap: space.sm }}>
-            <View style={{ flex: 1, backgroundColor: c.tile, borderRadius: radius.tile, padding: space.md, gap: 6 }}>
-              <Zap size={20} color={c.ink} />
-              <Txt size={type.label} weight="semibold">{t('power')}</Txt>
-              <Txt size={type.body} weight="bold">{demoPowerText}</Txt>
-            </View>
-            <View style={{ flex: 1, backgroundColor: c.tile, borderRadius: radius.tile, padding: space.md, gap: 6 }}>
-              <Droplets size={20} color={c.ink} />
-              <Txt size={type.label} weight="semibold">{t('water')}</Txt>
-              <Txt size={type.body} weight="bold">{demoWaterText}</Txt>
-            </View>
-          </View>
-          <Txt size={type.caption + 1} tone="muted">{t('demoSource')}</Txt>
-        </Card>
-      ) : null}
-      <SectionHeading title={t('scheduledMaintenance')} subtitle={t('scheduledOnlyCaption')} />
+      {demoEnabled ? <DemoControls /> : null}
+      <SectionHeading title={t(powerSource === 'example' ? 'power' : 'scheduledMaintenance')}
+        subtitle={t(demoEnabled && state !== 'ready' ? 'demoRealtimeDescription' : 'scheduledOnlyCaption')} />
+      {demoEnabled && state !== 'ready' ? <DemoUtilityCard service="power" state={demo.power} /> : (
       <Card>
         <CardHeader icon={<Zap size={19} color={c.stale} />} title={t('power')}
           right={<StatusChip kind={current && notices.length ? 'official' : 'unavailable'} />} />
@@ -73,20 +56,37 @@ export function Services() {
             {source.provider.toUpperCase()} · {source.last_success_at ? fmt.format(new Date(source.last_success_at)) : t('unavailable')}
           </Txt>
         ))}
+      </Card>
+      )}
+      <Card style={{ gap: space.xs }}>
+        <Txt size={type.label} weight="semibold" tone="muted">{t('realSourceLinksTitle')}</Txt>
         <View style={{ flexDirection: 'row', gap: space.sm }}>
           <View style={{ flex: 1 }}><Button label="Naturgy" onPress={() => Linking.openURL('https://www.naturgy.com.pa/cronogramas-mantenimiento/').catch(() => {})} /></View>
           <View style={{ flex: 1 }}><Button label="ENSA" onPress={() => Linking.openURL('https://ensa.com.pa/mantenimientos-programados/').catch(() => {})} /></View>
         </View>
       </Card>
       <SectionHeading title={t('categoryWater')} subtitle={t('waterCategoryHint')} />
+      {demoEnabled ? <DemoUtilityCard service="water" state={demo.water} /> : (
       <Card>
         <CardHeader icon={<Droplets size={19} color={c.muted} />} title="IDAAN" right={<StatusChip kind="unavailable" />} />
         <Txt size={type.body} tone="muted">{t('waterOfficial')}</Txt>
         <Txt size={type.label} tone="muted">{t('waterCommunity')}</Txt>
-        <Button label={t('openOfficial')} onPress={() => Linking.openURL('https://www.idaan.gob.pa/').catch(() => {})} />
       </Card>
+      )}
+      {demoEnabled ? (
+        <Button label={t('openOfficial')} onPress={() => Linking.openURL('https://www.idaan.gob.pa/').catch(() => {})} />
+      ) : null}
       <SectionHeading title={t('categoryCommunity')} subtitle={t('categoryCommunityHint')} />
-      <Button label={t('reportCta')} icon={<Megaphone size={18} color={c.community} />} onPress={() => go('report')} />
+      {demoEnabled ? (
+        <Card style={{ gap: space.sm }}>
+          <StatusChip kind="demo" />
+          <Txt size={type.body} weight="semibold">{t('demoDemoCount', { n: demo.communityReports })}</Txt>
+          <Txt size={type.label} tone="muted">{t('demoNotice')}</Txt>
+          <Button label={t('reportHomeAction')} onPress={() => go('report')} />
+        </Card>
+      ) : (
+        <Button label={t('reportCta')} icon={<Megaphone size={18} color={c.community} />} onPress={() => go('report')} />
+      )}
     </View>
   );
 }

@@ -6,6 +6,8 @@ Read `DESIGN.md`, `docs/BRAND.md`, `src/theme/tokens.ts`, `docs/ANTISLOP-RN.md`,
 
 **Aesthetic:** Maintain the original premium atmospheric gradients and spacious cards. Brand palette is "Porcelana" (ink, porcelain, coral; see `docs/BRAND.md`). Navy/cyan is retired. Token, logo, nav, type and background changes need explicit approval. Do not copy Hark screens exactly or reduce the product to a generic flat utility dashboard. `no-slop-ui` is inactive reference only.
 
+**Source-first preview:** Read `docs/DEMO_MODE.md` and `src/data/sourcePolicy.ts`. Demo must never hide actual USGS, official maintenance, or even stale sourced notices. Render preview examples only for missing sources, with local labels. Never add full-screen demo replacements or mark real data as simulated.
+
 **Behavior:** Do not invent transit ETAs, outages, forecast numbers or service states. Missing data is unknown, never normal. Keep Spanish / English and light / dark / auto. Preserve USGS/OAF, cautious utilities adapters and read-only guarded chat.
 
 **Delivery:** Work in small commits. Run `python -m pytest backend/tests -q`, `npm run typecheck` after npm ci, screenshot-check on Android/iOS, and document unverified third-party feeds.

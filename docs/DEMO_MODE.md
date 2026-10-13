@@ -1,31 +1,37 @@
-# PanaPulse Demo Mode: consistent scenario surfaces
+# PanaPulse: source-first preview (hybrid)
 
-Demo Mode is a **separate, explicit presentation layer**, not a live data feed. It is off by default and can be enabled in Settings.
+A source-first, bilingual consumer UI. This **replaces** the previous full-screen demo implementation.
 
-## Why this change was necessary
-Previously the simulator added sample cards above the real-source cards. That made Home, Services and Mobility display `SIMULATED` next to `NO DATA` because the underlying source adapters were still disconnected.
+## Why
+Two earlier mistakes were corrected:
+1. Preview cards were added above live-source “SIN DATOS” cards, contradicting the sample.
+2. Every screen was then replaced with fiction, hiding authentic USGS earthquake observations.
 
-Now, when Demo Mode is enabled, Home, Mobility, Services and Quakes **render demo-only category views**. Reports has a separate demo report panel while retaining the real local report form. The live-source views are restored when Demo Mode is disabled.
+Both are incorrect. Samples should be optional **per missing data source**, not an alternative reality for the app.
 
-## Shared scenarios
-`src/data/demo.ts` generates deterministic scenes using the existing clock and selected scenario:
-- **Everyday:** sample scheduled maintenance, stable transit estimates, example water situation, small simulated report count, and a fictional earthquake.
-- **Disruptions:** fictional delays, outage and low pressure, higher report count, and a fictional earthquake.
-- **Recovery:** simulated transit and utility restoration, intermediate report count and a fictional earthquake.
+## Rules
+1. **Real and fresh** → show official fact with provider, date/time, and source link.
+2. **Real but stale** → show the last-known official fact with its *original date/time* and stale label; do not refresh or extrapolate it.
+3. **No usable real feed + preview enabled** → show a dynamically changing fictional example, tagged **SIMULADO / SIMULATED on that card**.
+4. **No usable real feed + preview disabled** → show honest “SIN DATOS” with official link.
+5. An official scheduled-maintenance notice does **not** assert power availability, even if recent.
+6. No fake USGS earthquake or forecast may override real catalog entries. Quakes and the earthquake hero remain real USGS or dated official snapshot in **every** mode.
+7. Reports entered by the user and the chat use actual local/sourced data, never demo fixtures.
 
-All demo screens display `MODO DEMO · DATOS SIMULADOS` / `DEMO MODE · SIMULATED DATA` and render **SIMULADO / SIMULATED** status chips. The quake is a fictional example, not an actual USGS event, and does not deep-link to a nonexistent official earthquake. Official forecast probabilities are not invented. These examples must not be used for any safety or travel decisions.
+## Specific screens
+- **Home:** USGS hero and source time always real. The latest recorded magnitude/location is visible even with a dated snapshot, but explicitly labeled stale. The power card uses official current or stale data if present; an example only if the source is missing. An optional example commute is clearly marked.
+- **Sismos:** always actual USGS earthquakes/OAF. If cached/snapshot, the forecast and source are visibly **stale**; do not treat the archived probabilities as current.
+- **Servicios:** same source-first policy for ENSA/Naturgy scheduled notices; IDAAN is a locally tagged example only when preview is enabled. Official provider links remain accessible in all modes.
+- **Movilidad:** no verified live Metro/MiBus times yet; in preview, examples are labeled and grouped; official operator links remain accessible.
+- **Reportes:** fictional neighborhood count is isolated from saved user reports.
+- **Ajustes:** source health and timestamps stay real regardless of preview selection.
 
-## Separation rules
-- Never assign a real provider verification state to a demo value.
-- Simulated notices and ETAs are not written to official-source state or backend ingestion tables.
-- Reports created by the user remain distinct from demonstration community counts.
-- Chat continues to use actual sourced context and is not a simulation of the demo panels.
-- Keep Porcelana, Spanish/English, native navigation, and Reduce Motion support unchanged.
+The component selection for scheduled electricity is implemented centrally in `src/data/sourcePolicy.ts` and checked by `node scripts/test-source-policy.cjs`.
 
-## Acceptance checks
-1. Enable Demo and view **Home, Mobility, Quakes, Services, Reports**. No mock panel should be accompanied by a contradictory real `SIN DATOS` panel.
-2. Switch Everyday → Disruptions → Recovery. The same scenario must appear across tabs. Ensure reports counts agree everywhere.
-3. Wait one minute; fictional transit ETAs should change predictably.
-4. Turn Demo off; the original real-source views and honest unavailable states return.
-5. Test ES/EN, dark/light/auto, Android/iOS, narrow widths, large font sizes and Reduce Motion.
-6. Run CI TypeScript and backend tests; screenshots and real-device testing are required before final release.
+## Acceptance
+- Toggle preview while online: Home and Sismos USGS **must not change to fictional earthquakes**.
+- Set power source to current/stale/missing and toggle preview: current/stale are always preserved; only missing becomes a demo example.
+- Every fictional ETA or outage is labeled SIMULATED inside its card. The top-level UI is not labeled wholly fictional.
+- Verify in ES/EN, Auto/Light/Dark, 360dp width, large text, reduced motion.
+- Run GitHub CI, and capture native screenshots before release.
+- Deployment is separate: the electricity collector, IDAAN feed and authorized transit integrations are NOT made live by turning on preview.

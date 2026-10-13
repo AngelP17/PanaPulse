@@ -28,7 +28,16 @@ PanaPulse is a premium, bilingual consumer companion for life in Panama, not an 
 
 ## Honest status grammar
 
-Every data element includes source and update context; statuses distinguish official, community, stale and unavailable. Empty data is NOT proof that service is operating. Do not show fake transit ETAs, fake outage totals or unsourced aftershock probabilities. No advertisements or paywalls on emergency information.
+Every data element includes source and update context; statuses distinguish official, community, stale, example and unavailable.
+
+### Source-first preview rules
+
+- Preview mode fills **only unconnected/missing sources**. Real current and stale official data always take priority.
+- USGS actual earthquakes and aftershock products remain sourced in every mode; do not substitute fictional quakes on Home or Sismos.
+- A stale USGS snapshot stays readable with its original date and source, never with a live claim.
+- Only simulated elements carry local SIMULADO / SIMULATED tags. Never label the entire app as simulated when some data is real.
+- Community examples never mix with saved user reports or imply an actual count. Chat stays sourced from real data.
+- Implement this precedence through `src/data/sourcePolicy.ts`; do not add competing full-screen demo switches. Empty data is NOT proof that service is operating. Do not show fake transit ETAs, fake outage totals or unsourced aftershock probabilities. No advertisements or paywalls on emergency information.
 
 ## Changes that need explicit approval
 
