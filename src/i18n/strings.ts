@@ -109,7 +109,8 @@ const es = {
   dataSourcesBody:
     'Sismos y pronóstico: USGS (oficial). Luz, agua, Metro y MiBus: sin fuente conectada todavía. Los reportes de la comunidad nunca se muestran como oficiales.',
   demoChip: 'Simulado',
-  demoQuakeHero: 'Sismo M{mag} cerca de {place}',
+  demoTurnOff: 'Desactivar modo demo',
+  demoQuakeHero: 'Sismo simulado M{mag} cerca de {place}',
   demoQuakeDetail: 'Evento de ejemplo hace {n} min. No ocurrió realmente.',
   demoQuakeOverview: 'Escenario sísmico',
   demoQuakeSub: 'Estos sismos son ficticios y solo sirven para probar la interfaz.',
@@ -353,7 +354,8 @@ const en: Record<StringKey, string> = {
   dataSourcesBody:
     'Quakes and forecast: USGS (official). Power, water, Metro and MiBus: no source connected yet. Community reports are never shown as official.',
   demoChip: 'Simulated',
-  demoQuakeHero: 'M{mag} earthquake near {place}',
+  demoTurnOff: 'Turn off Demo Mode',
+  demoQuakeHero: 'Simulated M{mag} earthquake near {place}',
   demoQuakeDetail: 'Fictional event {n} min ago. This did not actually happen.',
   demoQuakeOverview: 'Seismic scenario',
   demoQuakeSub: 'These earthquakes are fictional and only demonstrate the interface.',

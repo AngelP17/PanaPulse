@@ -177,7 +177,7 @@ export function DemoServices() {
 }
 
 export function DemoQuakes() {
-  const { c, t, now, demoScenario } = useApp();
+  const { c, t, now, demoScenario, setDemoEnabled } = useApp();
   const scene = makeDemoScene(now, demoScenario);
   return (
     <View style={{ gap: space.md }}>
@@ -186,12 +186,17 @@ export function DemoQuakes() {
       <Card>
         <CardHeader icon={<Activity size={20} color={c.ink} />} title={t('demoQuakeListTitle')}
           right={<StatusChip kind="demo" />} />
-        <Txt size={type.stat + 3} weight="bold" numeric>M{scene.quake.magnitude.toFixed(1)}</Txt>
+        <Txt size={type.stat + 3} weight="bold" numeric>{t('demoChip')} · M{scene.quake.magnitude.toFixed(1)}</Txt>
         <Txt size={type.title} weight="semibold">{scene.quake.location}</Txt>
         <Txt size={type.body} tone="muted">{t('demoQuakeDetail', { n: scene.quake.minutesAgo })}</Txt>
         <SourceLine source={t('demoSource')} kind="demo" detail={t('demoQuakeSub')} />
       </Card>
       <Txt size={type.label} tone="muted">{t('demoForecastUnavailable')}</Txt>
+      {/* Real USGS events are hidden in Demo Mode: always say how to get them back. */}
+      <Card style={{ gap: space.sm }}>
+        <Txt size={type.body} weight="semibold">{t('demoSourcesDetail')}</Txt>
+        <Button label={t('demoTurnOff')} onPress={() => setDemoEnabled(false)} />
+      </Card>
     </View>
   );
 }

@@ -1,4 +1,4 @@
-import { BadgeCheck, Clock, CloudOff, Percent, Users } from 'lucide-react-native';
+import { BadgeCheck, Clock, CloudOff, FlaskConical, Percent, Users } from 'lucide-react-native';
 import React from 'react';
 import { Pressable, View } from 'react-native';
 import { useApp } from '../state/AppContext';
@@ -80,7 +80,7 @@ export function HeroCard({
   );
 }
 
-/** How a chip's fact is known. The icon says it in a shape, the words say it in full. */
+/** How a chip's fact is known. The icon says it in a shape (flask = simulated), the words say it in full. */
 export type PillKind = 'official' | 'forecast' | 'stale' | 'community' | 'demo';
 
 export function StatusPill({ kind, label, onPress }: { kind: PillKind; label: string; onPress: () => void }) {
@@ -89,6 +89,7 @@ export function StatusPill({ kind, label, onPress }: { kind: PillKind; label: st
     kind === 'official' ? <BadgeCheck size={17} color={c.official} strokeWidth={2.2} />
     : kind === 'stale' ? <Clock size={17} color={c.stale} strokeWidth={2.2} />
     : kind === 'community' ? <Users size={17} color={c.community} strokeWidth={2.2} />
+    : kind === 'demo' ? <FlaskConical size={17} color={c.ink} strokeWidth={2.2} />
     : <Percent size={17} color={c.ink} strokeWidth={2.2} />;
   return (
     <PressScale
