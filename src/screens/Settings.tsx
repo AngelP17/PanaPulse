@@ -3,7 +3,10 @@ import { Pressable, View } from 'react-native';
 import { Lang } from '../i18n/strings';
 import { ThemePref, useApp } from '../state/AppContext';
 import { radius, space, type } from '../theme/tokens';
-import { Card, Txt } from '../components/ui';
+import { Card, LinkChip, StatusChip, Txt } from '../components/ui';
+import { usePowerMaintenance, powerFeedState } from '../data/maintenance';
+import { dayStamp } from '../data/format';
+import { LIVE_MAX_AGE_MS } from '../data/glance';
 import { DemoScenario } from '../data/demo';
 
 function Segmented<T extends string>({ value, options, onChange }: { value: T; options: { id: T; label: string }[]; onChange: (v: T) => void }) {
@@ -31,7 +34,11 @@ function Segmented<T extends string>({ value, options, onChange }: { value: T; o
 }
 
 export function Settings() {
-  const { t, lang, setLang, themePref, setThemePref, demoEnabled, setDemoEnabled, demoScenario, setDemoScenario } = useApp();
+  const { t, lang, setLang, themePref, setThemePref, demoEnabled, setDemoEnabled, demoScenario, setDemoScenario, now, seismic, c } = useApp();
+  const { data: powerData, state: powerStatus } = usePowerMaintenance('Pueblo Nuevo');
+  const powerFeed = powerFeedState(powerData, powerStatus);
+  const usgsCurrent = seismic.mode === 'live' && Math.abs(now - seismic.fetchedAt) <= LIVE_MAX_AGE_MS;
+  const lastPowerCheck = powerData?.sources.map((s) => s.last_success_at).filter((s): s is string => !!s).sort().at(-1);
   return (
     <View style={{ gap: space.md }}>
       <Txt size={type.hero - 10} weight="bold" style={{ paddingHorizontal: space.xs }} accessibilityRole="header">
@@ -86,16 +93,42 @@ export function Settings() {
           </>
         ) : null}
       </Card>
-      <Card>
-        <Txt size={type.body} weight="semibold">
-          {t('dataSources')}
-        </Txt>
-        <Txt size={type.body} tone="muted">
-          {t('dataSourcesBody')}
-        </Txt>
-        <Txt size={type.caption + 1} tone="faint">
-          {t('version')}
-        </Txt>
+      <Card style={{ gap: space.md }}>
+        <Txt size={type.title} weight="semibold" accessibilityRole="header">{t('dataSources')}</Txt>
+        <Txt size={type.label} tone="muted">{t('sourceActualOnly')}</Txt>
+        <View style={{ gap: space.xs, borderRadius: radius.tile, backgroundColor: c.tile, padding: space.md }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
+            <Txt size={type.body} weight="semibold" style={{ flex: 1 }}>USGS</Txt>
+            <StatusChip kind={usgsCurrent ? 'official' : 'stale'} />
+          </View>
+          <Txt size={type.label} tone="muted">
+            {t(usgsCurrent ? 'sourceUsgsLive' : 'sourceUsgsArchive', { time: dayStamp(seismic.fetchedAt, lang) })}
+          </Txt>
+        </View>
+        <View style={{ gap: space.xs, borderRadius: radius.tile, backgroundColor: c.tile, padding: space.md }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
+            <Txt size={type.body} weight="semibold" style={{ flex: 1 }}>{t('power')} · ENSA/Naturgy</Txt>
+            <StatusChip kind={powerFeed === 'scheduled' ? 'official' : powerFeed === 'stale' ? 'stale' : 'unavailable'} />
+          </View>
+          <Txt size={type.label} tone="muted">
+            {powerFeed === 'none' ? t('sourcePowerMissing')
+              : t('sourcePowerScheduledCount', { n: powerData?.notices.length ?? 0 })}
+          </Txt>
+          {lastPowerCheck ? (
+            <Txt size={type.caption + 1} tone="muted">
+              {t('sourceLastChecked', { time: dayStamp(Date.parse(lastPowerCheck), lang) })}
+            </Txt>
+          ) : null}
+          <Txt size={type.caption + 1} tone="muted">{t('scheduledDisclaimer')}</Txt>
+        </View>
+        <Txt size={type.label} tone="muted">{t('sourceOtherMissing')}</Txt>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.xs }}>
+          <LinkChip label="USGS" url="https://earthquake.usgs.gov/earthquakes/map/" />
+          <LinkChip label="IDAAN" url="https://www.idaan.gob.pa/" />
+          <LinkChip label="Metro" url="https://www.elmetrodepanama.com/" />
+          <LinkChip label="MiBus" url="https://www.mibus.com.pa/" />
+        </View>
+        <Txt size={type.caption + 1} tone="faint">{t('version')}</Txt>
       </Card>
     </View>
   );
