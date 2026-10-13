@@ -21,7 +21,7 @@ export function Services() {
   const fmt = new Intl.DateTimeFormat(lang === 'es' ? 'es-PA' : 'en-US', {
     timeZone: 'America/Panama', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit',
   });
-  if (demoEnabled) return <PreviewServices />;
+  if (demoEnabled && powerSource === 'example') return <PreviewServices />;
   return (
     <View style={{ gap: space.md }}>
       <View style={{ paddingHorizontal: space.xs, gap: space.xs }}>

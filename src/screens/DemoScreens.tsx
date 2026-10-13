@@ -2,7 +2,7 @@ import { Bus, Droplets, Megaphone, TrainFront, Zap } from 'lucide-react-native';
 import React from 'react';
 import { ScrollView, View } from 'react-native';
 import { PressScale } from '../components/motion';
-import { Button, Card, CardHeader, Txt } from '../components/ui';
+import { Button, Card, CardHeader, LinkChip, Txt } from '../components/ui';
 import type { DemoScenario, DemoUtilityState, TransitId } from '../data/demo';
 import { makeDemoScene } from '../data/demo';
 import { useApp } from '../state/AppContext';
@@ -131,6 +131,14 @@ export function PreviewServices() {
           {t('previewReports', { n: scene.communityReports + demoReports })}
         </Txt>
         <Button label={t('reportHomeAction')} onPress={() => go('report')} />
+      </Card>
+      <Card style={{ gap: space.xs }}>
+        <Txt size={type.label} weight="semibold" tone="muted">{t('realSourceLinksTitle')}</Txt>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.xs }}>
+          <LinkChip label="Naturgy" url="https://www.naturgy.com.pa/cronogramas-mantenimiento/" />
+          <LinkChip label="ENSA" url="https://ensa.com.pa/mantenimientos-programados/" />
+          <LinkChip label="IDAAN" url="https://www.idaan.gob.pa/" />
+        </View>
       </Card>
       <Button label={t('previewSourceDetails')} onPress={() => go('settings')} />
     </View>

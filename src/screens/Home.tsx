@@ -109,7 +109,8 @@ export function Home({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
     : maintenanceState === 'loading' ? t('loadingMaintenance')
     : t('powerNoFeed');
 
-  if (demoEnabled) return <PreviewHome onOpenQuake={onOpenQuake} />;
+  // Source-first: the walkthrough fills only a missing power feed. Real current or stale notices are never replaced.
+  if (demoEnabled && powerSurface === 'example') return <PreviewHome onOpenQuake={onOpenQuake} />;
 
   return (
     <View style={{ gap: space.md }}>
