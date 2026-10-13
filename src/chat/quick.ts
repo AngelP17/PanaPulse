@@ -29,7 +29,7 @@ const METRO = /\b(metro|linea 1|linea 2|line 1|line 2|l1|l2)\b/;
 const BUS = /\b(mibus|metrobus|bus|buses)\b/;
 const POWER = /\b(luz|electricidad|apagon|apagones|corte de luz|power|electricity|outage|blackout|naturgy|ensa|edemet)\b/;
 const WATER = /\b(agua|idaan|water)\b/;
-const REPORT = /\b(reportar|reporto|como reporto|report)\b/;
+const REPORT = /\b(reportar|reporto|reportes|reporte|reports|reporting|report)\b/;
 
 /** The corregimiento named in the question, else the user's saved zone. */
 function zoneIn(q: string, fallback: string): string {
