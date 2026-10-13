@@ -14,12 +14,10 @@ import { Settings } from './screens/Settings';
 import { Services } from './screens/Services';
 import { AppProvider, useApp } from './state/AppContext';
 import { space } from './theme/tokens';
-import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
 
 function Shell() {
   const { tab, go, theme, askFromHome } = useApp();
   const insets = useSafeAreaInsets();
-  const reducedMotion = useReducedMotion();
   const [quakeId, setQuakeId] = useState<string | null>(null);
   const [chatBusy, setChatBusy] = useState(false);
   const chatRef = useRef<ChatHandle>(null);
@@ -76,14 +74,15 @@ function Shell() {
             keyboardShouldPersistTaps="handled"
           >
             {tab !== 'chat' ? (
-              <Animated.View key={tab} entering={reducedMotion ? undefined : FadeIn.duration(230)} style={{ gap: space.md }}>
+              // No tab-switch animation: tabs are switched constantly (DESIGN.md, Motion).
+              <View key={tab} style={{ gap: space.md }}>
                 {tab === 'home' && <Home onOpenQuake={setQuakeId} />}
                 {tab === 'mobility' && <Mobility />}
                 {tab === 'services' && <Services />}
                 {tab === 'quakes' && <Quakes onOpenQuake={setQuakeId} />}
                 {tab === 'report' && <Report />}
                 {tab === 'settings' && <Settings />}
-              </Animated.View>
+              </View>
             ) : null}
             <View style={{ display: tab === 'chat' ? 'flex' : 'none' }}>
               <Chat ref={chatRef} onBusy={setChatBusy} />

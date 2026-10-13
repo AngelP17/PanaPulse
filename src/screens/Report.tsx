@@ -76,7 +76,7 @@ export function Report() {
           </Txt>
           <Txt size={type.body} tone="muted">
             {demo.water === 'interrupted' ? t('demoWaterInterrupted') :
-              demo.power === 'interrupted' ? t('demoPowerInterrupted') : t('demoNormal')}
+              demo.power === 'interrupted' ? t('demoPowerInterrupted') : t('demoWaterNormal')}
           </Txt>
           <Txt size={type.caption + 1} tone="muted">{t('demoNotice')}</Txt>
         </Card>
