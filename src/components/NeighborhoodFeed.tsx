@@ -14,7 +14,7 @@ function AnonymousReportRow({ report }: { report: AnonymousReport }) {
   const Icon = report.service === 'electricity' ? Zap : Droplets;
   const description = report.note || (report.descriptionKey ? t(report.descriptionKey) : '');
   return (
-    <View style={{ paddingVertical: space.sm, gap: space.xs, borderBottomColor: c.stroke, borderBottomWidth: 1 }}>
+    <View style={{ paddingVertical: space.sm, gap: space.xs, borderBottomColor: c.line, borderBottomWidth: 1 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
         <View style={{ height: 34, width: 34, borderRadius: radius.pill, backgroundColor: c.tileStrong,
           alignItems: 'center', justifyContent: 'center' }}>

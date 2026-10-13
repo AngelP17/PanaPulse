@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
 import { CORREGIMIENTOS } from '../data/services';
 import { makeDemoScene } from '../data/demo';
+import { NeighborhoodFeed } from '../components/NeighborhoodFeed';
 import { ago } from '../data/format';
 import { useApp } from '../state/AppContext';
 import { font, radius, space, type } from '../theme/tokens';
@@ -45,7 +46,7 @@ export function Report() {
 
   const submit = async () => {
     if (demoEnabled) {
-      addDemoReport();
+      addDemoReport({ service, corregimiento: where, note });
       setSaved(true);
       setNote('');
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
@@ -77,16 +78,7 @@ export function Report() {
       </View>
 
       {demoEnabled ? (
-        <Card style={{ gap: space.sm }}>
-          <Txt size={type.title} weight="semibold">
-            {t('previewReports', { n: demoCommunityCount })}
-          </Txt>
-          <Txt size={type.body} tone="muted">
-            {demo.water === 'interrupted' ? t('previewWaterIssue') :
-              demo.power === 'interrupted' ? t('previewPowerIssue') : t('previewWaterGood')}
-          </Txt>
-
-        </Card>
+        <NeighborhoodFeed limit={20} />
       ) : null}
       {saved ? (
         <Card>
@@ -162,6 +154,7 @@ export function Report() {
             accessibilityLabel={t('note')}
             style={{ minHeight: 84, borderRadius: radius.tile, backgroundColor: c.tile, padding: space.md, color: c.ink, fontFamily: font.medium, fontSize: type.body, textAlignVertical: 'top' }}
           />
+          <Txt size={type.caption + 1} tone="muted">{t('neighborPrivacy')}</Txt>
           <Button label={t('submit')} variant="solid" onPress={submit} />
         </Card>
       )}
