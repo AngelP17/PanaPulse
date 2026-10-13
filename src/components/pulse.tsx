@@ -2,20 +2,20 @@ import React, { useState } from 'react';
 import { View } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { useApp } from '../state/AppContext';
-import { type } from '../theme/tokens';
+import { mark, type } from '../theme/tokens';
 import { Txt } from './ui';
 
 /** Custom PanaPulse P: the same connected-path geometry as the brand-kit app icon. */
 export function PulseMark({ size = 36 }: { size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 256 256" accessibilityElementsHidden importantForAccessibility="no">
-      <Rect x={0} y={0} width={256} height={256} rx={62} fill="#102635" />
+      <Rect x={0} y={0} width={256} height={256} rx={62} fill={mark.tile} />
       <Path
         d="M 74 196 L 74 106 C 74 72 94 60 129 60 L 145 60 C 181 60 197 76 197 105 C 197 136 178 151 142 151 L 112 151"
-        stroke="#20C9DB" strokeWidth={34} strokeLinecap="round" strokeLinejoin="round" fill="none"
+        stroke={mark.letter} strokeWidth={34} strokeLinecap="round" strokeLinejoin="round" fill="none"
       />
-      <Path d="M 55 150 L 111 101 L 155 101" stroke="#F9FCFD" strokeWidth={11} strokeLinecap="round" strokeLinejoin="round" fill="none" />
-      <Circle cx={155} cy={101} r={11} fill="#F9FCFD" />
+      <Path d="M 55 150 L 111 101 L 155 101" stroke={mark.spark} strokeWidth={11} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      <Circle cx={155} cy={101} r={11} fill={mark.spark} />
     </Svg>
   );
 }

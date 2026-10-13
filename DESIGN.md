@@ -2,12 +2,12 @@
 
 ## Direction
 
-PanaPulse is a premium, bilingual consumer companion for life in Panama, not an operations dashboard. It combines a **calm ocean-at-dusk atmosphere** with local service information that is always explicit about provenance and freshness. The original Hark-inspired v0.2 demonstrated the desired airiness; the rejected flat v0.3 (`v0.3-parked`) is the counterexample. The functional `recovery` branch and `preview/b-refinement` inform the approved information architecture, not an entirely new design.
+PanaPulse is a premium, bilingual consumer companion for life in Panama, not an operations dashboard. It combines a **calm porcelain-to-ember atmosphere** with local service information that is always explicit about provenance and freshness. The original Hark-inspired v0.2 demonstrated the desired airiness; the rejected flat v0.3 (`v0.3-parked`) is the counterexample. The functional `recovery` branch and `preview/b-refinement` inform the approved information architecture, not an entirely new design.
 
 ## Identity
 
 - **Brand mark:** The connected-path letter P in `assets/brandmark.svg` and its matching app icon. Never substitute a generic heartbeat/ECG icon.
-- **Brand colors:** Midnight navy `#102635`, coastal cyan `#20C9DB`, porcelain `#F9FCFD`. The actual light/dark UI values live in `src/theme/tokens.ts`.
+- **Brand colors ("Porcelana", approved 2026-10-12):** ink `#202333`, porcelain `#F5F2EF`, coral `#E4A18F`, deep coral `#9A4836`; storm `#515D7C` and periwinkle `#929BC5` reserved. Details and rules in `docs/BRAND.md`; light/dark UI values in `src/theme/tokens.ts`. Navy/cyan is retired; don't reintroduce it.
 - **Typography:** Manrope, generous leading, clear hierarchy and tabular numerals for magnitudes/times. Spanish diacritics must render correctly.
 - **Atmosphere:** Broad gradient across the background; translucent but legible cards. Keep rounded surfaces, quiet depth, and warmth near the horizon. Avoid blur stacks, loud glow, and flat enterprise tables.
 - **No pixel-for-pixel Hark duplication:** Our logo, four-way bottom navigation, local pulse rail and commute timeline distinguish the product.
@@ -29,6 +29,10 @@ PanaPulse is a premium, bilingual consumer companion for life in Panama, not an 
 ## Honest status grammar
 
 Every data element includes source and update context; statuses distinguish official, community, stale and unavailable. Empty data is NOT proof that service is operating. Do not show fake transit ETAs, fake outage totals or unsourced aftershock probabilities. No advertisements or paywalls on emergency information.
+
+## Changes that need explicit approval
+
+Core branding (logo, mark colors, wordmark), navigation, typography, background treatment and any design-system token in `src/theme/tokens.ts`. Ordinary feature work does not. Capture before/after screenshots for any visual change.
 
 ## Agent precedence
 

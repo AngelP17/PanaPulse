@@ -1,12 +1,23 @@
 // PanaPulse design tokens.
-// Direction: the original Hark-inspired atmosphere (rich gradient, soft translucent cards, big numerals),
-// recolored for PanaPulse: midnight navy, coastal cyan and softly atmospheric ocean light.
+// Direction: the original v0.2 atmosphere (rich gradient, soft translucent cards, big numerals) in the
+// approved "Porcelana" palette (2026-10-12): warm porcelain days, ink-to-ember evenings, deep coral accent.
+// Changing these values is a brand change and needs explicit approval (see DESIGN.md).
 // Status colors are fixed per theme and never derived from wallpaper / dynamic color.
 
 export const space = { xxs: 4, xs: 8, sm: 12, md: 16, lg: 20, xl: 24, xxl: 32 } as const;
 export const radius = { tile: 20, card: 30, pill: 999 } as const;
 
-export const brand = { navy: '#102635', cyan: '#20C9DB', porcelain: '#F9FCFD' } as const;
+export const brand = {
+  ink: '#202333',
+  storm: '#515D7C',
+  periwinkle: '#929BC5',
+  coral: '#E4A18F',
+  deepCoral: '#9A4836',
+  porcelain: '#F5F2EF',
+} as const;
+
+/** The P mark's three fills. Geometry lives in assets/brandmark.svg and components/pulse.tsx and never changes. */
+export const mark = { tile: brand.ink, letter: brand.coral, spark: brand.porcelain } as const;
 
 export const font = {
   regular: 'Manrope_400Regular',
@@ -48,55 +59,63 @@ export interface Palette {
   community: string;
   alert: string;
   unknown: string;
+  /** Bottom-sheet surface (quake detail). */
+  sheet: string;
+  /** Dim layer behind sheets and modals. */
+  scrim: string;
 }
 
 export const palettes: Record<ThemeName, Palette> = {
-  // Morning on the bay: clear sky into sea glass and warm sand.
+  // Morning in porcelain: warm off-white washing into a soft coral glow near the horizon.
   light: {
-    sky: ['#E4F3F7', '#B8DCE8', '#B9DCD9', '#EDD0C0'],
-    card: 'rgba(250,253,254,0.76)',
-    tile: 'rgba(255,255,255,0.64)',
-    tileStrong: 'rgba(255,255,255,0.90)',
-    line: 'rgba(16,38,53,0.11)',
-    ink: '#102635',
-    muted: 'rgba(16,38,53,0.67)',
-    faint: 'rgba(16,38,53,0.48)',
-    nav: 'rgba(249,252,253,0.96)',
-    navActive: '#102635',
-    navActiveInk: '#FFFFFF',
-    bubbleUser: '#102635',
-    bubbleUserInk: '#FFFFFF',
-    official: '#1E7A3E',
+    sky: ['#F5F2EF', '#EEE6E2', '#EAD3CA', '#E8B7A8'],
+    card: 'rgba(250,248,246,0.68)',
+    tile: 'rgba(250,248,246,0.70)',
+    tileStrong: 'rgba(252,250,248,0.88)',
+    line: 'rgba(32,35,51,0.09)',
+    ink: '#202333',
+    muted: 'rgba(32,35,51,0.66)',
+    faint: 'rgba(32,35,51,0.46)',
+    nav: 'rgba(247,245,243,0.95)',
+    navActive: '#202333',
+    navActiveInk: '#F5F2EF',
+    bubbleUser: '#202333',
+    bubbleUserInk: '#F5F2EF',
+    official: '#176A35',
     officialInk: '#FFFFFF',
-    stale: '#9A5B0C',
-    accent: '#087D90',
-    accentInk: '#FFFFFF',
-    community: '#5B45B8',
-    alert: '#B4372B',
-    unknown: 'rgba(16,38,53,0.62)',
+    stale: '#7D5A00',
+    accent: '#9A4836',
+    accentInk: '#F5F2EF',
+    community: '#0D6B64',
+    alert: '#A8322A',
+    unknown: 'rgba(32,35,51,0.58)',
+    sheet: '#EDE6E1',
+    scrim: 'rgba(32,35,51,0.45)',
   },
-  // Evening on the bay: navy into ocean and teal, city lights on a warm horizon.
+  // Evening: midnight ink into dusk plum, with an ember horizon.
   dark: {
-    sky: ['#102635', '#1A4661', '#2E6D7D', '#C38E86'],
-    card: 'rgba(12,31,46,0.82)',
-    tile: 'rgba(67,116,136,0.37)',
-    tileStrong: 'rgba(82,133,153,0.52)',
-    line: 'rgba(255,255,255,0.08)',
-    ink: '#F3F5FB',
-    muted: 'rgba(228,232,246,0.66)',
-    faint: 'rgba(228,232,246,0.44)',
-    nav: 'rgba(8,27,41,0.96)',
-    navActive: '#F9FCFD',
-    navActiveInk: '#102635',
-    bubbleUser: '#F9FCFD',
-    bubbleUserInk: '#102635',
+    sky: ['#202333', '#2A2B3F', '#463F55', '#B67F71'],
+    card: 'rgba(32,32,47,0.84)',
+    tile: 'rgba(150,130,150,0.24)',
+    tileStrong: 'rgba(170,150,165,0.38)',
+    line: 'rgba(245,242,239,0.08)',
+    ink: '#F5F2EF',
+    muted: 'rgba(245,242,239,0.68)',
+    faint: 'rgba(245,242,239,0.46)',
+    nav: 'rgba(26,26,39,0.96)',
+    navActive: '#F5F2EF',
+    navActiveInk: '#202333',
+    bubbleUser: '#F5F2EF',
+    bubbleUserInk: '#202333',
     official: '#7BD88F',
     officialInk: '#0B2A14',
-    stale: '#F2B56B',
-    accent: '#55DEEA',
-    accentInk: '#102635',
-    community: '#C3B1FF',
-    alert: '#FF8A7A',
-    unknown: 'rgba(228,232,246,0.55)',
+    stale: '#F2C14E',
+    accent: '#E4A18F',
+    accentInk: '#2A1813',
+    community: '#5FD4C4',
+    alert: '#FF8591',
+    unknown: 'rgba(245,242,239,0.56)',
+    sheet: '#2A2A3C',
+    scrim: 'rgba(12,12,20,0.55)',
   },
 };

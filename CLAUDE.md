@@ -9,6 +9,7 @@ Read `DESIGN.md`, `docs/BRAND.md`, `src/theme/tokens.ts`, `docs/ANTISLOP-RN.md` 
 - All data cards must surface their provenance and timestamps; snapshot times stay explicit.
 - Chat tools are read-only and mirrored in `src/chat/tools.ts` and `backend/panapulse/ask.py`.
 - Changes should be small, reviewable and backed by Python tests and a TS check.
+- Brand palette is "Porcelana" (`docs/BRAND.md`). Colors come only from `src/theme/tokens.ts`; no hex literals in components. Token, logo, nav, type or background changes need explicit approval.
 - The user's DESIGN.md overrides third-party aesthetic prohibitions. `no-slop-ui` in docs is inactive.
 - Do not commit API keys, `.env` or user location/report data.
 

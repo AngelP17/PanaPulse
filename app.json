@@ -12,15 +12,17 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#102635",
-        "foregroundImage": "./assets/android-icon-foreground.png"
+        "backgroundColor": "#202333",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": true,
       "package": "app.panapulse.mobile"
     },
     "web": {
       "output": "single",
-      "bundler": "metro"
+      "bundler": "metro",
+      "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-localization",

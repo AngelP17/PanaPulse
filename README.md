@@ -1,7 +1,7 @@
 # PanaPulse v0.2.1 (Brand integration)
 
 Spanish-first civic dashboard for Panama City. Expo SDK 57 (React Native 0.86), Android-first,
-premium atmospheric design with original navy/cyan PanaPulse branding, ES/EN, Auto/Light/Dark.
+premium atmospheric design in the PanaPulse "Porcelana" palette (see `docs/BRAND.md`), ES/EN, Auto/Light/Dark.
 
 ## What's real
 - **Sismos + pronóstico de réplicas:** USGS. Native builds fetch live every 5 min and fall back to the

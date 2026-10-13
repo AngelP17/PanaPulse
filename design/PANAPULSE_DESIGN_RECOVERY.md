@@ -1,5 +1,7 @@
 # PanaPulse Visual Recovery Contract
 
+> Color direction below is superseded by the approved "Porcelana" palette (`docs/BRAND.md`, 2026-10-12). Everything else still applies.
+
 Version: 2026-10-12. Applies to Expo / React Native Android and iOS. Spanish (Panama) and English are supported, with Auto, Light, and Dark appearance modes.
 
 ## Problem to correct

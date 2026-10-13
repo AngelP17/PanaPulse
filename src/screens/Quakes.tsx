@@ -123,16 +123,16 @@ function QuakeRow({ q, onPress }: { q: Quake; onPress: () => void }) {
 }
 
 export function QuakeSheet({ id, onClose }: { id: string | null; onClose: () => void }) {
-  const { c, t, lang, seismic, theme } = useApp();
+  const { c, t, lang, seismic } = useApp();
   const insets = useSafeAreaInsets();
   const q = seismic.earthquakes.find((x) => x.id === id) ?? null;
   return (
     <Modal visible={!!q} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={{ flex: 1, backgroundColor: 'rgba(8,12,24,0.45)' }} onPress={onClose} accessibilityLabel={t('close')} />
+      <Pressable style={{ flex: 1, backgroundColor: c.scrim }} onPress={onClose} accessibilityLabel={t('close')} />
       {q ? (
         <View
           style={{
-            backgroundColor: theme === 'dark' ? '#1E2740' : '#F4F6FB',
+            backgroundColor: c.sheet,
             borderTopLeftRadius: 32,
             borderTopRightRadius: 32,
             padding: space.lg,
