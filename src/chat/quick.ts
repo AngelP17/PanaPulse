@@ -41,6 +41,7 @@ export function quickAnswer(question: string, data: SeismicData, lang: Lang, zon
   const es = lang === 'es';
   const asOf = dayStamp(data.fetchedAt, lang);
   const day = data.earthquakes.filter((e) => e.time >= data.fetchedAt - 24 * 3600 * 1000);
+  const archived = data.mode !== 'live' || now - data.fetchedAt > 20 * 60 * 1000;
 
   // The preview is a complete, deterministic product walkthrough. These are NEVER official conditions.
   // Real USGS earthquake/forecast questions intentionally continue below unchanged.
@@ -56,7 +57,19 @@ export function quickAnswer(question: string, data: SeismicData, lang: Lang, zon
       : es ? 'La ruta circula con horario habitual.' : 'The route is running on its regular schedule.';
     let text: string;
     let intent = 'preview-summary';
-    if (has(q, METRO)) {
+    if (has(q, QUAKE)) {
+    const latest = [...data.earthquakes].sort((a, b) => b.time - a.time)[0];
+    return {
+      intent: 'latest-quake',
+      text: latest
+        ? (es
+          ? `Último sismo registrado en estos datos: M${latest.mag.toFixed(1)} cerca de ${place(latest.place, lang)}, ${dayStamp(latest.time, lang)}. Fuente: USGS, captura del ${asOf}${archived ? ' (histórica)' : ''}.`
+          : `Latest quake in this dataset: M${latest.mag.toFixed(1)} near ${place(latest.place, lang)}, ${dayStamp(latest.time, lang)}. USGS data captured ${asOf}${archived ? ' (historical)' : ''}.`)
+        : (es ? `No hay sismos en la captura USGS del ${asOf}.` : `No quakes appear in the USGS dataset from ${asOf}.`),
+    };
+  }
+
+  if (has(q, METRO)) {
       intent = 'preview-metro';
       text = es ? `En esta vista previa, la Línea 1 llega en ${preview.transit[0].arrivalMinutes} min y la Línea 2 en ${preview.transit[1].arrivalMinutes} min. ${transit}`
         : `In this preview, Line 1 arrives in ${preview.transit[0].arrivalMinutes} min and Line 2 in ${preview.transit[1].arrivalMinutes} min. ${transit}`;
@@ -92,9 +105,13 @@ export function quickAnswer(question: string, data: SeismicData, lang: Lang, zon
       const issued = dayStamp(data.forecast.creationTime, lang);
       return {
         intent: 'forecast',
-        text: es
-          ? `Según el USGS (pronóstico del ${issued}): ${pct(w6.probability)} de probabilidad de un M6+ en la próxima semana y ${pct(d6.probability)} en 24 h. Para M7+ en la semana: ${pct(w7.probability)}. Es una probabilidad, no una predicción.`
-          : `Per USGS (forecast issued ${issued}): ${pct(w6.probability)} chance of an M6+ in the next week and ${pct(d6.probability)} in 24 hr. M7+ this week: ${pct(w7.probability)}. It's a probability, not a prediction.`,
+        text: archived
+          ? (es
+            ? `Pronóstico histórico del USGS emitido el ${issued}: M6+ ${pct(w6.probability)} para la semana siguiente a esa emisión y ${pct(d6.probability)} para sus primeras 24 h. Estos periodos son históricos; no describen el riesgo de hoy.`
+            : `Historical USGS forecast issued ${issued}: M6+ ${pct(w6.probability)} for the week following that issue and ${pct(d6.probability)} for its first 24 hours. Those windows are historical, not current risk.`)
+          : (es
+            ? `Según el USGS (pronóstico del ${issued}): ${pct(w6.probability)} de probabilidad de un M6+ en la próxima semana y ${pct(d6.probability)} en 24 h. Para M7+ en la semana: ${pct(w7.probability)}. Es una probabilidad, no una predicción.`
+            : `Per USGS (forecast issued ${issued}): ${pct(w6.probability)} chance of an M6+ in the next week and ${pct(d6.probability)} in 24 hr. M7+ this week: ${pct(w7.probability)}. It's a probability, not a prediction.`),
       };
     }
   }
@@ -103,7 +120,7 @@ export function quickAnswer(question: string, data: SeismicData, lang: Lang, zon
     if (day.length === 0) {
       return {
         intent: 'strongest',
-        text: es ? `No hay sismos M4.5+ en las últimas 24 h en los datos del USGS (al ${asOf}).` : `No M4.5+ quakes in the last 24 hr in USGS data (as of ${asOf}).`,
+        text: es ? `La captura del USGS del ${asOf} no incluye sismos M4.5+ en sus 24 h anteriores.` : `The USGS dataset captured ${asOf} lists no M4.5+ quakes in its preceding 24 hours.`,
       };
     }
     const top = day.reduce((a, b) => (b.mag > a.mag ? b : a));
