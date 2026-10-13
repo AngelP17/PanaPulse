@@ -110,7 +110,7 @@ export function Home({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
 
   return (
     <View style={{ gap: space.md }}>
-      {demoEnabled ? <DemoControls /> : null}
+      {/* Actual USGS information always leads, including in preview mode. */}
       {/* Area summary */}
       <View style={{ paddingHorizontal: space.xs, gap: 4 }}>
         <Eyebrow>{t('areaEyebrow')}</Eyebrow>
@@ -151,6 +151,7 @@ export function Home({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
         />
       ) : null}
 
+      {demoEnabled ? <DemoControls /> : null}
       {/* Contextual utility: scheduled power notices for the area */}
       <SectionHeading title={t('categoryServices')} subtitle={t('servicesSummaryHint')} />
       {powerSurface === 'example' ? (

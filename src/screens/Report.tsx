@@ -71,7 +71,7 @@ export function Report() {
 
       {demoEnabled ? (
         <Card style={{ gap: space.sm }}>
-          <Txt size={type.label} weight="bold">{t('demoBanner')}</Txt>
+          <StatusChip kind="demo" />
           <Txt size={type.title} weight="semibold">
             {t('demoNeighborReports', { n: demoCommunityCount })}
           </Txt>
