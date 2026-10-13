@@ -88,3 +88,37 @@ def test_chat_tool_reports_provider_and_upcoming_cuts(sessions):
     assert [c["place"] for c in jd["scheduled_cuts"]] == ["Nuevo Hipodromo"]  # the 12 Oct cut already ended
     pn = tools.run("get_service_status", {"service": "electricity", "corregimiento": "Pueblo Nuevo"})
     assert pn["provider"] == "Naturgy (Edemet)" and pn["scheduled_cuts"] == []
+
+
+def test_ensa_actual_empty_state():
+    assert parse_ensa("<p>En estos momentos no tenemos planificado realizar ninguna interrupción.</p>") == []
+
+
+def test_unknown_source_is_refused(sessions):
+    with pytest.raises(ValueError, match="Unsupported"):
+        UtilityIngestor(sessions).run("bogus", NOW)
+
+
+def test_power_endpoint_unavailable_is_not_all_clear(sessions):
+    from fastapi.testclient import TestClient
+    from panapulse.api import create_app
+    res = TestClient(create_app(sessions)).get("/v0/power-maintenance", params={"corregimiento": "Pueblo Nuevo"})
+    assert res.status_code == 200
+    data = res.json()
+    assert data["service_state"] == "unknown"
+    assert data["notices"] == []
+    assert data["scope"] == "scheduled_maintenance_only"
+    assert data["sources"][0]["freshness"] == "stale_or_unavailable"
+
+
+def test_power_endpoint_respects_original_zone_and_source(sessions):
+    from fastapi.testclient import TestClient
+    from panapulse.api import create_app
+    now = datetime.now(timezone.utc).astimezone(PAN) + timedelta(days=1)
+    month = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"][now.month - 1]
+    html = ENSA_HTML.replace("12 de octubre de 2026", f"{now.day} de {month} de {now.year}")
+    UtilityIngestor(sessions, transport=mock({ENSA_URL: html})).run("ensa")
+    data = TestClient(create_app(sessions)).get("/v0/power-maintenance", params={"corregimiento":"Juan Díaz"}).json()
+    assert data["service_state"] == "unknown"
+    assert any(x["place"] == "Ciudad Radial" for x in data["notices"])
+    assert all(x["verification"] == "official_scheduled" and x["source_url"] == ENSA_URL for x in data["notices"])

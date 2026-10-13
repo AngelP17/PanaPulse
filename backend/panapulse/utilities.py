@@ -117,7 +117,8 @@ def parse_ensa(html: str, source_url: str = ENSA_URL) -> list[Notice]:
     if table is None:
         # An explicit "no scheduled maintenance" page is a valid empty state, not a failure.
         text = key(soup.get_text(" "))
-        if re.search(r"no (hay|existen) (mantenimientos|interrupciones)", text):
+        if (re.search(r"no (hay|existen) (mantenimientos|interrupciones)", text)
+                or "no tenemos planificado realizar ninguna interrupcion" in text):
             return []
         raise SourceFormatChanged("ENSA maintenance table not found")
     idx = {h: i for i, h in enumerate(headers)}
@@ -203,6 +204,8 @@ class UtilityIngestor:
 
     def run(self, source: str, now: datetime | None = None) -> dict:
         now = now or datetime.now(timezone.utc)
+        if source not in ("ensa", "naturgy"):
+            raise ValueError(f"Unsupported power-maintenance source: {source}")
         url = ENSA_URL if source == "ensa" else NATURGY_URL
         with self.sessions.begin() as s:
             health = s.get(SourceHealth, source) or SourceHealth(source=source)
@@ -217,6 +220,7 @@ class UtilityIngestor:
             logger.warning("%s ingest failed: %s", source, e)
             raise
         created = 0
+        captured = utcnow()
         with self.sessions.begin() as s:
             digest = hashlib.sha256(html.encode()).hexdigest()
             last = s.query(SourceSnapshot).filter(SourceSnapshot.url == url).order_by(SourceSnapshot.id.desc()).first()
@@ -225,12 +229,19 @@ class UtilityIngestor:
             for n in notices:
                 row = s.get(UtilityNotice, n.uid)
                 if row is None:
-                    row = UtilityNotice(id=n.uid, **{k: v for k, v in asdict(n).items()})
+                    fields = asdict(n)
+                    # SQLite drops tzinfo; store all maintenance windows in UTC.
+                    fields["starts_at"] = n.starts_at.astimezone(timezone.utc)
+                    fields["ends_at"] = n.ends_at.astimezone(timezone.utc)
+                    row = UtilityNotice(id=n.uid, **fields)
                     s.add(row)
                     created += 1
-                row.last_seen_at = now
+                else:
+                    row.starts_at = n.starts_at.astimezone(timezone.utc)
+                    row.ends_at = n.ends_at.astimezone(timezone.utc)
+                row.last_seen_at = captured
             h = s.get(SourceHealth, source)
-            h.last_success_at = utcnow()
+            h.last_success_at = captured
             h.last_error = None
             h.last_event_count = len(notices)
         return {"source": source, "parsed": len(notices), "new": created}
