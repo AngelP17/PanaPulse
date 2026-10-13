@@ -6,6 +6,7 @@ import { SectionHeading } from '../components/section';
 import { Button, Card, CardHeader, SourceLine, Txt, styles } from '../components/ui';
 import { ago, clock, dayKey, dayStamp, place } from '../data/format';
 import { joinList, locality, offlineSources, OfflineSource, seismicHero } from '../data/glance';
+import { makeDemoScene } from '../data/demo';
 import { powerFeedState, usePowerMaintenance } from '../data/maintenance';
 import { useApp } from '../state/AppContext';
 import { space, type } from '../theme/tokens';
@@ -17,7 +18,8 @@ const ZONE = 'Pueblo Nuevo';
  * Order: area summary, one hero, up to three status chips, one offline line, one utility card, one secondary card.
  */
 export function Home({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
-  const { c, t, lang, seismic, now, go } = useApp();
+  const { c, t, lang, seismic, now, go, demoEnabled, demoScenario } = useApp();
+  const demo = makeDemoScene(now, demoScenario);
   const { data: maintenance, state: maintenanceState } = usePowerMaintenance(ZONE);
   const power = powerFeedState(maintenance, maintenanceState);
   const cuts = maintenance?.notices.length ?? 0;
@@ -89,6 +91,12 @@ export function Home({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
 
   return (
     <View style={{ gap: space.md }}>
+      {demoEnabled ? (
+        <View style={{ backgroundColor: c.tileStrong, borderRadius: 18, padding: space.md, gap: 4 }}>
+          <Txt size={type.label} weight="bold">{t('demoBanner')}</Txt>
+          <Txt size={type.caption + 1} tone="muted">{t('demoBannerDetail')}</Txt>
+        </View>
+      ) : null}
       {/* Area summary */}
       <View style={{ paddingHorizontal: space.xs, gap: 4 }}>
         <Eyebrow>{t('areaEyebrow')}</Eyebrow>
@@ -127,6 +135,17 @@ export function Home({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
         />
       ) : null}
 
+      {demoEnabled ? (
+        <Card style={{ gap: space.sm }}>
+          <Txt size={type.label} weight="bold">{t('demoTripTitle')}</Txt>
+          <Txt size={type.title} weight="semibold">{t('tripHome')} → {t('tripWork')}</Txt>
+          <Txt size={type.body} weight="semibold">
+            {t('metroL1')} · {t('demoEta', { n: demo.transit[0].arrivalMinutes })}
+          </Txt>
+          <Txt size={type.caption + 1} tone="muted">{t('demoArrival')} · {t('demoSource')}</Txt>
+          <Button label={t('tabMobility')} onPress={() => go('mobility')} />
+        </Card>
+      ) : null}
       {/* Contextual utility: scheduled power notices for the area */}
       <SectionHeading title={t('categoryServices')} subtitle={t('servicesSummaryHint')} />
       <Card>
