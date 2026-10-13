@@ -3,10 +3,11 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { BackHandler, KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Composer, TopBar } from './components/chrome';
+import { BottomNav, Composer, Header } from './components/chrome';
 import { Scene } from './components/ui';
 import { Chat, ChatHandle } from './screens/Chat';
 import { Home } from './screens/Home';
+import { Mobility } from './screens/Mobility';
 import { QuakeSheet, Quakes } from './screens/Quakes';
 import { Report } from './screens/Report';
 import { Settings } from './screens/Settings';
@@ -49,19 +50,21 @@ function Shell() {
     [tab, askFromHome],
   );
 
-  const showComposer = tab === 'home' || tab === 'chat' || tab === 'quakes';
 
   return (
     <View style={{ flex: 1 }}>
       <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
       <Scene>
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          {/* Column layout: header, content, (chat composer), nav. Nothing floats over content. */}
+          <Header />
           <ScrollView
             ref={scrollRef}
+            style={{ flex: 1 }}
             onContentSizeChange={() => tab === 'chat' && scrollRef.current?.scrollToEnd({ animated: true })}
             contentContainerStyle={{
-              paddingTop: insets.top + 84,
-              paddingBottom: insets.bottom + 110,
+              paddingTop: space.sm,
+              paddingBottom: space.lg,
               paddingHorizontal: space.md,
               maxWidth: 560,
               width: '100%',
@@ -70,6 +73,7 @@ function Shell() {
             keyboardShouldPersistTaps="handled"
           >
             {tab === 'home' && <Home onOpenQuake={setQuakeId} />}
+            {tab === 'mobility' && <Mobility />}
             {tab === 'quakes' && <Quakes onOpenQuake={setQuakeId} />}
             <View style={{ display: tab === 'chat' ? 'flex' : 'none' }}>
               <Chat ref={chatRef} onBusy={setChatBusy} />
@@ -77,8 +81,12 @@ function Shell() {
             {tab === 'report' && <Report />}
             {tab === 'settings' && <Settings />}
           </ScrollView>
-          <TopBar />
-          {showComposer ? <Composer onSubmit={onAsk} disabled={chatBusy} /> : null}
+          {tab === 'chat' ? (
+            <View style={{ paddingHorizontal: space.md, paddingBottom: space.xxs, maxWidth: 560, width: '100%', alignSelf: 'center' }}>
+              <Composer onSubmit={onAsk} disabled={chatBusy} />
+            </View>
+          ) : null}
+          <BottomNav />
         </KeyboardAvoidingView>
       </Scene>
       <QuakeSheet id={quakeId} onClose={() => setQuakeId(null)} />

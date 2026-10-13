@@ -7,7 +7,7 @@ import { palettes, Palette, ThemeName } from '../theme/tokens';
 import { loadLive, loadSnapshot, SeismicData } from '../data/usgs';
 
 export type ThemePref = 'auto' | 'light' | 'dark';
-export type Tab = 'home' | 'quakes' | 'chat' | 'report' | 'settings';
+export type Tab = 'home' | 'mobility' | 'quakes' | 'chat' | 'report' | 'settings';
 
 interface AppState {
   lang: Lang;

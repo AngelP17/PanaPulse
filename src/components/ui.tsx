@@ -98,13 +98,13 @@ export function TileGrid({ children }: { children: React.ReactNode }) {
   );
 }
 
-export type Verification = 'official' | 'community' | 'unavailable';
+export type Verification = 'official' | 'community' | 'stale' | 'unavailable';
 
 /** Verification is shown with an icon-free text label plus shape, never color alone. */
 export function StatusChip({ kind }: { kind: Verification }) {
   const { c, t } = useApp();
-  const color = kind === 'official' ? c.official : kind === 'community' ? c.community : c.unknown;
-  const label = kind === 'official' ? t('official') : kind === 'community' ? t('community') : t('unavailable');
+  const color = kind === 'official' ? c.official : kind === 'community' ? c.community : kind === 'stale' ? c.stale : c.unknown;
+  const label = kind === 'official' ? t('official') : kind === 'community' ? t('community') : kind === 'stale' ? t('stale') : t('unavailable');
   return (
     <View
       style={[
@@ -126,7 +126,7 @@ export function SourceLine({ source, kind, detail }: { source: string; kind: Ver
   return (
     <View style={[styles.row, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.line, paddingTop: space.sm, flexWrap: 'wrap' }]}>
       <StatusChip kind={kind} />
-      <Txt size={type.caption + 1} tone="muted" style={{ flexShrink: 1 }}>
+      <Txt size={type.caption + 2} tone="muted" style={{ flexShrink: 1 }}>
         {source}
         {detail ? ` · ${detail}` : ''}
       </Txt>

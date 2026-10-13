@@ -1,6 +1,6 @@
 // PanaPulse design tokens.
-// Direction: Hark-style atmosphere (sky gradient, soft translucent cards, pill navigation,
-// big numerals) carrying a calm civic-instrument status grammar.
+// Direction: the original Hark-inspired atmosphere (rich gradient, soft translucent cards, big numerals),
+// recolored for Panama: navy into ocean and teal over a warm sand horizon. Accent: canal cyan.
 // Status colors are fixed per theme and never derived from wallpaper / dynamic color.
 
 export const space = { xxs: 4, xs: 8, sm: 12, md: 16, lg: 20, xl: 24, xxl: 32 } as const;
@@ -40,15 +40,18 @@ export interface Palette {
   bubbleUserInk: string;
   official: string;
   officialInk: string;
+  stale: string;
+  accent: string;
+  accentInk: string;
   community: string;
   alert: string;
   unknown: string;
 }
 
 export const palettes: Record<ThemeName, Palette> = {
-  // Daylight over the bay: pale sky into soft lilac and a warm horizon.
+  // Morning on the bay: clear sky into sea glass and warm sand.
   light: {
-    sky: ['#C9DBF1', '#A9C1E6', '#B6B8E0', '#EBC7B7'],
+    sky: ['#D3E7F4', '#AFD4E0', '#BEDDD4', '#F1D6BA'],
     card: 'rgba(255,255,255,0.62)',
     tile: 'rgba(255,255,255,0.66)',
     tileStrong: 'rgba(255,255,255,0.86)',
@@ -61,30 +64,36 @@ export const palettes: Record<ThemeName, Palette> = {
     navActiveInk: '#FFFFFF',
     bubbleUser: '#16203A',
     bubbleUserInk: '#FFFFFF',
-    official: '#1D7A63',
+    official: '#1E7A3E',
     officialInk: '#FFFFFF',
-    community: '#9A5E14',
+    stale: '#9A5B0C',
+    accent: '#0A6E95',
+    accentInk: '#FFFFFF',
+    community: '#5B45B8',
     alert: '#B4372B',
     unknown: 'rgba(22,32,58,0.55)',
   },
-  // Dusk over the city: steel blue into violet and a peach horizon.
+  // Evening on the bay: navy into ocean and teal, city lights on a warm horizon.
   dark: {
-    sky: ['#2C4266', '#47558A', '#7A6C9C', '#CB8B78'],
-    card: 'rgba(27,35,56,0.80)',
-    tile: 'rgba(78,88,120,0.42)',
-    tileStrong: 'rgba(92,102,136,0.55)',
+    sky: ['#14284A', '#1F4F6E', '#35767E', '#CF9670'],
+    card: 'rgba(17,33,52,0.80)',
+    tile: 'rgba(72,112,132,0.36)',
+    tileStrong: 'rgba(86,128,148,0.50)',
     line: 'rgba(255,255,255,0.08)',
     ink: '#F3F5FB',
     muted: 'rgba(228,232,246,0.66)',
     faint: 'rgba(228,232,246,0.44)',
-    nav: 'rgba(22,28,45,0.97)',
+    nav: 'rgba(11,24,40,0.96)',
     navActive: '#F3F5FB',
     navActiveInk: '#141A28',
     bubbleUser: '#F3F5FB',
     bubbleUserInk: '#141A28',
-    official: '#6FD1B3',
-    officialInk: '#0E2A22',
-    community: '#F0B66A',
+    official: '#7BD88F',
+    officialInk: '#0B2A14',
+    stale: '#F2B56B',
+    accent: '#7FD6EC',
+    accentInk: '#06202C',
+    community: '#C3B1FF',
     alert: '#FF8A7A',
     unknown: 'rgba(228,232,246,0.55)',
   },

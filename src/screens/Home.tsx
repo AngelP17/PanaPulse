@@ -1,27 +1,25 @@
-import { Activity, Bus, Droplets, TrainFront, Zap } from 'lucide-react-native';
+import { Activity, Droplets, Megaphone, TrainFront, Zap } from 'lucide-react-native';
 import React, { useMemo } from 'react';
-import { Pressable, View } from 'react-native';
+import { Linking, Pressable, View } from 'react-native';
+import { PulseRail } from '../components/pulse';
+import { Button, Card, CardHeader, SourceLine, StatusChip, Tile, TileGrid, Txt, styles } from '../components/ui';
+import { ago, clock, dayStamp, longDate, pct, place } from '../data/format';
 import { bin } from '../data/usgs';
-import { ago, clock, dayStamp, longDate, pct, place, shortDate } from '../data/format';
-import { SERVICES } from '../data/services';
 import { useApp } from '../state/AppContext';
 import { radius, space, type } from '../theme/tokens';
-import { Button, Card, CardHeader, LinkChip, SourceLine, Tile, TileGrid, Txt, styles } from '../components/ui';
+
+const MAPS_TRIP =
+  'https://www.google.com/maps/dir/?api=1&origin=Pueblo+Nuevo,+Panam%C3%A1&destination=Albrook,+Panam%C3%A1&travelmode=transit';
 
 export function Home({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
-  const { c, t, lang, seismic, now, go, askFromHome } = useApp();
+  const { c, t, lang, seismic, now, go } = useApp();
   const f = seismic.forecast;
-  const main = useMemo(
-    () => seismic.earthquakes.find((q) => q.id === f?.mainshockId) ?? null,
-    [seismic, f],
-  );
-  const recent = seismic.earthquakes.slice(0, 4);
-
+  const main = useMemo(() => seismic.earthquakes.find((q) => q.id === f?.mainshockId) ?? null, [seismic, f]);
+  const recent = seismic.earthquakes.slice(0, 3);
   const d6 = bin(f, '1 Day', 6);
   const w6 = bin(f, '1 Week', 6);
   const d7 = bin(f, '1 Day', 7);
   const w7 = bin(f, '1 Week', 7);
-  const d5 = bin(f, '1 Day', 5);
 
   const dataNote =
     seismic.mode === 'live'
@@ -32,17 +30,114 @@ export function Home({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
     <View style={{ gap: space.md }}>
       <View style={{ paddingHorizontal: space.xs, gap: 2 }}>
         <Txt size={type.label} weight="semibold" tone="muted">
-          {t('city')}
+          {t('myZone')}
         </Txt>
-        <Txt size={type.caption + 1} tone="faint" numeric>
+        <Txt size={type.hero} weight="bold" accessibilityRole="header" style={{ letterSpacing: -1 }}>
+          Pueblo Nuevo
+        </Txt>
+        <Txt size={type.caption + 1} tone="muted" numeric>
           {dataNote}
         </Txt>
       </View>
 
-      {/* Hark-style action cards: a verb chip followed by the thing it acts on. */}
-      <Suggestion verb={t('ask')} text={t('sugAsk')} onPress={() => askFromHome(t('sugAskPrompt'))} />
-      <Suggestion verb={t('review')} text={t('sugReview')} onPress={() => go('quakes')} />
-      <Suggestion verb={t('report')} text={t('sugReport')} onPress={() => go('report')} />
+      {/* Signature: the area's pulse, one line through five services. */}
+      <Card>
+        <CardHeader icon={<Activity size={18} color={c.accent} />} title={t('pulseTitle')} />
+        <PulseRail
+          nodes={[
+            { label: t('power'), status: t('pulsePowerStale'), state: 'stale' },
+            { label: t('water'), status: t('pulseNone'), state: 'none' },
+            { label: 'Metro', status: t('pulseNoFeed'), state: 'none' },
+            { label: 'MiBus', status: t('pulseNoFeed'), state: 'none' },
+            { label: t('pulseQuakes'), status: f ? t('pulseActive') : t('pulseNone'), state: f ? 'live' : 'none', intensity: w6 ? Math.min(1, w6.probability / 0.4) : 0 },
+          ]}
+        />
+        <Txt size={type.caption + 1} tone="muted">
+          {t('pulseLegend')}
+        </Txt>
+      </Card>
+
+      {/* Everyday use: the commute, as a station timeline. No invented times. */}
+      <Card>
+        <CardHeader
+          icon={<TrainFront size={18} color={c.ink} />}
+          title={t('tripTitle')}
+          right={
+            <Txt size={type.caption + 1} tone="muted">
+              {t('tripExample')}
+            </Txt>
+          }
+        />
+        <View style={{ flexDirection: 'row', gap: space.md }}>
+          <View style={{ alignItems: 'center', width: 20 }}>
+            <View style={{ width: 18, height: 18, borderRadius: 9, backgroundColor: c.accent }} />
+            <View style={{ width: 4, height: 44, backgroundColor: c.accent, opacity: 0.85 }} />
+            <View style={{ width: 18, height: 18, borderRadius: 9, borderWidth: 4, borderColor: c.accent }} />
+          </View>
+          <View style={{ flex: 1, justifyContent: 'space-between' }}>
+            <Txt size={type.body} weight="bold" style={{ lineHeight: 18 }}>
+              {t('tripHome')}
+            </Txt>
+            <Txt size={type.label} tone="muted">
+              {t('tripLeg')}
+            </Txt>
+            <Txt size={type.body} weight="bold" style={{ lineHeight: 18 }}>
+              {t('tripWork')}
+            </Txt>
+          </View>
+        </View>
+        <Txt size={type.label} tone="muted">
+          {t('tripNote')}
+        </Txt>
+        <Button label={t('tripMaps')} variant="solid" onPress={() => Linking.openURL(MAPS_TRIP).catch(() => {})} />
+      </Card>
+
+      {/* Separate floating cards for power and water, each with its own verification line. */}
+      <View style={{ flexDirection: 'row', gap: space.sm }}>
+        <Card style={{ flex: 1, minWidth: 0, padding: space.md, gap: space.xs }}>
+          <View style={styles.row}>
+            <Zap size={18} color={c.stale} />
+            <Txt size={type.body} weight="bold">
+              {t('power')}
+            </Txt>
+          </View>
+          <Txt size={type.label} tone="muted" numberOfLines={1}>
+            {t('powerCardProvider')}
+          </Txt>
+          <Txt size={type.title} weight="bold" style={{ color: c.stale }}>
+            {t('powerCardState')}
+          </Txt>
+          <StatusChip kind="stale" />
+          <Txt size={type.caption} tone="muted">
+            {t('powerCardBasis')}
+          </Txt>
+        </Card>
+        <Card style={{ flex: 1, minWidth: 0, padding: space.md, gap: space.xs }}>
+          <View style={styles.row}>
+            <Droplets size={18} color={c.muted} />
+            <Txt size={type.body} weight="bold">
+              {t('water')}
+            </Txt>
+          </View>
+          <Txt size={type.label} tone="muted">
+            IDAAN
+          </Txt>
+          <Txt size={type.title} weight="bold" tone="muted">
+            {t('waterCardState')}
+          </Txt>
+          <View style={{ gap: 6 }}>
+            <View style={[styles.row, { gap: 6 }]}>
+              <StatusChip kind="unavailable" />
+            </View>
+            <Txt size={type.caption} tone="muted">
+              {t('waterOfficial')}
+            </Txt>
+            <Txt size={type.caption} tone="muted">
+              {t('waterCommunity')}
+            </Txt>
+          </View>
+        </Card>
+      </View>
 
       {f ? (
         <Card>
@@ -53,23 +148,13 @@ export function Home({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
             </Txt>
           ) : null}
           <TileGrid>
-            <Tile label={`M6+ · ${t('next24')}`} value={d6 ? pct(d6.probability) : '–'} />
             <Tile label={`M6+ · ${t('nextWeek')}`} value={w6 ? pct(w6.probability) : '–'} />
-            <Tile label={`M7+ · ${t('next24')}`} value={d7 ? pct(d7.probability) : '–'} dim />
+            <Tile label={`M6+ · ${t('next24')}`} value={d6 ? pct(d6.probability) : '–'} />
             <Tile label={`M7+ · ${t('nextWeek')}`} value={w7 ? pct(w7.probability) : '–'} dim />
-            <Tile
-              label={`${t('m5Count')} · ${t('next24')}`}
-              value={d5 ? t('about', { n: d5.median }) : '–'}
-              sub={d5 ? t('range', { a: d5.p95min, b: d5.p95max }) : undefined}
-            />
-            <Tile label={t('issued')} value={clock(f.creationTime, lang)} sub={shortDate(f.creationTime, lang)} />
+            <Tile label={`M7+ · ${t('next24')}`} value={d7 ? pct(d7.probability) : '–'} dim />
           </TileGrid>
           <Txt size={type.label} tone="muted">
             {t('forecastCaveat')}
-          </Txt>
-
-          <Txt size={type.body} weight="semibold" style={{ marginTop: space.xs }}>
-            {t('recentQuakes')}
           </Txt>
           <View style={{ gap: space.xs }}>
             {recent.map((q) => (
@@ -78,10 +163,7 @@ export function Home({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
                 accessibilityRole="button"
                 accessibilityLabel={`M${q.mag.toFixed(1)}, ${place(q.place, lang)}, ${clock(q.time, lang)}`}
                 onPress={() => onOpenQuake(q.id)}
-                style={({ pressed }) => [
-                  styles.row,
-                  { backgroundColor: c.tile, borderRadius: radius.tile, paddingHorizontal: space.md, minHeight: 56, opacity: pressed ? 0.75 : 1 },
-                ]}
+                style={({ pressed }) => [styles.row, { backgroundColor: c.tile, borderRadius: radius.tile, paddingHorizontal: space.md, minHeight: 52, opacity: pressed ? 0.75 : 1 }]}
               >
                 <Txt size={type.body} weight="bold" numeric style={{ width: 40 }}>
                   {q.mag.toFixed(1)}
@@ -96,98 +178,11 @@ export function Home({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
             ))}
           </View>
           <Button label={t('seeAll')} onPress={() => go('quakes')} />
-          <SourceLine
-            source="USGS"
-            kind="official"
-            detail={t('updated', { ago: ago(seismic.fetchedAt, now, lang) })}
-          />
+          <SourceLine source="USGS" kind="official" detail={`${t('issued')} ${dayStamp(f.creationTime, lang)} · ${t('updated', { ago: ago(seismic.fetchedAt, now, lang) })}`} />
         </Card>
       ) : null}
 
-      <Card>
-        <CardHeader icon={<Zap size={18} color={c.ink} />} title={t('services')} />
-        <TileGrid>
-          <ServiceTile icon={<Zap size={18} color={c.muted} />} name={t('power')} provider={SERVICES.electricity.provider} />
-          <ServiceTile icon={<Droplets size={18} color={c.muted} />} name={t('water')} provider={SERVICES.water.provider} />
-        </TileGrid>
-        <Txt size={type.label} tone="muted">
-          {t('noSourceBody', { source: lang === 'es' ? 'Naturgy, ENSA e IDAAN' : 'Naturgy, ENSA and IDAAN' })}
-        </Txt>
-        <SourceLine source="Naturgy · ENSA · IDAAN" kind="unavailable" />
-      </Card>
-
-      <Card>
-        <CardHeader icon={<TrainFront size={18} color={c.ink} />} title={t('mobility')} />
-        <View style={{ gap: space.xs }}>
-          <MobilityRow icon={<TrainFront size={18} color={c.muted} />} name={t('metroL1')} />
-          <MobilityRow icon={<TrainFront size={18} color={c.muted} />} name={t('metroL2')} />
-          <MobilityRow icon={<Bus size={18} color={c.muted} />} name={t('mibus')} />
-        </View>
-        <Txt size={type.label} tone="muted">
-          {t('mobilityNote')}
-        </Txt>
-        <View style={[styles.row, { flexWrap: 'wrap' }]}>
-          <LinkChip label="Metro de Panamá" url={SERVICES.metro_l1.officialUrl} />
-          <LinkChip label="MiBus" url={SERVICES.mibus.officialUrl} />
-        </View>
-        <SourceLine source="Metro de Panamá · MiBus" kind="unavailable" />
-      </Card>
-    </View>
-  );
-}
-
-function Suggestion({ verb, text, onPress }: { verb: string; text: string; onPress: () => void }) {
-  const { c } = useApp();
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={`${verb} ${text}`}
-      onPress={onPress}
-      style={({ pressed }) => [
-        { backgroundColor: c.card, borderRadius: radius.card, paddingHorizontal: space.lg, paddingVertical: space.lg, opacity: pressed ? 0.8 : 1 },
-      ]}
-    >
-      <Txt size={type.body + 1} weight="medium" style={{ lineHeight: 30 }}>
-        <Txt size={type.body} weight="semibold" style={{ backgroundColor: c.tileStrong, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2, overflow: 'hidden' }}>
-          {` ${verb} `}
-        </Txt>
-        {`  ${text}`}
-      </Txt>
-    </Pressable>
-  );
-}
-
-function ServiceTile({ icon, name, provider }: { icon: React.ReactNode; name: string; provider: string }) {
-  const { c, t } = useApp();
-  return (
-    <View style={{ flex: 1, minWidth: 0, backgroundColor: c.tile, borderRadius: radius.tile, padding: space.md, gap: 6 }}>
-      <View style={styles.row}>
-        {icon}
-        <Txt size={type.body} weight="semibold">
-          {name}
-        </Txt>
-      </View>
-      <Txt size={type.title} weight="semibold" tone="muted">
-        {t('unavailable')}
-      </Txt>
-      <Txt size={type.caption + 1} tone="faint" numberOfLines={1}>
-        {provider}
-      </Txt>
-    </View>
-  );
-}
-
-function MobilityRow({ icon, name }: { icon: React.ReactNode; name: string }) {
-  const { c, t } = useApp();
-  return (
-    <View style={[styles.row, { backgroundColor: c.tile, borderRadius: radius.tile, paddingHorizontal: space.md, minHeight: 52 }]}>
-      {icon}
-      <Txt size={type.body} style={{ flex: 1 }}>
-        {name}
-      </Txt>
-      <Txt size={type.label} tone="muted">
-        {t('noLiveFeed')}
-      </Txt>
+      <Button label={t('reportCta')} icon={<Megaphone size={18} color={c.community} />} onPress={() => go('report')} />
     </View>
   );
 }
