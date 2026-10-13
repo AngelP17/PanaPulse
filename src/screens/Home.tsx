@@ -9,6 +9,7 @@ import { joinList, locality, offlineSources, OfflineSource, seismicHero } from '
 import { DemoCommuteCard, DemoControls, DemoUtilityCard, demoUtilityCopy } from './DemoScreens';
 import { makeDemoScene } from '../data/demo';
 import { powerFeedState, usePowerMaintenance } from '../data/maintenance';
+import { powerSurfaceSource } from '../data/sourcePolicy';
 import { useApp } from '../state/AppContext';
 import { space, type } from '../theme/tokens';
 
@@ -24,6 +25,7 @@ export function Home({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
   const latestRecorded = seismic.earthquakes.length ? [...seismic.earthquakes].sort((a, b) => b.time - a.time)[0] : null;
   const { data: maintenance, state: maintenanceState } = usePowerMaintenance(ZONE);
   const power = powerFeedState(maintenance, maintenanceState);
+  const powerSurface = powerSurfaceSource(power, demoEnabled);
   const cuts = maintenance?.notices.length ?? 0;
   const hero = useMemo(() => seismicHero(seismic, now), [seismic, now]);
 
@@ -85,7 +87,7 @@ export function Home({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
   } else if (power === 'stale') {
     pills.push({ kind: 'stale', label: t('chipPowerStale'), onPress: () => go('services') });
   }
-  if (demoEnabled && power === 'none') {
+  if (powerSurface === 'example') {
     pills.push({ kind: 'demo', label: t('demoStatusPower', {
       status: demoUtilityCopy(demo.power, 'power', t),
     }), onPress: () => go('services') });
@@ -151,7 +153,7 @@ export function Home({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
 
       {/* Contextual utility: scheduled power notices for the area */}
       <SectionHeading title={t('categoryServices')} subtitle={t('servicesSummaryHint')} />
-      {demoEnabled && power === 'none' ? (
+      {powerSurface === 'example' ? (
         <DemoUtilityCard service="power" state={demo.power} onDetails={() => go('services')} />
       ) : (
       <Card>

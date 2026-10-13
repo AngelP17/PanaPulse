@@ -6,6 +6,7 @@ import { SectionHeading } from '../components/section';
 import { makeDemoScene } from '../data/demo';
 import { DemoControls, DemoUtilityCard } from './DemoScreens';
 import { usePowerMaintenance, powerFeedState } from '../data/maintenance';
+import { powerSurfaceSource } from '../data/sourcePolicy';
 import { useApp } from '../state/AppContext';
 import { radius, space, type } from '../theme/tokens';
 
@@ -14,7 +15,8 @@ export function Services() {
   const { c, t, lang, go, demoEnabled, demoScenario, now } = useApp();
   const demo = makeDemoScene(now, demoScenario);
   const { data, state } = usePowerMaintenance(ZONE);
-  const current = powerFeedState(data, state) === 'scheduled';
+  const powerSource = powerSurfaceSource(powerFeedState(data, state), demoEnabled);
+  const current = powerSource === 'official';
   const notices = data?.notices ?? [];
   const fmt = new Intl.DateTimeFormat(lang === 'es' ? 'es-PA' : 'en-US', {
     timeZone: 'America/Panama', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit',
@@ -26,7 +28,7 @@ export function Services() {
         <Txt size={type.body} tone="muted">{ZONE} · {t('serviceScope')}</Txt>
       </View>
       {demoEnabled ? <DemoControls /> : null}
-      <SectionHeading title={t(demoEnabled && state !== 'ready' ? 'power' : 'scheduledMaintenance')}
+      <SectionHeading title={t(powerSource === 'example' ? 'power' : 'scheduledMaintenance')}
         subtitle={t(demoEnabled && state !== 'ready' ? 'demoRealtimeDescription' : 'scheduledOnlyCaption')} />
       {demoEnabled && state !== 'ready' ? <DemoUtilityCard service="power" state={demo.power} /> : (
       <Card>
