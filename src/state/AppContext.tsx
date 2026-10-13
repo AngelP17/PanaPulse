@@ -122,7 +122,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       corregimiento: input.corregimiento,
       note: safePreviewNote(input.note),
       at: Date.now(),
-      origin: 'local',
+      origin: 'local' as const,
     }, ...old].slice(0, 20));
   }, []);
 
