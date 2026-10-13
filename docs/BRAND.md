@@ -39,13 +39,13 @@ Every card text color clears WCAG AA (4.5:1) over every sky stop; recheck with
 - Cards are large, rounded and translucent. Don't shrink text to cram data into uniform boxes.
 - The four-tab bottom navigation is the product's own grammar, distinct from Hark's conversation-first nav.
 - Status always carries a text label; color is never the only signal.
-- The pulse rail uses neutral text/ink with different line shapes for USGS activity and checked scheduled-maintenance feeds. Coral is not a data-status indicator. Do not reinterpret a checked maintenance feed as power availability.
+- Home uses words, not legends: the pulse rail was retired from Home because it needed a legend. Status chips pair a plain-language label with a semantic icon (check = official, clock = old data, % = forecast, people = community). Coral is not a data-status indicator. Do not reinterpret a checked maintenance feed as power availability.
 - Section headings use type scale and whitespace, never decorative colored rules.
 
 ## Known risk
 
 Porcelain plus coral sits near the "cream and terracotta" look that AI-generated designs default to.
-What keeps it distinct: the ink sky at night, the P mark, the pulse rail and the bottom nav. Avoid adding serif
+What keeps it distinct: the ink sky at night, the P mark, the one-glance Home and the bottom nav. Avoid adding serif
 display type, beige-on-beige cards or terracotta rules, which would push it into the cliché.
 
 ## Provenance

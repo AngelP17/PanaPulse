@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getLocales } from 'expo-localization';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { Platform, useColorScheme } from 'react-native';
+import { useColorScheme } from 'react-native';
 import { format, Lang, StringKey, strings } from '../i18n/strings';
 import { palettes, Palette, ThemeName } from '../theme/tokens';
 import { loadLive, loadSnapshot, SeismicData } from '../data/usgs';
@@ -70,10 +70,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  // Native builds fetch live USGS data; on failure the snapshot stays, labeled with its real time.
-  // Web (incl. the artifact sandbox, which blocks outside requests) stays on the snapshot.
+  // Every build tries live USGS data; on failure (offline, or a sandbox that blocks outside requests)
+  // the bundled snapshot stays, labeled with its real time and never presented as live.
   useEffect(() => {
-    if (Platform.OS === 'web') return;
     let alive = true;
     const refresh = () =>
       loadLive()
