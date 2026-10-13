@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { ask, ChatError, detectTransport, MAX_INPUT, MODEL, Transport, Turn } from '../chat/engine';
 import { useApp } from '../state/AppContext';
+import { makeDemoScene } from '../data/demo';
 import { radius, space, type } from '../theme/tokens';
 import { PressScale } from '../components/motion';
 import { Txt, styles } from '../components/ui';
@@ -12,7 +13,7 @@ export interface ChatHandle {
 }
 
 export const Chat = React.forwardRef<ChatHandle, { onBusy: (b: boolean) => void }>(function Chat({ onBusy }, ref) {
-  const { c, t, lang, seismic, pendingQuestion, takePendingQuestion } = useApp();
+  const { c, t, lang, seismic, pendingQuestion, takePendingQuestion, demoEnabled, demoScenario, demoReports, now } = useApp();
   const [turns, setTurns] = useState<Turn[]>([]);
   const [draft, setDraft] = useState<string | null>(null); // streaming answer
   const [busy, setBusy] = useState(false);
@@ -41,7 +42,9 @@ export const Chat = React.forwardRef<ChatHandle, { onBusy: (b: boolean) => void 
       setDraft(null);
       ctl.current = new AbortController();
       try {
-        const answer = await ask(history, seismic, lang, { signal: ctl.current.signal, onText: setDraft, zone: 'Pueblo Nuevo' });
+        const preview = demoEnabled ? makeDemoScene(now, demoScenario) : null;
+        if (preview) preview.communityReports += demoReports;
+        const answer = await ask(history, seismic, lang, { signal: ctl.current.signal, onText: setDraft, zone: 'Pueblo Nuevo', preview });
         setTurns([...history, { role: 'assistant', content: answer.text, quick: answer.quick }]);
       } catch (e) {
         const code = e instanceof ChatError ? e.code : 'failed';
@@ -53,7 +56,7 @@ export const Chat = React.forwardRef<ChatHandle, { onBusy: (b: boolean) => void 
         setBusy(false);
       }
     },
-    [busy, turns, seismic, lang, t],
+    [busy, turns, seismic, lang, t, demoEnabled, demoScenario, demoReports, now],
   );
 
   React.useImperativeHandle(ref, () => ({ submit }), [submit]);
@@ -73,11 +76,11 @@ export const Chat = React.forwardRef<ChatHandle, { onBusy: (b: boolean) => void 
       <View style={[styles.row, { paddingHorizontal: space.xs }]}>
         <ShieldCheck size={16} color={c.muted} />
         <Txt size={type.caption + 1} tone="muted">
-          {t('chatScope', { model: transport === 'server' ? 'Haiku 5.5' : transport === 'artifact' ? 'Haiku 5.5 / Claude' : MODEL })}
+          {demoEnabled ? t('previewChatScope') : t('chatScope', { model: transport === 'server' ? 'Haiku 5.5' : transport === 'artifact' ? 'Haiku 5.5 / Claude' : MODEL })}
         </Txt>
       </View>
 
-      <Bubble role="assistant" text={t('chatIntro')} />
+      <Bubble role="assistant" text={t(demoEnabled ? 'previewChatIntro' : 'chatIntro')} />
 
       {turns.length === 0 ? (
         <View style={{ gap: space.xs }}>
@@ -86,8 +89,8 @@ export const Chat = React.forwardRef<ChatHandle, { onBusy: (b: boolean) => void 
               key={s}
               accessibilityRole="button"
               onPress={() => submit(s)}
-              disabled={busy || transport === 'none'}
-              style={{ alignSelf: 'flex-end', backgroundColor: c.nav, borderRadius: radius.pill, paddingHorizontal: space.lg, paddingVertical: space.sm, minHeight: 48, justifyContent: 'center', opacity: transport === 'none' ? 0.5 : 1 }}
+              disabled={busy || (transport === 'none' && !demoEnabled)}
+              style={{ alignSelf: 'flex-end', backgroundColor: c.nav, borderRadius: radius.pill, paddingHorizontal: space.lg, paddingVertical: space.sm, minHeight: 48, justifyContent: 'center', opacity: transport === 'none' && !demoEnabled ? 0.5 : 1 }}
             >
               <Txt size={type.body} weight="medium">
                 {s}
@@ -108,7 +111,7 @@ export const Chat = React.forwardRef<ChatHandle, { onBusy: (b: boolean) => void 
           </Txt>
         </View>
       ) : null}
-      {transport === 'none' && !error ? (
+      {transport === 'none' && !demoEnabled && !error ? (
         <Txt size={type.label} tone="muted" style={{ paddingHorizontal: space.xs }}>
           {t('chatUnavailable')}
         </Txt>

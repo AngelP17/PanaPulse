@@ -6,7 +6,7 @@ Read `DESIGN.md`, `docs/BRAND.md`, `src/theme/tokens.ts`, `docs/ANTISLOP-RN.md`,
 
 **Aesthetic:** Maintain the original premium atmospheric gradients and spacious cards. Brand palette is "Porcelana" (ink, porcelain, coral; see `docs/BRAND.md`). Navy/cyan is retired. Token, logo, nav, type and background changes need explicit approval. Do not copy Hark screens exactly or reduce the product to a generic flat utility dashboard. `no-slop-ui` is inactive reference only.
 
-**Source-first preview:** Read `docs/DEMO_MODE.md` and `src/data/sourcePolicy.ts`. Demo must never hide actual USGS, official maintenance, or even stale sourced notices. Render preview examples only for missing sources, with local labels. Never add full-screen demo replacements or mark real data as simulated.
+**Interactive product preview:** Read `docs/DEMO_MODE.md`. Preview ON is a complete end-to-end walkthrough with ONE persistent header indicator and coherent dynamic scenarios across screens and chat, not a debugger full of 'simulated' and 'no data' labels. Route, reports and scenario changes must update the preview. Historical USGS stays real and correctly dated. Preview OFF remains source-first, with unknown sources identified honestly. Never pretend preview scenario values came from official operators.
 
 **Behavior:** Do not invent transit ETAs, outages, forecast numbers or service states. Missing data is unknown, never normal. Keep Spanish / English and light / dark / auto. Preserve USGS/OAF, cautious utilities adapters and read-only guarded chat.
 

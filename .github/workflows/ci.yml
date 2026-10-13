@@ -31,3 +31,5 @@ jobs:
         run: node --stack-size=8000 node_modules/typescript/bin/tsc --noEmit
       - name: Source precedence regression
         run: node scripts/test-source-policy.cjs
+      - name: Interactive preview regression
+        run: node scripts/test-preview-flow.cjs

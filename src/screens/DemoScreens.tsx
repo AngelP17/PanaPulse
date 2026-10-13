@@ -1,37 +1,35 @@
-import { Bus, Droplets, TrainFront, Zap } from 'lucide-react-native';
+import { Bus, Droplets, Megaphone, TrainFront, Zap } from 'lucide-react-native';
 import React from 'react';
 import { ScrollView, View } from 'react-native';
 import { PressScale } from '../components/motion';
-import { Button, Card, CardHeader, LinkChip, SourceLine, StatusChip, Txt } from '../components/ui';
+import { Button, Card, CardHeader, LinkChip, Txt } from '../components/ui';
 import type { DemoScenario, DemoUtilityState, TransitId } from '../data/demo';
 import { makeDemoScene } from '../data/demo';
-import { SERVICES } from '../data/services';
 import { useApp } from '../state/AppContext';
 import { radius, space, type } from '../theme/tokens';
 
-/** One small control strip for the whole preview. Demo labels belong to example facts, not real sources. */
+/** One global Preview indicator is in the Shell; content here reads like a real product. */
 export function DemoControls() {
   const { c, t, demoScenario, setDemoScenario } = useApp();
-  const scenarios: { id: DemoScenario; label: string }[] = [
+  const choices: { id: DemoScenario; label: string }[] = [
     { id: 'everyday', label: t('demoEveryday') },
     { id: 'disruption', label: t('demoDisruption') },
     { id: 'recovery', label: t('demoRecovery') },
   ];
   return (
     <View style={{ borderRadius: radius.tile, backgroundColor: c.tileStrong, padding: space.sm, gap: space.xs }}>
-      <Txt size={type.caption + 1} weight="semibold" tone="muted">{t('demoPreviewTitle')}</Txt>
+      <Txt size={type.caption + 1} weight="semibold" tone="muted">{t('previewControlsTitle')}</Txt>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}
-        accessibilityLabel={t('demoChange')} contentContainerStyle={{ gap: space.xs }}>
-        {scenarios.map((s) => {
-          const selected = demoScenario === s.id;
+        contentContainerStyle={{ gap: space.xs }} accessibilityLabel={t('demoChange')}>
+        {choices.map(({ id, label }) => {
+          const selected = demoScenario === id;
           return (
-            <PressScale key={s.id} onPress={() => setDemoScenario(s.id)} accessibilityRole="button"
-              accessibilityState={{ selected }} accessibilityLabel={s.label}
-              style={{ minHeight: 44, justifyContent: 'center', borderRadius: radius.pill,
-                backgroundColor: selected ? c.navActive : c.card, paddingHorizontal: space.md }}>
-              <Txt size={type.label} weight="semibold" style={{ color: selected ? c.navActiveInk : c.ink }}>
-                {s.label}
-              </Txt>
+            <PressScale key={id} onPress={() => setDemoScenario(id)}
+              accessibilityRole="button" accessibilityLabel={label}
+              accessibilityState={{ selected }}
+              style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: space.md,
+                borderRadius: radius.pill, backgroundColor: selected ? c.navActive : c.card }}>
+              <Txt size={type.label} weight="semibold" style={{ color: selected ? c.navActiveInk : c.ink }}>{label}</Txt>
             </PressScale>
           );
         })}
@@ -40,91 +38,109 @@ export function DemoControls() {
   );
 }
 
-export function demoUtilityCopy(state: DemoUtilityState, service: 'power' | 'water', t: ReturnType<typeof useApp>['t']): string {
-  if (service === 'power') {
-    return state === 'interrupted' ? t('demoPowerInterrupted')
-      : state === 'recovering' ? t('demoPowerRecovering') : t('demoPowerScheduled');
-  }
-  return state === 'interrupted' ? t('demoWaterInterrupted')
-    : state === 'recovering' ? t('demoWaterRecovering') : t('demoWaterNormal');
+export function demoUtilityCopy(state: DemoUtilityState, service: 'power' | 'water', t: ReturnType<typeof useApp>['t']) {
+  if (service === 'power') return state === 'interrupted' ? t('previewPowerIssue')
+    : state === 'recovering' ? t('previewPowerRestoring') : t('previewPowerPlan');
+  return state === 'interrupted' ? t('previewWaterIssue')
+    : state === 'recovering' ? t('previewWaterRecover') : t('previewWaterGood');
 }
 
-/** Fallback example card only. Real current provider data takes precedence in the calling screen. */
-export function DemoUtilityCard({
-  service, state, onDetails,
-}: { service: 'power' | 'water'; state: DemoUtilityState; onDetails?: () => void }) {
+export function DemoUtilityCard({ service, state, onDetails }: {
+  service: 'power' | 'water'; state: DemoUtilityState; onDetails?: () => void;
+}) {
   const { c, t } = useApp();
+  const name = service === 'power' ? t('power') : t('water');
   return (
     <Card style={{ gap: space.sm }}>
       <CardHeader icon={service === 'power' ? <Zap size={20} color={c.ink} /> : <Droplets size={20} color={c.ink} />}
-        title={service === 'power' ? t('power') : t('water')} right={<StatusChip kind="demo" />} />
-      <Txt size={type.title + 3} weight="bold">{demoUtilityCopy(state, service, t)}</Txt>
-      <Txt size={type.label} tone="muted">{t('demoRealtimeDescription')}</Txt>
-      <SourceLine source={t('demoExampleProvider')} kind="demo" />
+        title={name} />
+      <Txt size={type.title + 4} weight="bold">{demoUtilityCopy(state, service, t)}</Txt>
+      <Txt size={type.label} tone="muted">{t('previewHomeCaption')}</Txt>
       {onDetails ? <Button label={t('viewServices')} onPress={onDetails} /> : null}
     </Card>
   );
 }
 
-/** A product-preview route, not a saved commute or an operator arrival estimate. */
 export function DemoCommuteCard({ onDetails }: { onDetails: () => void }) {
   const { c, t, now, demoScenario } = useApp();
   const scene = makeDemoScene(now, demoScenario);
   return (
     <Card style={{ gap: space.sm }}>
-      <CardHeader icon={<TrainFront size={20} color={c.ink} />} title={t('demoTripTitle')}
-        right={<StatusChip kind="demo" />} />
+      <CardHeader icon={<TrainFront size={20} color={c.ink} />} title={t('tripTitle')} />
       <Txt size={type.body} weight="semibold">{t('tripHome')} → {t('tripWork')}</Txt>
-      <Txt size={type.title + 3} weight="bold" numeric>
+      <Txt size={type.title + 4} weight="bold" numeric>
         {t('metroL1')} · {t('demoEta', { n: scene.transit[0].arrivalMinutes })}
       </Txt>
-      <Txt size={type.label} tone="muted">{t('demoArrival')} · {t('demoSource')}</Txt>
+      <Txt size={type.label} tone="muted">{t('previewArrival')} · {t('previewTransitMeta')}</Txt>
       <Button label={t('tabMobility')} onPress={onDetails} />
     </Card>
   );
 }
 
-/** Transit currently has no authorized live ETA integration. Preview is always individually labeled. */
 export function DemoMobility() {
-  const { c, t, demoScenario, now } = useApp();
+  const { c, t, demoScenario, now, demoCommuteSaved, setDemoCommuteSaved } = useApp();
   const scene = makeDemoScene(now, demoScenario);
-  const labels: Record<TransitId, string> = { metro1: t('metroL1'), metro2: t('metroL2'), mibus: t('mibus') };
+  const names: Record<TransitId, string> = { metro1: t('metroL1'), metro2: t('metroL2'), mibus: t('mibus') };
   return (
     <View style={{ gap: space.md }}>
       <Txt size={type.hero - 10} weight="bold" accessibilityRole="header">{t('mobilityTitle')}</Txt>
       <DemoControls />
-      <Card>
-        <CardHeader icon={<TrainFront size={20} color={c.ink} />} title={t('demoTripTitle')}
-          right={<StatusChip kind="demo" />} />
+      <Card style={{ gap: space.md }}>
+        <CardHeader icon={<TrainFront size={20} color={c.ink} />} title={t('tripTitle')} />
         <Txt size={type.body} weight="semibold">{t('tripHome')} → {t('tripWork')}</Txt>
-        <View style={{ backgroundColor: c.tile, borderRadius: radius.tile, padding: space.md, gap: space.sm }}>
+        <Txt size={type.label} tone="muted">{t(demoCommuteSaved ? 'previewRouteSaved' : 'previewRouteNotSaved')}</Txt>
+        <Button label={t(demoCommuteSaved ? 'previewRemoveRoute' : 'previewSaveRoute')}
+          onPress={() => setDemoCommuteSaved(!demoCommuteSaved)} />
+        <View style={{ backgroundColor: c.tile, padding: space.md, borderRadius: radius.tile, gap: space.md }}>
           {scene.transit.map((item) => (
-            <View key={item.id} style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: 76 }}>
+            <View key={item.id} style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: 62 }}>
               {item.id === 'mibus' ? <Bus size={22} color={c.ink} /> : <TrainFront size={22} color={c.ink} />}
               <View style={{ flex: 1, gap: 3 }}>
-                <Txt size={type.body} weight="semibold">{labels[item.id]}</Txt>
-                <Txt size={type.caption + 1} tone="muted">
-                  {item.condition === 'delayed' ? t('demoDelay', { n: item.delayMinutes })
-                    : item.condition === 'recovering' ? t('demoRecovering') : t('demoNormal')}
+                <Txt size={type.body} weight="semibold">{names[item.id]}</Txt>
+                <Txt size={type.label} tone="muted">
+                  {item.condition === 'delayed' ? t('previewTransitDelayed')
+                    : item.condition === 'recovering' ? t('previewTransitRecover')
+                    : t('previewTransitOnTime')}
                 </Txt>
               </View>
               <View style={{ alignItems: 'flex-end', gap: 2 }}>
-                <Txt size={type.title + 2} weight="bold" numeric>{t('demoEta', { n: item.arrivalMinutes })}</Txt>
-                <Txt size={type.caption} tone="muted">{t('demoArrival')}</Txt>
+                <Txt size={type.title + 3} weight="bold" numeric>{t('demoEta', { n: item.arrivalMinutes })}</Txt>
+                <Txt size={type.caption} tone="muted">{t('previewArrival')}</Txt>
               </View>
             </View>
           ))}
         </View>
-        <SourceLine source={t('demoSource')} kind="demo" detail={t('demoNotice')} />
       </Card>
+    </View>
+  );
+}
+
+export function PreviewServices() {
+  const { c, t, now, demoScenario, demoReports, go } = useApp();
+  const scene = makeDemoScene(now, demoScenario);
+  return (
+    <View style={{ gap: space.md }}>
+      <Txt size={type.hero - 10} weight="bold" accessibilityRole="header">{t('categoryServices')}</Txt>
+      <Txt size={type.label} tone="muted">{t('previewHomeCaption')}</Txt>
+      <DemoControls />
+      <DemoUtilityCard service="power" state={scene.power} />
+      <DemoUtilityCard service="water" state={scene.water} />
       <Card style={{ gap: space.sm }}>
-        <Txt size={type.body} weight="semibold">{t('realSourceLinksTitle')}</Txt>
-        <Txt size={type.label} tone="muted">{t('realTransitUnconnected')}</Txt>
+        <CardHeader icon={<Megaphone size={20} color={c.ink} />} title={t('previewSectionCommunity')} />
+        <Txt size={type.title + 3} weight="bold" numeric>
+          {t('previewReports', { n: scene.communityReports + demoReports })}
+        </Txt>
+        <Button label={t('reportHomeAction')} onPress={() => go('report')} />
+      </Card>
+      <Card style={{ gap: space.xs }}>
+        <Txt size={type.label} weight="semibold" tone="muted">{t('realSourceLinksTitle')}</Txt>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.xs }}>
-          <LinkChip label="Metro de Panamá" url={SERVICES.metro_l1.officialUrl} />
-          <LinkChip label="MiBus" url={SERVICES.mibus.officialUrl} />
+          <LinkChip label="Naturgy" url="https://www.naturgy.com.pa/cronogramas-mantenimiento/" />
+          <LinkChip label="ENSA" url="https://ensa.com.pa/mantenimientos-programados/" />
+          <LinkChip label="IDAAN" url="https://www.idaan.gob.pa/" />
         </View>
       </Card>
+      <Button label={t('previewSourceDetails')} onPress={() => go('settings')} />
     </View>
   );
 }

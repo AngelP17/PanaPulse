@@ -89,7 +89,7 @@ export function Settings() {
                 { id: 'recovery', label: t('demoRecovery') },
               ]}
             />
-            <Txt size={type.label} tone="muted">{t('demoBannerDetail')}</Txt>
+
           </>
         ) : null}
       </Card>

@@ -29,10 +29,10 @@ async function loadReports(): Promise<LocalReport[]> {
 }
 
 export function Report() {
-  const { c, t, lang, now, demoEnabled, demoScenario } = useApp();
+  const { c, t, lang, now, demoEnabled, demoScenario, demoReports, addDemoReport } = useApp();
   const demo = makeDemoScene(now, demoScenario);
   // Same scenario/count as Home and Services, so demo surfaces cannot contradict each other.
-  const demoCommunityCount = demo.communityReports;
+  const demoCommunityCount = demo.communityReports + demoReports;
   const [service, setService] = useState<'electricity' | 'water'>('electricity');
   const [where, setWhere] = useState('Pueblo Nuevo');
   const [note, setNote] = useState('');
@@ -44,6 +44,13 @@ export function Report() {
   }, []);
 
   const submit = async () => {
+    if (demoEnabled) {
+      addDemoReport();
+      setSaved(true);
+      setNote('');
+      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      return;
+    }
     const r: LocalReport = { service, corregimiento: where, note: note.trim().slice(0, 200), at: Date.now() };
     const next = [r, ...mine].slice(0, 20);
     setMine(next);
@@ -65,21 +72,20 @@ export function Report() {
           {t('reportTitle')}
         </Txt>
         <Txt size={type.body} tone="muted">
-          {t('reportLead')}
+          {t(demoEnabled ? 'previewReportHint' : 'reportLead')}
         </Txt>
       </View>
 
       {demoEnabled ? (
         <Card style={{ gap: space.sm }}>
-          <StatusChip kind="demo" />
           <Txt size={type.title} weight="semibold">
-            {t('demoNeighborReports', { n: demoCommunityCount })}
+            {t('previewReports', { n: demoCommunityCount })}
           </Txt>
           <Txt size={type.body} tone="muted">
-            {demo.water === 'interrupted' ? t('demoWaterInterrupted') :
-              demo.power === 'interrupted' ? t('demoPowerInterrupted') : t('demoWaterNormal')}
+            {demo.water === 'interrupted' ? t('previewWaterIssue') :
+              demo.power === 'interrupted' ? t('previewPowerIssue') : t('previewWaterGood')}
           </Txt>
-          <Txt size={type.caption + 1} tone="muted">{t('demoNotice')}</Txt>
+
         </Card>
       ) : null}
       {saved ? (
@@ -87,11 +93,11 @@ export function Report() {
           <View style={styles.row}>
             <CheckCircle2 size={24} color={c.official} />
             <Txt size={type.title} weight="semibold" style={{ flex: 1 }}>
-              {t('saved')}
+              {t(demoEnabled ? 'previewReportSaved' : 'saved')}
             </Txt>
           </View>
           <Txt size={type.body} tone="muted">
-            {t('savedBody')}
+            {t(demoEnabled ? 'previewReportSavedBody' : 'savedBody')}
           </Txt>
           <Button label={t('newOne')} onPress={() => setSaved(false)} />
         </Card>

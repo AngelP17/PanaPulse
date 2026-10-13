@@ -1,37 +1,32 @@
-# PanaPulse: source-first preview (hybrid)
+# PanaPulse interactive product preview
 
-A source-first, bilingual consumer UI. This **replaces** the previous full-screen demo implementation.
+The preview showcases the **finished-product interaction model** using coherent, locally generated scenarios, not a debugging screen.
 
-## Why
-Two earlier mistakes were corrected:
-1. Preview cards were added above live-source “SIN DATOS” cards, contradicting the sample.
-2. Every screen was then replaced with fiction, hiding authentic USGS earthquake observations.
+## Product behavior
+- A single persistent, tappable `VISTA PREVIA · {escenario}` indicator appears below the app header on every screen when enabled. Tapping opens Settings. This distinguishes sample service data without repeating disclaimers on each tile.
+- Three mutually consistent scenarios: Everyday / Disruptions / Recovery. Selecting one updates Home, Mobility, Essential Services, Reports, and the built-in assistant.
+- **Home** shows a scenario-aware primary update, organized service cards, an optional saved commute, community activity, and a **separate genuine USGS record** attributed with its actual original timestamp. The scenario does not forge a USGS event or forecast.
+- **Mobility** shows advancing Metro/MiBus arrival countdowns and allows a route to be saved/removed. The Home commute responds to this action.
+- **Services** shows detailed power and water scenario states with a community shortcut. Real provider health and links remain accessible in Settings.
+- **Reports** allows submitting a local preview report, incrementing the community report number everywhere. Preview reports are never stored as actual reports or sent to a production backend.
+- **Ask PanaPulse** uses the selected scenario for questions about transit, utilities and neighborhood reports. When asked about earthquakes, it answers from actual USGS data, never the fictional scenarios. Unknown preview questions receive a concise scenario overview instead of a generic "feed unavailable".
+- The two languages and existing Porcelana Light/Dark/Auto modes remain supported.
 
-Both are incorrect. Samples should be optional **per missing data source**, not an alternative reality for the app.
+## Source distinction
+- Preview is a **controlled product walkthrough**, not current Panama service telemetry. Keep the header preview indicator visible in all preview screenshots and preserve source integrity in the underlying code.
+- The actual USGS catalog and archived aftershock products are never altered. Old USGS forecasts must not be described as future periods starting now.
+- Live-source mode (preview OFF) remains honest and unmodified. The Settings "Data sources" section explains actual connectivity and official channels.
+- No official IDAAN, MiBus, Metro, ENSA, or Naturgy status is inferred from a fictional preview record.
+- Real notices from the power collector can be inspected when leaving preview; the deployment of that collector remains a separate task.
 
-## Rules
-1. **Real and fresh** → show official fact with provider, date/time, and source link.
-2. **Real but stale** → show the last-known official fact with its *original date/time* and stale label; do not refresh or extrapolate it.
-3. **No usable real feed + preview enabled** → show a dynamically changing fictional example, tagged **SIMULADO / SIMULATED on that card**.
-4. **No usable real feed + preview disabled** → show honest “SIN DATOS” with official link.
-5. An official scheduled-maintenance notice does **not** assert power availability, even if recent.
-6. No fake USGS earthquake or forecast may override real catalog entries. Quakes and the earthquake hero remain real USGS or dated official snapshot in **every** mode.
-7. Reports entered by the user and the chat use actual local/sourced data, never demo fixtures.
+## Acceptance test
+1. Enable preview and set Disruptions. Open Home, Services, Mobility, Reports and Ask. The same interruption, water and transit context should be visible everywhere with **no duplicated offline disclaimers**.
+2. Ask `¿Cómo está el Metro?` and `¿Hay cortes de luz?`. Receive scenario-grounded replies, not "no data connected".
+3. Create a report and confirm the count increases in Home and Services. Turn preview off and confirm the report has not been written to real community data.
+4. Remove your saved commute in Mobility, verify Home removes it, save it again and verify Home restores it.
+5. Change to Recovery, verify displayed conditions and chat change. Wait a minute and confirm transit countdown changes.
+6. Open Sismos and verify USGS values and issue dates are always genuine, including when data is archived.
+7. Check Light/Dark/Auto, Spanish/English, narrow phone widths, large font sizes, Reduce Motion, and mobile browser safe areas.
+8. Run TypeScript and backend tests in GitHub CI and the deterministic preview regression test.
 
-## Specific screens
-- **Home:** USGS hero and source time always real. The latest recorded magnitude/location is visible even with a dated snapshot, but explicitly labeled stale. The power card uses official current or stale data if present; an example only if the source is missing. An optional example commute is clearly marked.
-- **Sismos:** always actual USGS earthquakes/OAF. If cached/snapshot, the forecast and source are visibly **stale**; do not treat the archived probabilities as current.
-- **Servicios:** same source-first policy for ENSA/Naturgy scheduled notices; IDAAN is a locally tagged example only when preview is enabled. Official provider links remain accessible in all modes.
-- **Movilidad:** no verified live Metro/MiBus times yet; in preview, examples are labeled and grouped; official operator links remain accessible.
-- **Reportes:** fictional neighborhood count is isolated from saved user reports.
-- **Ajustes:** source health and timestamps stay real regardless of preview selection.
-
-The component selection for scheduled electricity is implemented centrally in `src/data/sourcePolicy.ts` and checked by `node scripts/test-source-policy.cjs`.
-
-## Acceptance
-- Toggle preview while online: Home and Sismos USGS **must not change to fictional earthquakes**.
-- Set power source to current/stale/missing and toggle preview: current/stale are always preserved; only missing becomes a demo example.
-- Every fictional ETA or outage is labeled SIMULATED inside its card. The top-level UI is not labeled wholly fictional.
-- Verify in ES/EN, Auto/Light/Dark, 360dp width, large text, reduced motion.
-- Run GitHub CI, and capture native screenshots before release.
-- Deployment is separate: the electricity collector, IDAAN feed and authorized transit integrations are NOT made live by turning on preview.
+**Native-device screenshot testing and actual backend deployments remain outstanding.**
