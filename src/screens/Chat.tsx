@@ -1,9 +1,10 @@
 import { ShieldCheck } from 'lucide-react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 import { ask, ChatError, detectTransport, MAX_INPUT, MODEL, Transport, Turn } from '../chat/engine';
 import { useApp } from '../state/AppContext';
 import { radius, space, type } from '../theme/tokens';
+import { PressScale } from '../components/motion';
 import { Txt, styles } from '../components/ui';
 
 export interface ChatHandle {
@@ -81,19 +82,17 @@ export const Chat = React.forwardRef<ChatHandle, { onBusy: (b: boolean) => void 
       {turns.length === 0 ? (
         <View style={{ gap: space.xs }}>
           {suggestions.map((s) => (
-            <Pressable
+            <PressScale
               key={s}
               accessibilityRole="button"
               onPress={() => submit(s)}
               disabled={busy || transport === 'none'}
-              style={({ pressed }) => [
-                { alignSelf: 'flex-end', backgroundColor: c.nav, borderRadius: radius.pill, paddingHorizontal: space.lg, paddingVertical: space.sm, minHeight: 48, justifyContent: 'center', opacity: pressed ? 0.75 : transport === 'none' ? 0.5 : 1 },
-              ]}
+              style={{ alignSelf: 'flex-end', backgroundColor: c.nav, borderRadius: radius.pill, paddingHorizontal: space.lg, paddingVertical: space.sm, minHeight: 48, justifyContent: 'center', opacity: transport === 'none' ? 0.5 : 1 }}
             >
               <Txt size={type.body} weight="medium">
                 {s}
               </Txt>
-            </Pressable>
+            </PressScale>
           ))}
         </View>
       ) : null}

@@ -34,6 +34,17 @@ Every data element includes source and update context; statuses distinguish offi
 
 Core branding (logo, mark colors, wordmark), navigation, typography, background treatment and any design-system token in `src/theme/tokens.ts`. Ordinary feature work does not. Capture before/after screenshots for any visual change.
 
+## Motion
+
+Motion explains or confirms; it never decorates. Built with Reanimated (`src/components/motion.tsx`).
+
+- **Press feedback:** button-like pills and choice cards use `PressScale`: scale 0.97 on press-in, 120 ms, strong ease-out, commit on press-out. Full-width list rows highlight instead of scaling.
+- **No animation** on the bottom nav or tab switches (used 100+ times a day).
+- **Pulse rail draw-in:** once per app session, 560 ms ease-out, left to right, ending on the quake spike. Returning to Home shows it complete.
+- **Haptics:** one success haptic when a report is saved, always paired with the visible confirmation. Never on scroll, entrances or navigation.
+- **Reduce Motion:** scale and draw-in are dropped; presses dim instead.
+- Never `ease-in`, never `scale(0)`, never animate layout properties except an absolute, fixed-content clip.
+
 ## Agent precedence
 
 1. Explicit product direction and approved screenshots.

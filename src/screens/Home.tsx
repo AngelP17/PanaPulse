@@ -5,7 +5,7 @@ import { PulseRail } from '../components/pulse';
 import { Button, Card, CardHeader, SourceLine, StatusChip, Tile, TileGrid, Txt, styles } from '../components/ui';
 import { ago, clock, dayStamp, longDate, pct, place } from '../data/format';
 import { bin } from '../data/usgs';
-import { usePowerMaintenance } from '../data/maintenance';
+import { powerFeedState, usePowerMaintenance } from '../data/maintenance';
 import { SectionHeading } from '../components/section';
 import { useApp } from '../state/AppContext';
 import { radius, space, type } from '../theme/tokens';
@@ -17,7 +17,8 @@ export function Home({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
   const { c, t, lang, seismic, now, go } = useApp();
   const { data: maintenance, state: maintenanceState } = usePowerMaintenance('Pueblo Nuevo');
   const plannedCuts = maintenance?.notices ?? [];
-  const currentSource = maintenanceState === 'ready' && maintenance?.sources.every((s) => s.freshness === 'current') === true;
+  const power = powerFeedState(maintenance, maintenanceState);
+  const currentSource = power === 'scheduled';
   const f = seismic.forecast;
   const main = useMemo(() => seismic.earthquakes.find((q) => q.id === f?.mainshockId) ?? null, [seismic, f]);
   const recent = seismic.earthquakes.slice(0, 3);
@@ -50,7 +51,7 @@ export function Home({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
         <CardHeader icon={<Activity size={18} color={c.accent} />} title={t('pulseTitle')} />
         <PulseRail
           nodes={[
-            { label: t('power'), status: currentSource ? (plannedCuts.length ? t('scheduledBrief') : t('pulseNoPlans')) : t('pulsePowerStale'), state: currentSource ? 'scheduled' : 'stale' },
+            { label: t('power'), status: power === 'scheduled' ? (plannedCuts.length ? t('scheduledBrief') : t('pulseNoPlans')) : power === 'stale' ? t('pulsePowerStale') : t('pulseNone'), state: power },
             { label: t('water'), status: t('pulseNone'), state: 'none' },
             { label: 'Metro', status: t('pulseNoFeed'), state: 'none' },
             { label: 'MiBus', status: t('pulseNoFeed'), state: 'none' },
@@ -67,7 +68,7 @@ export function Home({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
       <View style={{ flexDirection: 'row', gap: space.sm }}>
         <Card style={{ flex: 1, minWidth: 0, padding: space.md, gap: space.xs }}>
           <View style={styles.row}>
-            <Zap size={18} color={c.stale} />
+            <Zap size={18} color={power === 'stale' ? c.stale : power === 'scheduled' ? c.ink : c.muted} />
             <Txt size={type.body} weight="bold">
               {t('power')}
             </Txt>
@@ -75,12 +76,14 @@ export function Home({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
           <Txt size={type.label} tone="muted" numberOfLines={1}>
             {t('powerCardProvider')}
           </Txt>
-          <Txt size={type.title} weight="bold" style={{ color: c.stale }}>
-            {currentSource ? (plannedCuts.length ? t('scheduledCount', { n: plannedCuts.length }) : t('noPlannedNotices')) : t('maintenanceUnavailable')}
+          <Txt size={type.title} weight="bold" style={{ color: power === 'stale' ? c.stale : power === 'scheduled' ? c.ink : c.muted }}>
+            {power === 'scheduled'
+              ? plannedCuts.length ? t('scheduledCount', { n: plannedCuts.length }) : t('noPlannedNotices')
+              : power === 'stale' ? t('powerStale') : t('pulseNone')}
           </Txt>
-          <StatusChip kind={currentSource && plannedCuts.length ? "official" : "unavailable"} />
+          <StatusChip kind={power === 'scheduled' ? 'official' : power === 'stale' ? 'stale' : 'unavailable'} />
           <Txt size={type.caption} tone="muted">
-            {currentSource ? t('maintenanceOnly') : t('maintenanceUnavailable')}
+            {power === 'scheduled' ? t('maintenanceOnly') : power === 'stale' ? t('maintenanceUnavailable') : t('powerNoFeed')}
           </Txt>
         </Card>
         <Card style={{ flex: 1, minWidth: 0, padding: space.md, gap: space.xs }}>

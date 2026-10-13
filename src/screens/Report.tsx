@@ -1,11 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Haptics from 'expo-haptics';
 import { CheckCircle2, Droplets, Zap } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
-import { Pressable, ScrollView, TextInput, View } from 'react-native';
+import { Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
 import { CORREGIMIENTOS } from '../data/services';
 import { ago } from '../data/format';
 import { useApp } from '../state/AppContext';
 import { font, radius, space, type } from '../theme/tokens';
+import { PressScale } from '../components/motion';
 import { Button, Card, StatusChip, Txt, styles } from '../components/ui';
 
 interface LocalReport {
@@ -48,6 +50,8 @@ export function Report() {
     }
     setSaved(true);
     setNote('');
+    // One haptic for the one committed action, alongside the visible "saved" card. Never the only feedback.
+    if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
   };
 
   return (
@@ -84,20 +88,18 @@ export function Report() {
               const active = service === s;
               const Icon = s === 'electricity' ? Zap : Droplets;
               return (
-                <Pressable
+                <PressScale
                   key={s}
                   accessibilityRole="radio"
                   accessibilityState={{ selected: active }}
                   onPress={() => setService(s)}
-                  style={({ pressed }) => [
-                    { flex: 1, minHeight: 88, borderRadius: radius.tile, padding: space.md, gap: 8, backgroundColor: active ? c.navActive : c.tile, opacity: pressed ? 0.8 : 1 },
-                  ]}
+                  style={{ flex: 1, minHeight: 88, borderRadius: radius.tile, padding: space.md, gap: 8, backgroundColor: active ? c.navActive : c.tile }}
                 >
                   <Icon size={22} color={active ? c.navActiveInk : c.ink} />
                   <Txt size={type.title} weight="semibold" style={{ color: active ? c.navActiveInk : c.ink }}>
                     {s === 'electricity' ? t('power') : t('water')}
                   </Txt>
-                </Pressable>
+                </PressScale>
               );
             })}
           </View>
