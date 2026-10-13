@@ -4,7 +4,9 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { BackHandler, KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomNav, Composer, Header } from './components/chrome';
-import { Scene } from './components/ui';
+import { Scene, Txt } from './components/ui';
+import { PressScale } from './components/motion';
+import { radius, type } from './theme/tokens';
 import { Chat, ChatHandle } from './screens/Chat';
 import { Home } from './screens/Home';
 import { Mobility } from './screens/Mobility';
@@ -16,7 +18,7 @@ import { AppProvider, useApp } from './state/AppContext';
 import { space } from './theme/tokens';
 
 function Shell() {
-  const { tab, go, theme, askFromHome } = useApp();
+  const { tab, go, theme, askFromHome, demoEnabled, demoScenario, t, c } = useApp();
   const insets = useSafeAreaInsets();
   const [quakeId, setQuakeId] = useState<string | null>(null);
   const [chatBusy, setChatBusy] = useState(false);
@@ -59,6 +61,12 @@ function Shell() {
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           {/* Column layout: header, content, (chat composer), nav. Nothing floats over content. */}
           <Header />
+          {demoEnabled ? (
+            <PressScale accessibilityRole="button" accessibilityLabel={t('previewBadgeScenario', { scenario: t(demoScenario === 'everyday' ? 'demoEveryday' : demoScenario === 'disruption' ? 'demoDisruption' : 'demoRecovery') })}
+              onPress={() => go('settings')} style={{ alignSelf: 'flex-start', marginHorizontal: space.lg, marginBottom: 4, paddingHorizontal: space.md, minHeight: 30, justifyContent: 'center', borderRadius: radius.pill, backgroundColor: c.tileStrong }}>
+              <Txt size={type.caption + 1} weight="semibold">{t('previewBadgeScenario', { scenario: t(demoScenario === 'everyday' ? 'demoEveryday' : demoScenario === 'disruption' ? 'demoDisruption' : 'demoRecovery') })}</Txt>
+            </PressScale>
+          ) : null}
           <ScrollView
             ref={scrollRef}
             style={{ flex: 1 }}

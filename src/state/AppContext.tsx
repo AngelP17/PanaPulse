@@ -21,6 +21,8 @@ interface AppState {
   setDemoScenario: (s: DemoScenario) => void;
   demoReports: number;
   addDemoReport: () => void;
+  demoCommuteSaved: boolean;
+  setDemoCommuteSaved: (value: boolean) => void;
   theme: ThemeName;
   c: Palette;
   t: (key: StringKey, vars?: Record<string, string | number>) => string;
@@ -65,6 +67,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [demoEnabled, setDemoEnabled] = useState(false);
   const [demoScenario, setDemoScenario] = useState<DemoScenario>('everyday');
   const [demoReports, setDemoReports] = useState(0);
+  const [demoCommuteSaved, setDemoCommuteSaved] = useState(true);
   const [prefsLoaded, setPrefsLoaded] = useState(false);
   const [tab, setTab] = useState<Tab>('home');
   const [seismic, setSeismic] = useState<SeismicData>(() => loadSnapshot());
@@ -123,6 +126,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setDemoScenario,
       demoReports,
       addDemoReport,
+      demoCommuteSaved,
+      setDemoCommuteSaved,
       theme,
       c: palettes[theme],
       t: (key, vars) => format(strings[lang][key], vars),
@@ -141,7 +146,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         return q;
       },
     }),
-    [lang, setLang, themePref, setThemePref, demoEnabled, demoScenario, demoReports, addDemoReport, theme, tab, seismic, now, pendingQuestion],
+    [lang, setLang, themePref, setThemePref, demoEnabled, demoScenario, demoReports, addDemoReport, demoCommuteSaved, theme, tab, seismic, now, pendingQuestion],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
