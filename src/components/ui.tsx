@@ -1,6 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import React from 'react';
-import { Linking, Pressable, StyleSheet, Text, TextProps, View, ViewProps, ViewStyle } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Animated, Linking, Pressable, StyleSheet, Text, TextProps, View, ViewProps, ViewStyle } from 'react-native';
+import { useReducedMotion } from 'react-native-reanimated';
 import { useApp } from '../state/AppContext';
 import { PressScale } from './motion';
 import { font, radius, space, type } from '../theme/tokens';
@@ -33,12 +34,32 @@ export function Txt({
   );
 }
 
+/** Gentle Porcelana gradient crossfade. Disabled for Reduce Motion. */
 export function Scene({ children }: { children: React.ReactNode }) {
   const { c } = useApp();
+  const reduced = useReducedMotion();
+  const [previous, setPrevious] = useState(c.sky);
+  const last = useRef(c.sky);
+  const fade = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    if (last.current === c.sky) return;
+    setPrevious(last.current);
+    last.current = c.sky;
+    fade.stopAnimation();
+    fade.setValue(reduced ? 1 : 0);
+    if (!reduced) {
+      Animated.timing(fade, { toValue: 1, duration: 330, useNativeDriver: true }).start();
+    }
+  }, [c.sky, fade, reduced]);
+  const locations: [number, number, number, number] = [0, 0.38, 0.7, 1];
   return (
-    <LinearGradient colors={c.sky as unknown as [string, string, ...string[]]} locations={[0, 0.38, 0.7, 1]} style={StyleSheet.absoluteFill}>
-      {children}
-    </LinearGradient>
+    <View style={{ flex: 1 }}>
+      <LinearGradient colors={previous as unknown as [string, string, ...string[]]} locations={locations} style={StyleSheet.absoluteFill} />
+      <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { opacity: fade }]}>
+        <LinearGradient colors={c.sky as unknown as [string, string, ...string[]]} locations={locations} style={{ flex: 1 }} />
+      </Animated.View>
+      <View style={{ flex: 1 }}>{children}</View>
+    </View>
   );
 }
 

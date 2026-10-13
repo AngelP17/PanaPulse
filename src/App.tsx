@@ -73,15 +73,20 @@ function Shell() {
             }}
             keyboardShouldPersistTaps="handled"
           >
-            {tab === 'home' && <Home onOpenQuake={setQuakeId} />}
-            {tab === 'mobility' && <Mobility />}
-            {tab === 'services' && <Services />}
-            {tab === 'quakes' && <Quakes onOpenQuake={setQuakeId} />}
+            {tab !== 'chat' ? (
+              // No tab-switch animation: tabs are switched constantly (DESIGN.md, Motion).
+              <View key={tab} style={{ gap: space.md }}>
+                {tab === 'home' && <Home onOpenQuake={setQuakeId} />}
+                {tab === 'mobility' && <Mobility />}
+                {tab === 'services' && <Services />}
+                {tab === 'quakes' && <Quakes onOpenQuake={setQuakeId} />}
+                {tab === 'report' && <Report />}
+                {tab === 'settings' && <Settings />}
+              </View>
+            ) : null}
             <View style={{ display: tab === 'chat' ? 'flex' : 'none' }}>
               <Chat ref={chatRef} onBusy={setChatBusy} />
             </View>
-            {tab === 'report' && <Report />}
-            {tab === 'settings' && <Settings />}
           </ScrollView>
           {tab === 'chat' ? (
             <View style={{ paddingHorizontal: space.md, paddingBottom: space.xxs, maxWidth: 560, width: '100%', alignSelf: 'center' }}>

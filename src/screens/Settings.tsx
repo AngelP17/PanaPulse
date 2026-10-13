@@ -4,6 +4,7 @@ import { Lang } from '../i18n/strings';
 import { ThemePref, useApp } from '../state/AppContext';
 import { radius, space, type } from '../theme/tokens';
 import { Card, Txt } from '../components/ui';
+import { DemoScenario } from '../data/demo';
 
 function Segmented<T extends string>({ value, options, onChange }: { value: T; options: { id: T; label: string }[]; onChange: (v: T) => void }) {
   const { c } = useApp();
@@ -30,7 +31,7 @@ function Segmented<T extends string>({ value, options, onChange }: { value: T; o
 }
 
 export function Settings() {
-  const { t, lang, setLang, themePref, setThemePref } = useApp();
+  const { t, lang, setLang, themePref, setThemePref, demoEnabled, setDemoEnabled, demoScenario, setDemoScenario } = useApp();
   return (
     <View style={{ gap: space.md }}>
       <Txt size={type.hero - 10} weight="bold" style={{ paddingHorizontal: space.xs }} accessibilityRole="header">
@@ -60,6 +61,30 @@ export function Settings() {
             { id: 'dark', label: t('themeDark') },
           ]}
         />
+      </Card>
+      <Card>
+        <Txt size={type.title} weight="semibold">{t('demoSettingsTitle')}</Txt>
+        <Txt size={type.body} tone="muted">{t('demoSettingsDescription')}</Txt>
+        <Segmented<'on' | 'off'>
+          value={demoEnabled ? 'on' : 'off'}
+          onChange={(value) => setDemoEnabled(value === 'on')}
+          options={[{ id: 'off', label: t('demoOff') }, { id: 'on', label: t('demoOn') }]}
+        />
+        {demoEnabled ? (
+          <>
+            <Txt size={type.body} weight="semibold">{t('demoChange')}</Txt>
+            <Segmented<DemoScenario>
+              value={demoScenario}
+              onChange={setDemoScenario}
+              options={[
+                { id: 'everyday', label: t('demoEveryday') },
+                { id: 'disruption', label: t('demoDisruption') },
+                { id: 'recovery', label: t('demoRecovery') },
+              ]}
+            />
+            <Txt size={type.label} tone="muted">{t('demoBannerDetail')}</Txt>
+          </>
+        ) : null}
       </Card>
       <Card>
         <Txt size={type.body} weight="semibold">

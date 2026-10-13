@@ -3,13 +3,17 @@ import React from 'react';
 import { Linking, View } from 'react-native';
 import { Button, Card, CardHeader, StatusChip, Txt } from '../components/ui';
 import { SectionHeading } from '../components/section';
+import { makeDemoScene } from '../data/demo';
 import { usePowerMaintenance, powerFeedState } from '../data/maintenance';
 import { useApp } from '../state/AppContext';
 import { radius, space, type } from '../theme/tokens';
 
 const ZONE = 'Pueblo Nuevo';
 export function Services() {
-  const { c, t, lang, go } = useApp();
+  const { c, t, lang, go, demoEnabled, demoScenario, now } = useApp();
+  const demo = makeDemoScene(now, demoScenario);
+  const demoPowerText = demo.power === 'interrupted' ? t('demoPowerInterrupted') : demo.power === 'recovering' ? t('demoPowerRecovering') : t('demoPowerScheduled');
+  const demoWaterText = demo.water === 'interrupted' ? t('demoWaterInterrupted') : demo.water === 'recovering' ? t('demoWaterRecovering') : t('demoWaterNormal');
   const { data, state } = usePowerMaintenance(ZONE);
   const current = powerFeedState(data, state) === 'scheduled';
   const notices = data?.notices ?? [];
@@ -22,6 +26,25 @@ export function Services() {
         <Txt size={type.hero - 10} weight="bold" accessibilityRole="header">{t('categoryServices')}</Txt>
         <Txt size={type.body} tone="muted">{ZONE} · {t('serviceScope')}</Txt>
       </View>
+      {demoEnabled ? (
+        <Card style={{ gap: space.sm }}>
+          <Txt size={type.label} weight="bold">{t('demoBanner')}</Txt>
+          <Txt size={type.caption + 1} tone="muted">{t('demoBannerDetail')}</Txt>
+          <View style={{ flexDirection: 'row', gap: space.sm }}>
+            <View style={{ flex: 1, backgroundColor: c.tile, borderRadius: radius.tile, padding: space.md, gap: 6 }}>
+              <Zap size={20} color={c.ink} />
+              <Txt size={type.label} weight="semibold">{t('power')}</Txt>
+              <Txt size={type.body} weight="bold">{demoPowerText}</Txt>
+            </View>
+            <View style={{ flex: 1, backgroundColor: c.tile, borderRadius: radius.tile, padding: space.md, gap: 6 }}>
+              <Droplets size={20} color={c.ink} />
+              <Txt size={type.label} weight="semibold">{t('water')}</Txt>
+              <Txt size={type.body} weight="bold">{demoWaterText}</Txt>
+            </View>
+          </View>
+          <Txt size={type.caption + 1} tone="muted">{t('demoSource')}</Txt>
+        </Card>
+      ) : null}
       <SectionHeading title={t('scheduledMaintenance')} subtitle={t('scheduledOnlyCaption')} />
       <Card>
         <CardHeader icon={<Zap size={19} color={c.stale} />} title={t('power')}
