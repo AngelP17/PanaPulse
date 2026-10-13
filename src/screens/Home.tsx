@@ -7,6 +7,7 @@ import { Button, Card, CardHeader, SourceLine, Txt, styles } from '../components
 import { ago, clock, dayKey, dayStamp, place } from '../data/format';
 import { joinList, locality, offlineSources, OfflineSource, seismicHero } from '../data/glance';
 import { DemoCommuteCard, DemoControls, DemoUtilityCard, demoUtilityCopy } from './DemoScreens';
+import { PreviewHome } from './PreviewHome';
 import { makeDemoScene } from '../data/demo';
 import { powerFeedState, usePowerMaintenance } from '../data/maintenance';
 import { powerSurfaceSource } from '../data/sourcePolicy';
@@ -107,6 +108,8 @@ export function Home({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
     : power === 'stale' ? t('powerStale')
     : maintenanceState === 'loading' ? t('loadingMaintenance')
     : t('powerNoFeed');
+
+  if (demoEnabled) return <PreviewHome onOpenQuake={onOpenQuake} />;
 
   return (
     <View style={{ gap: space.md }}>
