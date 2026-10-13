@@ -1,32 +1,31 @@
-# PanaPulse interactive demo mode
+# PanaPulse Demo Mode: consistent scenario surfaces
 
-A deliberately **opt-in, local simulation**, used to show what future Metro, MiBus, electricity, water, and community-report screens could look like with connected data. It is **not** a substitute for a verified feed.
+Demo Mode is a **separate, explicit presentation layer**, not a live data feed. It is off by default and can be enabled in Settings.
 
-## Controls
-- Settings → Demo preview → Enabled.
-- Everyday, Disruptions, and Recovery choose three distinct deterministic scenarios.
-- Arrival estimates count down as the app clock advances; these numbers are fictional and are not estimates from transit providers.
-- Power/water states and community report counts are fabricated solely for UI demonstrations. Counts change with the scenario and five-minute time windows.
-- Simulator state and preference are stored locally; default remains OFF.
-- Every affected screen carries the explicit bilingual DEMO/SIMULATED banner.
-- Quake feed stays independently sourced from live USGS data or clearly dated bundled USGS snapshots. Simulator does not modify earthquake records.
-- Chat receives real app context, not demo fixtures. Reports submitted by the user remain locally saved and are not combined with simulated community reports.
+## Why this change was necessary
+Previously the simulator added sample cards above the real-source cards. That made Home, Services and Mobility display `SIMULATED` next to `NO DATA` because the underlying source adapters were still disconnected.
 
-## Safety acceptance
-1. Open Settings with Demo disabled; verify fake arrivals and statuses are absent.
-2. Enable Demo. Test all scenarios on Home, Mobility, Services and Reports, ES/EN and Light/Dark.
-3. Wait across one minute boundary; countdown values must update.
-4. Switch Demo OFF. Only real/unavailable source state should remain.
-5. Observe explicit simulated notices on every demo tile; no CTA should imply a fictional outage was confirmed.
-6. Toggle Automatic, Light, Dark on Android and iOS, including system Reduce Motion.
-7. Check narrow widths, 200% font scale, and TalkBack/VoiceOver. Native screenshots pending.
+Now, when Demo Mode is enabled, Home, Mobility, Services and Quakes **render demo-only category views**. Reports has a separate demo report panel while retaining the real local report form. The live-source views are restored when Demo Mode is disabled.
 
-## Implementation
-- Pure fixture generator: `src/data/demo.ts`, bounded deterministic values.
-- Preferences: `src/state/AppContext.tsx`.
-- UI: `Home`, `Mobility`, `Services`, `Report`, `Settings`.
-- Motion: restrained screen fade and theme gradient crossfade.
-- Real provider status is never overwritten, and user reports aren't populated with the simulation.
+## Shared scenarios
+`src/data/demo.ts` generates deterministic scenes using the existing clock and selected scenario:
+- **Everyday:** sample scheduled maintenance, stable transit estimates, example water situation, small simulated report count, and a fictional earthquake.
+- **Disruptions:** fictional delays, outage and low pressure, higher report count, and a fictional earthquake.
+- **Recovery:** simulated transit and utility restoration, intermediate report count and a fictional earthquake.
 
-## Next production steps
-Connect licensed transit feeds and verified official power/water notice sources, deploy backend collectors, add a reliable user-location picker, and implement community report aggregation with abuse protections. Do not remove demo labels or substitute simulated data as production facts.
+All demo screens display `MODO DEMO · DATOS SIMULADOS` / `DEMO MODE · SIMULATED DATA` and render **SIMULADO / SIMULATED** status chips. The quake is a fictional example, not an actual USGS event, and does not deep-link to a nonexistent official earthquake. Official forecast probabilities are not invented. These examples must not be used for any safety or travel decisions.
+
+## Separation rules
+- Never assign a real provider verification state to a demo value.
+- Simulated notices and ETAs are not written to official-source state or backend ingestion tables.
+- Reports created by the user remain distinct from demonstration community counts.
+- Chat continues to use actual sourced context and is not a simulation of the demo panels.
+- Keep Porcelana, Spanish/English, native navigation, and Reduce Motion support unchanged.
+
+## Acceptance checks
+1. Enable Demo and view **Home, Mobility, Quakes, Services, Reports**. No mock panel should be accompanied by a contradictory real `SIN DATOS` panel.
+2. Switch Everyday → Disruptions → Recovery. The same scenario must appear across tabs. Ensure reports counts agree everywhere.
+3. Wait one minute; fictional transit ETAs should change predictably.
+4. Turn Demo off; the original real-source views and honest unavailable states return.
+5. Test ES/EN, dark/light/auto, Android/iOS, narrow widths, large font sizes and Reduce Motion.
+6. Run CI TypeScript and backend tests; screenshots and real-device testing are required before final release.
