@@ -11,6 +11,7 @@ import { Mobility } from './screens/Mobility';
 import { QuakeSheet, Quakes } from './screens/Quakes';
 import { Report } from './screens/Report';
 import { Settings } from './screens/Settings';
+import { Services } from './screens/Services';
 import { AppProvider, useApp } from './state/AppContext';
 import { space } from './theme/tokens';
 
@@ -74,6 +75,7 @@ function Shell() {
           >
             {tab === 'home' && <Home onOpenQuake={setQuakeId} />}
             {tab === 'mobility' && <Mobility />}
+            {tab === 'services' && <Services />}
             {tab === 'quakes' && <Quakes onOpenQuake={setQuakeId} />}
             <View style={{ display: tab === 'chat' ? 'flex' : 'none' }}>
               <Chat ref={chatRef} onBusy={setChatBusy} />
