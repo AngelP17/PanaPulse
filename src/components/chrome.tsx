@@ -18,9 +18,10 @@ export function Header() {
     <View style={[s.header, { paddingTop: insets.top + space.xs }]}>
       <Pressable accessibilityRole="button" accessibilityLabel="PanaPulse" onPress={() => go('home')} style={[ui.row, { flex: 1, gap: space.xs }]}>
         <PulseMark />
-        <Txt size={type.title + 1} weight="bold">
-          PanaPulse
-        </Txt>
+        <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+          <Txt size={type.title + 1} weight="bold">Pana</Txt>
+          <Txt size={type.title + 1} weight="bold" style={{ color: c.accent }}>Pulse</Txt>
+        </View>
       </Pressable>
       <Pressable
         accessibilityRole="button"

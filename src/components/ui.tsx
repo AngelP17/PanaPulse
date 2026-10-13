@@ -41,10 +41,10 @@ export function Scene({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function Card({ style, children, ...rest }: ViewProps) {
+export function Card({ style, children, featured = false, ...rest }: ViewProps & { featured?: boolean }) {
   const { c } = useApp();
   return (
-    <View {...rest} style={[{ backgroundColor: c.card, borderRadius: radius.card, padding: space.lg, gap: space.md }, style]}>
+    <View {...rest} style={[{ backgroundColor: c.card, borderRadius: radius.card, padding: space.lg, gap: space.md, borderWidth: 1, borderColor: featured ? c.accent : c.line, overflow: 'hidden' }, style]}>
       {children}
     </View>
   );
@@ -158,12 +158,12 @@ export function Button({
       accessibilityLabel={accessibilityLabel ?? label}
       style={({ pressed }) => [
         styles.button,
-        { backgroundColor: solid ? c.navActive : c.tileStrong, opacity: pressed ? 0.72 : 1 },
+        { backgroundColor: solid ? c.accent : c.tileStrong, opacity: pressed ? 0.72 : 1 },
         style,
       ]}
     >
       {icon}
-      <Txt size={type.body} weight="semibold" style={{ color: solid ? c.navActiveInk : c.ink }}>
+      <Txt size={type.body} weight="semibold" style={{ color: solid ? c.accentInk : c.ink }}>
         {label}
       </Txt>
     </Pressable>

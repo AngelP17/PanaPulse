@@ -1,10 +1,12 @@
 // PanaPulse design tokens.
 // Direction: the original Hark-inspired atmosphere (rich gradient, soft translucent cards, big numerals),
-// recolored for Panama: navy into ocean and teal over a warm sand horizon. Accent: canal cyan.
+// recolored for PanaPulse: midnight navy, coastal cyan and softly atmospheric ocean light.
 // Status colors are fixed per theme and never derived from wallpaper / dynamic color.
 
 export const space = { xxs: 4, xs: 8, sm: 12, md: 16, lg: 20, xl: 24, xxl: 32 } as const;
 export const radius = { tile: 20, card: 30, pill: 999 } as const;
+
+export const brand = { navy: '#102635', cyan: '#20C9DB', porcelain: '#F9FCFD' } as const;
 
 export const font = {
   regular: 'Manrope_400Regular',
@@ -51,48 +53,48 @@ export interface Palette {
 export const palettes: Record<ThemeName, Palette> = {
   // Morning on the bay: clear sky into sea glass and warm sand.
   light: {
-    sky: ['#D3E7F4', '#AFD4E0', '#BEDDD4', '#F1D6BA'],
-    card: 'rgba(255,255,255,0.62)',
-    tile: 'rgba(255,255,255,0.66)',
-    tileStrong: 'rgba(255,255,255,0.86)',
-    line: 'rgba(22,32,58,0.09)',
-    ink: '#16203A',
-    muted: 'rgba(22,32,58,0.62)',
-    faint: 'rgba(22,32,58,0.42)',
-    nav: 'rgba(248,250,255,0.94)',
-    navActive: '#16203A',
+    sky: ['#E4F3F7', '#B8DCE8', '#B9DCD9', '#EDD0C0'],
+    card: 'rgba(250,253,254,0.76)',
+    tile: 'rgba(255,255,255,0.64)',
+    tileStrong: 'rgba(255,255,255,0.90)',
+    line: 'rgba(16,38,53,0.11)',
+    ink: '#102635',
+    muted: 'rgba(16,38,53,0.67)',
+    faint: 'rgba(16,38,53,0.48)',
+    nav: 'rgba(249,252,253,0.96)',
+    navActive: '#102635',
     navActiveInk: '#FFFFFF',
-    bubbleUser: '#16203A',
+    bubbleUser: '#102635',
     bubbleUserInk: '#FFFFFF',
     official: '#1E7A3E',
     officialInk: '#FFFFFF',
     stale: '#9A5B0C',
-    accent: '#0A6E95',
+    accent: '#087D90',
     accentInk: '#FFFFFF',
     community: '#5B45B8',
     alert: '#B4372B',
-    unknown: 'rgba(22,32,58,0.55)',
+    unknown: 'rgba(16,38,53,0.62)',
   },
   // Evening on the bay: navy into ocean and teal, city lights on a warm horizon.
   dark: {
-    sky: ['#14284A', '#1F4F6E', '#35767E', '#CF9670'],
-    card: 'rgba(17,33,52,0.80)',
-    tile: 'rgba(72,112,132,0.36)',
-    tileStrong: 'rgba(86,128,148,0.50)',
+    sky: ['#102635', '#1A4661', '#2E6D7D', '#C38E86'],
+    card: 'rgba(12,31,46,0.82)',
+    tile: 'rgba(67,116,136,0.37)',
+    tileStrong: 'rgba(82,133,153,0.52)',
     line: 'rgba(255,255,255,0.08)',
     ink: '#F3F5FB',
     muted: 'rgba(228,232,246,0.66)',
     faint: 'rgba(228,232,246,0.44)',
-    nav: 'rgba(11,24,40,0.96)',
-    navActive: '#F3F5FB',
-    navActiveInk: '#141A28',
-    bubbleUser: '#F3F5FB',
-    bubbleUserInk: '#141A28',
+    nav: 'rgba(8,27,41,0.96)',
+    navActive: '#F9FCFD',
+    navActiveInk: '#102635',
+    bubbleUser: '#F9FCFD',
+    bubbleUserInk: '#102635',
     official: '#7BD88F',
     officialInk: '#0B2A14',
     stale: '#F2B56B',
-    accent: '#7FD6EC',
-    accentInk: '#06202C',
+    accent: '#55DEEA',
+    accentInk: '#102635',
     community: '#C3B1FF',
     alert: '#FF8A7A',
     unknown: 'rgba(228,232,246,0.55)',

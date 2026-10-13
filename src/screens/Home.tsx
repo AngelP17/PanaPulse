@@ -41,7 +41,7 @@ export function Home({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
       </View>
 
       {/* Signature: the area's pulse, one line through five services. */}
-      <Card>
+      <Card featured>
         <CardHeader icon={<Activity size={18} color={c.accent} />} title={t('pulseTitle')} />
         <PulseRail
           nodes={[
@@ -58,7 +58,7 @@ export function Home({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
       </Card>
 
       {/* Everyday use: the commute, as a station timeline. No invented times. */}
-      <Card>
+      <Card style={{ backgroundColor: c.card }}>
         <CardHeader
           icon={<TrainFront size={18} color={c.ink} />}
           title={t('tripTitle')}

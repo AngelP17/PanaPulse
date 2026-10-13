@@ -44,3 +44,11 @@ yarn-error.*
 dist/
 *.db
 backend/*.egg-info
+
+# never commit credentials
+.env
+.env.*
+!.env.example
+*.sqlite*
+__pycache__/
+*.pyc

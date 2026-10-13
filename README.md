@@ -1,7 +1,7 @@
-# PanaPulse v0.2
+# PanaPulse v0.2.1 (Brand integration)
 
 Spanish-first civic dashboard for Panama City. Expo SDK 57 (React Native 0.86), Android-first,
-Hark-inspired design, ES/EN, Auto/Light/Dark.
+premium atmospheric design with original navy/cyan PanaPulse branding, ES/EN, Auto/Light/Dark.
 
 ## What's real
 - **Sismos + pronóstico de réplicas:** USGS. Native builds fetch live every 5 min and fall back to the
@@ -47,3 +47,16 @@ no-slop-ui). `scripts/fetch-reference-skills.sh` clones the reviewed-but-not-ven
 - Navigation is in-app state (Hark-style pill nav), not expo-router, so the same build runs in a
   sandboxed web frame. Android back closes the sheet, then returns Home.
 - `node --stack-size=8000 node_modules/typescript/bin/tsc --noEmit` to typecheck (TS 6 stack quirk).
+
+
+## Brand and design preservation
+
+`DESIGN.md` is the binding visual direction. `docs/BRAND.md` contains logo/color rules. `assets/` includes icon and wordmark files. The feature branch preserves the original atmosphere and all v0.2 functional improvements; it is not a rebuild. `no-slop-ui` is reference-only.
+
+Git history has the original (`v0.2` tag), the functional recovery branch (`recovery`), the rejected flat direction (`v0.3-parked`) and a non-destructive intermediate B refinement (`preview/b-refinement`). The current implementation branch is `feature/brand-integration`.
+
+## Publish to GitHub from a computer with GitHub authentication
+
+GitHub target: `https://github.com/AngelP17/PanaPulse` (private, initially empty). From this directory run `bash scripts/publish-to-github.sh`. The script refuses to overwrite a nonempty `main`. It publishes the current branch to `main` and preserves historical references for recovery and comparison.
+
+The CI workflow runs offline backend tests and the TypeScript check. Production provider data still requires network validation.

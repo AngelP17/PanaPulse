@@ -1,15 +1,15 @@
-# Agent instructions for PanaPulse
+# PanaPulse implementation rules
 
-Read before touching UI, in this order: `DESIGN.md`, `docs/ANTISLOP-RN.md`, `src/theme/tokens.ts`,
-`docs/DATA_SOURCES.md`. Project skills live in `.claude/skills/` (Expo official + anti-slop core,
-copywriting, UI + avoid-ai-design + no-slop-ui). DESIGN.md and these rules win over any skill.
+Read `DESIGN.md`, `docs/BRAND.md`, `src/theme/tokens.ts`, `docs/ANTISLOP-RN.md` and `docs/DATA_SOURCES.md` before changing the interface.
 
-Hard rules
-- Never invent status data. A module without a connected, licensed source shows "Sin datos".
-- USGS forecast numbers are quoted verbatim with issue time. No app-side earthquake prediction.
-- es/en parity is a release gate (`src/i18n/strings.ts` is typed: a missing key fails tsc).
-- Native primitives only (View/Text/Pressable). No WebView/DOM shortcuts for screens.
-- Chat tools are read-only and mirrored in `src/chat/tools.ts` and `backend/panapulse/ask.py`;
-  `backend/tests/test_ask.py::test_tool_names_match_the_app` keeps them in sync.
-- An AI response may never set a record to "official"; only validated source metadata can.
-- Typecheck with `node --stack-size=8000 node_modules/typescript/bin/tsc --noEmit` (TS 6 needs the stack).
+- Keep Expo/React Native native surfaces, both language options, and Auto/Light/Dark intact.
+- Do not convert screens to WebViews or abandon the approved v0.2 atmospheric design.
+- Preserve the separate status dimensions of operational state, verification and freshness.
+- Never fabricate status information, quake probabilities, commute durations or bus ETAs.
+- All data cards must surface their provenance and timestamps; snapshot times stay explicit.
+- Chat tools are read-only and mirrored in `src/chat/tools.ts` and `backend/panapulse/ask.py`.
+- Changes should be small, reviewable and backed by Python tests and a TS check.
+- The user's DESIGN.md overrides third-party aesthetic prohibitions. `no-slop-ui` in docs is inactive.
+- Do not commit API keys, `.env` or user location/report data.
+
+Use `npm run typecheck` after dependencies are installed and `python -m pytest backend/tests -q` for Python tests. For SDK 57 / TypeScript 6 stack issues use `node --stack-size=8000 node_modules/typescript/bin/tsc --noEmit`.

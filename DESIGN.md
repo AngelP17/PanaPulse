@@ -1,38 +1,41 @@
-# PanaPulse design direction
+# PanaPulse visual contract
 
-**Identity:** a calm civic instrument with Hark's atmosphere. Sky gradient, soft translucent cards,
-floating pill navigation, big numerals. Trust first: it must read calmly the day after an M7.7.
+## Direction
 
-**Dials (anti-slop):** ENERGY 1 · RHYTHM 1 · MOTION 1. No celebratory motion, no pulsing dots.
+PanaPulse is a premium, bilingual consumer companion for life in Panama, not an operations dashboard. It combines a **calm ocean-at-dusk atmosphere** with local service information that is always explicit about provenance and freshness. The original Hark-inspired v0.2 demonstrated the desired airiness; the rejected flat v0.3 (`v0.3-parked`) is the counterexample. The functional `recovery` branch and `preview/b-refinement` inform the approved information architecture, not an entirely new design.
 
-## Tokens (`src/theme/tokens.ts`)
-- **Atmosphere:** light = daylight over the bay (pale sky → lilac → warm horizon); dark = dusk over
-  the city (steel blue → violet → peach). Decoration only.
-- **Surfaces:** `card` (translucent, radius 30), `tile` (nested, radius 20), `nav` (near-opaque so
-  text never shows through the floating bars).
-- **Status (fixed, never dynamic color):** official = solid chip, community = dashed outline,
-  unavailable = solid outline in neutral. Always a text label, never color alone.
-- **Alert red** only marks M6+ events. Nothing else is red.
-- **Type:** Manrope (Spanish diacritics, tabular numerals). Stats 34, titles 19, body 16, labels 14.
+## Identity
 
-## Layout grammar
-- Top: round `+` (new report) · pill nav (Inicio / Sismos / Chat) · round settings.
-- Bottom: floating composer "Pregúntale a PanaPulse".
-- Home: Hark-style action cards (verb chip + object), then one focal card (aftershock forecast
-  while a USGS forecast is active), then services and mobility with honest "Sin datos" states.
+- **Brand mark:** The connected-path letter P in `assets/brandmark.svg` and its matching app icon. Never substitute a generic heartbeat/ECG icon.
+- **Brand colors:** Midnight navy `#102635`, coastal cyan `#20C9DB`, porcelain `#F9FCFD`. The actual light/dark UI values live in `src/theme/tokens.ts`.
+- **Typography:** Manrope, generous leading, clear hierarchy and tabular numerals for magnitudes/times. Spanish diacritics must render correctly.
+- **Atmosphere:** Broad gradient across the background; translucent but legible cards. Keep rounded surfaces, quiet depth, and warmth near the horizon. Avoid blur stacks, loud glow, and flat enterprise tables.
+- **No pixel-for-pixel Hark duplication:** Our logo, four-way bottom navigation, local pulse rail and commute timeline distinguish the product.
 
-## Status grammar (every data card)
-Source · verification chip · "actualizado hace N min". Missing data is shown as missing, never as
-"todo normal". Snapshot data says its real timestamp.
+## Screen hierarchy
 
-## Banned here
-Purple-blue hero gradients on white, glassmorphism blur stacks, emoji icons, 2×3 fake-metric grids,
-sparkle/AI badges, invented sample stats, confetti or celebratory haptics, ads on emergency screens.
+1. **Home:** My area → signature five-service pulse rail → daily commute timeline → separate electricity/water cards → official aftershock context → neighborhood report action. Do not default to a grid of uniform status tiles.
+2. **Mobility:** Metro/MiBus module, honest feed status, links to official sources. Never invent vehicle positions or arrivals.
+3. **Quakes:** Real USGS catalog data, official aftershock probabilities *only when the OAF exists*, issue timestamp and link to sources.
+4. **Chat:** Conversational on-demand help grounded in the application's tools, without fabricated outages.
+5. **Report:** Local on-device reports are NOT crowd confirmation and must be labeled accordingly.
 
-## Skill precedence (set 2026-10-12 after the v0.3 regression)
-1. The user's direction and reference screenshots. 2. This file and `src/theme/tokens.ts`.
-3. Expo official skills (`.claude/skills/expo-*`) for implementation.
-4. anti-slop for honesty: no fabricated data, real empty/loading/error/stale states, accessible controls, no filler.
-5. Everything else is reference only. `no-slop-ui` lives in `docs/reference-skills/` and is NOT active: its bans on
-   gradients, large radii, pills and atmospheric styling contradict this direction and must not be applied.
-The v0.3 flat redesign (tag `v0.3-parked`) is the cautionary example: anti-slop's own "Sterile Default".
+## Themes and language
+
+- **ES/EN:** All visible copy via the typed locale keys. Spanish-first; English equivalent. The AppContext persists theme and language selection.
+- **Auto/Light/Dark:** Support all three from day one. Color is never the only carrier of status.
+- **Native layout:** Safe-area insets, scroll-to-last-item clearance, >= 44pt practical targets and 2x font-scaling review.
+
+## Honest status grammar
+
+Every data element includes source and update context; statuses distinguish official, community, stale and unavailable. Empty data is NOT proof that service is operating. Do not show fake transit ETAs, fake outage totals or unsourced aftershock probabilities. No advertisements or paywalls on emergency information.
+
+## Agent precedence
+
+1. Explicit product direction and approved screenshots.
+2. This document and `src/theme/tokens.ts`.
+3. Official Expo skills for native implementation and testing.
+4. Anti-slop rules for accuracy, copy, states and accessibility.
+5. Community design skills as references only.
+
+`no-slop-ui` is parked under `docs/reference-skills/` and must NOT prohibit the atmospheric gradients, large radii and intentional pill controls in this product. Do not regress to v0.3 aesthetics.

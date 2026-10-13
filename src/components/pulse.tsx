@@ -5,13 +5,17 @@ import { useApp } from '../state/AppContext';
 import { type } from '../theme/tokens';
 import { Txt } from './ui';
 
-/** PanaPulse mark: a heartbeat stroke in a rounded square, in the brand accent. */
-export function PulseMark({ size = 32 }: { size?: number }) {
-  const { c } = useApp();
+/** Custom PanaPulse P: the same connected-path geometry as the brand-kit app icon. */
+export function PulseMark({ size = 36 }: { size?: number }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 32 32" accessibilityElementsHidden importantForAccessibility="no">
-      <Rect x={2} y={2} width={28} height={28} rx={9} fill={c.accent} />
-      <Path d="M5 17h6l2.5-6 4 11 3-8 1.5 3H27" fill="none" stroke={c.accentInk} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
+    <Svg width={size} height={size} viewBox="0 0 256 256" accessibilityElementsHidden importantForAccessibility="no">
+      <Rect x={0} y={0} width={256} height={256} rx={62} fill="#102635" />
+      <Path
+        d="M 74 196 L 74 106 C 74 72 94 60 129 60 L 145 60 C 181 60 197 76 197 105 C 197 136 178 151 142 151 L 112 151"
+        stroke="#20C9DB" strokeWidth={34} strokeLinecap="round" strokeLinejoin="round" fill="none"
+      />
+      <Path d="M 55 150 L 111 101 L 155 101" stroke="#F9FCFD" strokeWidth={11} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      <Circle cx={155} cy={101} r={11} fill="#F9FCFD" />
     </Svg>
   );
 }
