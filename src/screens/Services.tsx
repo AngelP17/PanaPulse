@@ -4,6 +4,7 @@ import { Linking, View } from 'react-native';
 import { Button, Card, CardHeader, StatusChip, Txt } from '../components/ui';
 import { SectionHeading } from '../components/section';
 import { makeDemoScene } from '../data/demo';
+import { DemoServices } from './DemoScreens';
 import { usePowerMaintenance, powerFeedState } from '../data/maintenance';
 import { useApp } from '../state/AppContext';
 import { radius, space, type } from '../theme/tokens';
@@ -20,6 +21,7 @@ export function Services() {
   const fmt = new Intl.DateTimeFormat(lang === 'es' ? 'es-PA' : 'en-US', {
     timeZone: 'America/Panama', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit',
   });
+  if (demoEnabled) return <DemoServices />;
   return (
     <View style={{ gap: space.md }}>
       <View style={{ paddingHorizontal: space.xs, gap: space.xs }}>

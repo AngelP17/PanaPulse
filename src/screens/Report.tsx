@@ -31,7 +31,8 @@ async function loadReports(): Promise<LocalReport[]> {
 export function Report() {
   const { c, t, lang, now, demoEnabled, demoScenario } = useApp();
   const demo = makeDemoScene(now, demoScenario);
-  const demoCommunityCount = demoScenario === 'everyday' ? 0 : demoScenario === 'recovery' ? 2 : 5 + Math.floor(now / (5 * 60 * 1000)) % 4;
+  // Same scenario/count as Home and Services, so demo surfaces cannot contradict each other.
+  const demoCommunityCount = demo.communityReports;
   const [service, setService] = useState<'electricity' | 'water'>('electricity');
   const [where, setWhere] = useState('Pueblo Nuevo');
   const [note, setNote] = useState('');

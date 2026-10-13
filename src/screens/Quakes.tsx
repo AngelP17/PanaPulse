@@ -4,12 +4,13 @@ import { Linking, Modal, Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ago, clock, dayKey, dayLabel, dayStamp, pct, place } from '../data/format';
 import type { Quake } from '../data/usgs';
+import { DemoQuakes } from './DemoScreens';
 import { useApp } from '../state/AppContext';
 import { radius, space, type } from '../theme/tokens';
 import { Button, Card, SourceLine, Tile, TileGrid, Txt, styles } from '../components/ui';
 
 export function Quakes({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
-  const { c, t, lang, seismic, now } = useApp();
+  const { c, t, lang, seismic, now, demoEnabled } = useApp();
   const groups = useMemo(() => {
     const out: { key: string; label: string; items: Quake[] }[] = [];
     for (const q of seismic.earthquakes) {
@@ -22,6 +23,7 @@ export function Quakes({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
   }, [seismic, now, lang]);
 
   const f = seismic.forecast;
+  if (demoEnabled) return <DemoQuakes />;
 
   return (
     <View style={{ gap: space.md }}>
