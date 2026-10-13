@@ -40,6 +40,9 @@ export function Quakes({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
   const forecast = seismic.forecast;
   const isCurrent = seismic.mode === 'live' && now >= seismic.fetchedAt
     && now - seismic.fetchedAt <= LIVE_MAX_AGE_MS;
+  // Catalog ingestion freshness and USGS OAF issuance freshness are independent.
+  const forecastRecent = !!forecast && isCurrent && now >= forecast.creationTime
+    && now - forecast.creationTime <= 24 * 60 * 60 * 1000;
   const dataTime = dayStamp(seismic.fetchedAt, lang);
   const options: { value: SeismicMagnitudeFilter; label: string }[] = [
     { value: 'all', label: t('seismicFilterAll') },
@@ -120,15 +123,14 @@ export function Quakes({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
       {forecast ? (
         <>
           <SectionHeading title={t('forecastTable')}
-            subtitle={t(isCurrent ? 'seismicForecastLiveHint' : 'seismicForecastArchivedHint')} />
+            subtitle={t(forecastRecent ? 'seismicForecastLiveHint' : 'seismicForecastArchivedHint')} />
           <Card style={{ gap: space.md }}>
             <View style={[styles.row, { paddingHorizontal: space.xs, gap: space.xs }]}>
               <Txt size={type.caption} tone="muted" weight="semibold"
                 style={{ flex: 1.15 }}>{t('magnitude')}</Txt>
-              {(isCurrent ? ['next24', 'nextWeek', 'nextMonth']
-                : ['seismicFirstDay', 'seismicFirstWeek', 'seismicFirstMonth']).map((key) => (
+              {(['seismicFirstDay', 'seismicFirstWeek', 'seismicFirstMonth'] as const).map((key) => (
                 <Txt key={key} size={type.caption} tone="muted" weight="semibold"
-                  style={{ flex: 1, textAlign: 'right' }}>{t(key as 'next24')}</Txt>
+                  style={{ flex: 1, textAlign: 'right' }}>{t(key)}</Txt>
               ))}
             </View>
             {[5, 6, 7].map((magnitude) => (
@@ -149,11 +151,12 @@ export function Quakes({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
                 })}
               </View>
             ))}
+            <Txt size={type.label} tone="muted">{t('seismicForecastWindowsIssued')}</Txt>
             <Txt size={type.label} tone="muted">{t('forecastCaveat')}</Txt>
-            {!isCurrent ? (
+            {!forecastRecent ? (
               <Txt size={type.label} tone="muted">{t('archivedForecastWarning')}</Txt>
             ) : null}
-            <SourceLine source="USGS OAF" kind={isCurrent ? 'official' : 'stale'}
+            <SourceLine source="USGS OAF" kind={forecastRecent ? 'official' : 'stale'}
               detail={`${t('issued')} ${dayStamp(forecast.creationTime, lang)}`} />
           </Card>
         </>
