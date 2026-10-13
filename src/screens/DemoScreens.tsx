@@ -1,6 +1,6 @@
 import { Bus, Droplets, Megaphone, TrainFront, Zap } from 'lucide-react-native';
 import React from 'react';
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 import { PressScale } from '../components/motion';
 import { Button, Card, CardHeader, LinkChip, Txt } from '../components/ui';
 import type { DemoScenario, DemoUtilityState, TransitId } from '../data/demo';
@@ -20,8 +20,7 @@ export function DemoControls() {
   return (
     <View style={{ borderRadius: radius.tile, backgroundColor: c.tileStrong, padding: space.sm, gap: space.xs }}>
       <Txt size={type.caption + 1} weight="semibold" tone="muted">{t('previewControlsTitle')}</Txt>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ gap: space.xs }} accessibilityLabel={t('demoChange')}>
+      <View accessibilityLabel={t('demoChange')} style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.xs }}>
         {choices.map(({ id, label }) => {
           const selected = demoScenario === id;
           return (
@@ -34,7 +33,7 @@ export function DemoControls() {
             </PressScale>
           );
         })}
-      </ScrollView>
+      </View>
     </View>
   );
 }
