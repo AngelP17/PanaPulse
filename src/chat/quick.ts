@@ -7,6 +7,7 @@ import { providerFor } from '../data/utilities';
 import type { MaintenanceResult, PowerFeedState } from '../data/maintenance';
 import type { Lang } from '../i18n/strings';
 import type { DemoScene } from '../data/demo';
+import { powerSurfaceSource } from '../data/sourcePolicy';
 
 export interface QuickAnswer {
   text: string;
@@ -86,7 +87,11 @@ export function quickAnswer(question: string, data: SeismicData, lang: Lang, zon
   const asOf = dayStamp(data.fetchedAt, lang);
   const day = data.earthquakes.filter((e) => e.time >= data.fetchedAt - 24 * 3600 * 1000);
   const archived = data.mode !== 'live' || now - data.fetchedAt > 20 * 60 * 1000;
-  const powerAnswer = officialMaintenanceAnswer(powerFeed, zoneIn(q, zone), lang);
+  // One shared decision with Home and Services: a real current or stale feed is always what Ask reports.
+  const powerSurface = powerSurfaceSource(powerFeed?.state ?? 'none', preview !== null);
+  const powerAnswer = powerSurface === 'official' || powerSurface === 'stale'
+    ? officialMaintenanceAnswer(powerFeed, zoneIn(q, zone), lang)
+    : null;
 
   // The preview is a complete, deterministic product walkthrough. These are NEVER official conditions.
   // Real USGS earthquake/forecast questions intentionally continue below unchanged.

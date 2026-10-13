@@ -28,7 +28,9 @@ assert.equal(recovery.power, 'recovering');
 assert.ok(incidents.transit[0].arrivalMinutes > everyday.transit[0].arrivalMinutes);
 assert.notEqual(makeDemoScene(now + 60000, 'everyday').transit[0].arrivalMinutes, everyday.transit[0].arrivalMinutes);
 
+const sourcePolicy = load('src/data/sourcePolicy.ts');
 const { quickAnswer } = load('src/chat/quick.ts', {
+  '../data/sourcePolicy': sourcePolicy,
   '../data/usgs': { bin: () => null },
   '../data/format': {
     clock: (v) => new Date(v).toISOString(),
@@ -95,4 +97,19 @@ assert.match(livePower('¿Hay luz?', { state: 'none', data: null }, null), /No p
 assert.match(livePower('¿Hay luz?', { state: 'none', data: null }), /interrupción reportada/);
 assert.match(livePower('¿Hay luz?', connectedPower, null), /Hato Pintado/);
 assert.match(livePower('¿Hay luz?', connectedPower, incidents, 'en'), /scheduled-maintenance/);
+// One selector for Home, Services and Ask: the visible power source must agree on every state.
+const { powerSurfaceSource } = sourcePolicy;
+for (const [state, data, expectKind] of [['scheduled', connectedPower.data, 'official'], ['stale', connectedPower.data, 'stale'], ['none', null, null]]) {
+  for (const previewOn of [false, true]) {
+    const surface = powerSurfaceSource(state, previewOn);
+    const text = quickAnswer('¿Hay luz en Pueblo Nuevo?', usgs, 'es', 'Pueblo Nuevo', now, previewOn ? incidents : null, { state, data });
+    if (expectKind) {
+      assert.equal(surface, expectKind);
+      assert.match(text.text ?? text, /Hato Pintado/, `Ask must show the real ${state} notice (preview ${previewOn}).`);
+    } else {
+      assert.equal(surface, previewOn ? 'example' : 'missing');
+      assert.match(text.text ?? text, previewOn ? /interrupción reportada/ : /No puedo comprobar/);
+    }
+  }
+}
 console.log('Official maintenance beats preview incidents; stale and unavailable source states stay distinct.');
