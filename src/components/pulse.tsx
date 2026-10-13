@@ -20,7 +20,7 @@ export function PulseMark({ size = 36 }: { size?: number }) {
   );
 }
 
-export type PulseState = 'live' | 'stale' | 'none';
+export type PulseState = 'live' | 'scheduled' | 'stale' | 'none';
 
 export interface PulseNode {
   label: string;
@@ -41,7 +41,7 @@ export function PulseRail({ nodes }: { nodes: PulseNode[] }) {
   const base = 42;
   const step = w / nodes.length;
   const x = (i: number) => step * i + step / 2;
-  const tone = (st: PulseState) => (st === 'live' ? c.accent : st === 'stale' ? c.stale : c.faint);
+  const tone = (st: PulseState) => (st === 'live' || st === 'scheduled' ? c.accent : st === 'stale' ? c.stale : c.faint);
 
   return (
     <View accessibilityRole="summary" accessibilityLabel={nodes.map((n) => `${n.label}: ${n.status}`).join('. ')}>
@@ -64,7 +64,7 @@ export function PulseRail({ nodes }: { nodes: PulseNode[] }) {
                   d={`M${x0} ${base} H${x1}`}
                   stroke={tone(n.state)}
                   strokeWidth={n.state === 'none' ? 1.6 : 2.4}
-                  strokeDasharray={n.state === 'live' ? undefined : n.state === 'stale' ? '1 5' : '3 6'}
+                  strokeDasharray={n.state === 'live' ? undefined : n.state === 'scheduled' ? '5 5' : n.state === 'stale' ? '1 5' : '3 6'}
                   strokeLinecap="round"
                 />
               );
@@ -85,7 +85,7 @@ export function PulseRail({ nodes }: { nodes: PulseNode[] }) {
               size={type.caption + 1}
               weight="semibold"
               numberOfLines={2}
-              style={{ textAlign: 'center', color: n.state === 'live' ? c.accent : n.state === 'stale' ? c.stale : c.muted }}
+              style={{ textAlign: 'center', color: n.state === 'live' || n.state === 'scheduled' ? c.accent : n.state === 'stale' ? c.stale : c.muted }}
             >
               {n.status}
             </Txt>

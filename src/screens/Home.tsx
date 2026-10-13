@@ -50,7 +50,7 @@ export function Home({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
         <CardHeader icon={<Activity size={18} color={c.accent} />} title={t('pulseTitle')} />
         <PulseRail
           nodes={[
-            { label: t('power'), status: currentSource ? (plannedCuts.length ? t('scheduledBrief') : t('pulseNoPlans')) : t('pulsePowerStale'), state: 'stale' },
+            { label: t('power'), status: currentSource ? (plannedCuts.length ? t('scheduledBrief') : t('pulseNoPlans')) : t('pulsePowerStale'), state: currentSource ? 'scheduled' : 'stale' },
             { label: t('water'), status: t('pulseNone'), state: 'none' },
             { label: 'Metro', status: t('pulseNoFeed'), state: 'none' },
             { label: 'MiBus', status: t('pulseNoFeed'), state: 'none' },
@@ -76,7 +76,7 @@ export function Home({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
             {t('powerCardProvider')}
           </Txt>
           <Txt size={type.title} weight="bold" style={{ color: c.stale }}>
-            {currentSource ? (plannedCuts.length ? t('scheduledCount', { n: plannedCuts.length }) : t('noPlannedNotices')) : t('powerCardState')}
+            {currentSource ? (plannedCuts.length ? t('scheduledCount', { n: plannedCuts.length }) : t('noPlannedNotices')) : t('maintenanceUnavailable')}
           </Txt>
           <StatusChip kind={currentSource && plannedCuts.length ? "official" : "unavailable"} />
           <Txt size={type.caption} tone="muted">
