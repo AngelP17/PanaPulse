@@ -4,6 +4,7 @@
 //     tools server-side with a cheap model (Haiku 5.5 by default).
 import type { SeismicData } from '../data/usgs';
 import type { DemoScene } from '../data/demo';
+import type { PowerChatContext } from './quick';
 import type { Lang } from '../i18n/strings';
 import { quickAnswer } from './quick';
 import { buildTools, SYSTEM_PROMPT } from './tools';
@@ -55,13 +56,13 @@ export async function ask(
   history: Turn[],
   data: SeismicData,
   lang: Lang,
-  opts: { onText?: (text: string) => void; signal?: AbortSignal; zone?: string; preview?: DemoScene | null } = {},
+  opts: { onText?: (text: string) => void; signal?: AbortSignal; zone?: string; preview?: DemoScene | null; powerFeed?: PowerChatContext } = {},
 ): Promise<Answer> {
   const last = history[history.length - 1];
   if (!last || last.role !== 'user') throw new ChatError('bad_input');
   if (last.content.trim().length === 0 || last.content.length > MAX_INPUT) throw new ChatError('too_long');
   // Common questions get an instant, deterministic answer from the data itself.
-  const instant = quickAnswer(last.content, data, lang, opts.zone, Date.now(), opts.preview);
+  const instant = quickAnswer(last.content, data, lang, opts.zone, Date.now(), opts.preview, opts.powerFeed);
   if (instant) return { text: instant.text, quick: true };
 
   // Keep context small and cheap: the last 6 turns only, and only role/content go out.

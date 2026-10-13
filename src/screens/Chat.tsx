@@ -4,6 +4,7 @@ import { View } from 'react-native';
 import { ask, ChatError, detectTransport, MAX_INPUT, MODEL, Transport, Turn } from '../chat/engine';
 import { useApp } from '../state/AppContext';
 import { makeDemoScene } from '../data/demo';
+import { powerFeedState, usePowerMaintenance } from '../data/maintenance';
 import { radius, space, type } from '../theme/tokens';
 import { PressScale } from '../components/motion';
 import { Txt, styles } from '../components/ui';
@@ -14,6 +15,7 @@ export interface ChatHandle {
 
 export const Chat = React.forwardRef<ChatHandle, { onBusy: (b: boolean) => void }>(function Chat({ onBusy }, ref) {
   const { c, t, lang, seismic, pendingQuestion, takePendingQuestion, demoEnabled, demoScenario, demoReports, now } = useApp();
+  const { data: maintenance, state: maintenanceState } = usePowerMaintenance('Pueblo Nuevo');
   const [turns, setTurns] = useState<Turn[]>([]);
   const [draft, setDraft] = useState<string | null>(null); // streaming answer
   const [busy, setBusy] = useState(false);
@@ -44,7 +46,10 @@ export const Chat = React.forwardRef<ChatHandle, { onBusy: (b: boolean) => void 
       try {
         const preview = demoEnabled ? makeDemoScene(now, demoScenario) : null;
         if (preview) preview.communityReports += demoReports;
-        const answer = await ask(history, seismic, lang, { signal: ctl.current.signal, onText: setDraft, zone: 'Pueblo Nuevo', preview });
+        const answer = await ask(history, seismic, lang, {
+          signal: ctl.current.signal, onText: setDraft, zone: 'Pueblo Nuevo', preview,
+          powerFeed: { data: maintenance, state: powerFeedState(maintenance, maintenanceState) },
+        });
         setTurns([...history, { role: 'assistant', content: answer.text, quick: answer.quick }]);
       } catch (e) {
         const code = e instanceof ChatError ? e.code : 'failed';
@@ -56,7 +61,7 @@ export const Chat = React.forwardRef<ChatHandle, { onBusy: (b: boolean) => void 
         setBusy(false);
       }
     },
-    [busy, turns, seismic, lang, t, demoEnabled, demoScenario, demoReports, now],
+    [busy, turns, seismic, lang, t, demoEnabled, demoScenario, demoReports, now, maintenance, maintenanceState],
   );
 
   React.useImperativeHandle(ref, () => ({ submit }), [submit]);

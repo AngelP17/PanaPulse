@@ -6,6 +6,7 @@ import { Button, Card, CardHeader, LinkChip, Txt } from '../components/ui';
 import type { DemoScenario, DemoUtilityState, TransitId } from '../data/demo';
 import { makeDemoScene } from '../data/demo';
 import { useApp } from '../state/AppContext';
+import { NeighborhoodFeed } from '../components/NeighborhoodFeed';
 import { radius, space, type } from '../theme/tokens';
 
 /** One global Preview indicator is in the Shell; content here reads like a real product. */
@@ -125,13 +126,7 @@ export function PreviewServices() {
       <DemoControls />
       <DemoUtilityCard service="power" state={scene.power} />
       <DemoUtilityCard service="water" state={scene.water} />
-      <Card style={{ gap: space.sm }}>
-        <CardHeader icon={<Megaphone size={20} color={c.ink} />} title={t('previewSectionCommunity')} />
-        <Txt size={type.title + 3} weight="bold" numeric>
-          {t('previewReports', { n: scene.communityReports + demoReports })}
-        </Txt>
-        <Button label={t('reportHomeAction')} onPress={() => go('report')} />
-      </Card>
+      <NeighborhoodFeed limit={3} onViewAll={() => go('report')} />
       <Card style={{ gap: space.xs }}>
         <Txt size={type.label} weight="semibold" tone="muted">{t('realSourceLinksTitle')}</Txt>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.xs }}>

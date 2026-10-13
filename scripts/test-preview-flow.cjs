@@ -66,3 +66,33 @@ assert.match(ask('¿Hubo un sismo?', incidents), /M4.8/);
 assert.match(ask('¿Hubo un sismo?', incidents), /histórica/);
 assert.match(ask('¿Cómo está el Metro?'), /No tenemos datos/);
 console.log('Preview scenario chat, time evolution, report interactions and real-USGS integrity: 14 assertions passed.');
+
+const connectedPower = {
+  state: 'scheduled',
+  data: {
+    corregimiento: 'Pueblo Nuevo',
+    service_state: 'unknown',
+    scope: 'scheduled_maintenance_only',
+    sources: [{ provider: 'naturgy', freshness: 'current', last_success_at: new Date(now - 120000).toISOString() }],
+    notices: [{
+      id: 'official-notice-1', place: 'Hato Pintado', provider: 'Naturgy',
+      start: new Date(now + 3600000).toISOString(),
+      end: new Date(now + 4 * 3600000).toISOString(),
+      source_url: 'https://example.org/official-maintenance',
+      verification: 'official_scheduled', source_freshness: 'current',
+    }],
+  },
+};
+const livePower = (q, powerFeed, preview = incidents, lang = 'es') =>
+  quickAnswer(q, usgs, lang, 'Pueblo Nuevo', now, preview, powerFeed)?.text;
+assert.match(livePower('¿Hay luz en Pueblo Nuevo?', connectedPower), /Hato Pintado/);
+assert.match(livePower('¿Hay luz en Pueblo Nuevo?', connectedPower), /cronograma/);
+assert.doesNotMatch(livePower('¿Hay luz en Pueblo Nuevo?', connectedPower), /interrupción reportada/);
+assert.match(livePower('¿Qué pasa en mi zona?', connectedPower), /avisos oficiales programados/);
+assert.match(livePower('¿Hay cortes de luz?', { ...connectedPower, state: 'stale' }), /desactualizados/);
+assert.match(livePower('¿Hay luz?', { ...connectedPower, data: { ...connectedPower.data, notices: [] } }), /No hay cortes programados publicados/);
+assert.match(livePower('¿Hay luz?', { state: 'none', data: null }, null), /No puedo comprobar/);
+assert.match(livePower('¿Hay luz?', { state: 'none', data: null }), /interrupción reportada/);
+assert.match(livePower('¿Hay luz?', connectedPower, null), /Hato Pintado/);
+assert.match(livePower('¿Hay luz?', connectedPower, incidents, 'en'), /scheduled-maintenance/);
+console.log('Official maintenance beats preview incidents; stale and unavailable source states stay distinct.');
