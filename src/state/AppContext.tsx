@@ -19,6 +19,8 @@ interface AppState {
   setDemoEnabled: (b: boolean) => void;
   demoScenario: DemoScenario;
   setDemoScenario: (s: DemoScenario) => void;
+  demoReports: number;
+  addDemoReport: () => void;
   theme: ThemeName;
   c: Palette;
   t: (key: StringKey, vars?: Record<string, string | number>) => string;
@@ -62,6 +64,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [themePref, setThemePrefState] = useState<ThemePref>('auto');
   const [demoEnabled, setDemoEnabled] = useState(false);
   const [demoScenario, setDemoScenario] = useState<DemoScenario>('everyday');
+  const [demoReports, setDemoReports] = useState(0);
   const [prefsLoaded, setPrefsLoaded] = useState(false);
   const [tab, setTab] = useState<Tab>('home');
   const [seismic, setSeismic] = useState<SeismicData>(() => loadSnapshot());
@@ -104,6 +107,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [prefsLoaded, lang, themePref, demoEnabled, demoScenario]);
   const setLang = useCallback((l: Lang) => setLangState(l), []);
   const setThemePref = useCallback((tp: ThemePref) => setThemePrefState(tp), []);
+  const addDemoReport = useCallback(() => setDemoReports((count) => count + 1), []);
 
   const theme: ThemeName = themePref === 'auto' ? (system === 'light' ? 'light' : 'dark') : themePref;
 
@@ -117,6 +121,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setDemoEnabled,
       demoScenario,
       setDemoScenario,
+      demoReports,
+      addDemoReport,
       theme,
       c: palettes[theme],
       t: (key, vars) => format(strings[lang][key], vars),
@@ -135,7 +141,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         return q;
       },
     }),
-    [lang, setLang, themePref, setThemePref, demoEnabled, demoScenario, theme, tab, seismic, now, pendingQuestion],
+    [lang, setLang, themePref, setThemePref, demoEnabled, demoScenario, demoReports, addDemoReport, theme, tab, seismic, now, pendingQuestion],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
