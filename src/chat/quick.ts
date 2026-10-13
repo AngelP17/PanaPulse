@@ -57,18 +57,6 @@ export function quickAnswer(question: string, data: SeismicData, lang: Lang, zon
       : es ? 'La ruta circula con horario habitual.' : 'The route is running on its regular schedule.';
     let text: string;
     let intent = 'preview-summary';
-    if (has(q, QUAKE)) {
-    const latest = [...data.earthquakes].sort((a, b) => b.time - a.time)[0];
-    return {
-      intent: 'latest-quake',
-      text: latest
-        ? (es
-          ? `Último sismo registrado en estos datos: M${latest.mag.toFixed(1)} cerca de ${place(latest.place, lang)}, ${dayStamp(latest.time, lang)}. Fuente: USGS, captura del ${asOf}${archived ? ' (histórica)' : ''}.`
-          : `Latest quake in this dataset: M${latest.mag.toFixed(1)} near ${place(latest.place, lang)}, ${dayStamp(latest.time, lang)}. USGS data captured ${asOf}${archived ? ' (historical)' : ''}.`)
-        : (es ? `No hay sismos en la captura USGS del ${asOf}.` : `No quakes appear in the USGS dataset from ${asOf}.`),
-    };
-  }
-
   if (has(q, METRO)) {
       intent = 'preview-metro';
       text = es ? `En esta vista previa, la Línea 1 llega en ${preview.transit[0].arrivalMinutes} min y la Línea 2 en ${preview.transit[1].arrivalMinutes} min. ${transit}`
@@ -138,6 +126,18 @@ export function quickAnswer(question: string, data: SeismicData, lang: Lang, zon
       text: es
         ? `${day.length} sismos M4.5+ en las últimas 24 h y ${data.earthquakes.length} desde el 9 de octubre. Fuente: USGS, datos al ${asOf}.`
         : `${day.length} M4.5+ quakes in the last 24 hr and ${data.earthquakes.length} since October 9. Source: USGS, data as of ${asOf}.`,
+    };
+  }
+
+  if (has(q, QUAKE)) {
+    const latest = [...data.earthquakes].sort((a, b) => b.time - a.time)[0];
+    return {
+      intent: 'latest-quake',
+      text: latest
+        ? (es
+          ? `Último sismo registrado en estos datos: M${latest.mag.toFixed(1)} cerca de ${place(latest.place, lang)}, ${dayStamp(latest.time, lang)}. Fuente: USGS, captura del ${asOf}${archived ? ' (histórica)' : ''}.`
+          : `Latest quake in this dataset: M${latest.mag.toFixed(1)} near ${place(latest.place, lang)}, ${dayStamp(latest.time, lang)}. USGS data captured ${asOf}${archived ? ' (historical)' : ''}.`)
+        : (es ? `No hay sismos en la captura USGS del ${asOf}.` : `No quakes appear in the USGS dataset from ${asOf}.`),
     };
   }
 
