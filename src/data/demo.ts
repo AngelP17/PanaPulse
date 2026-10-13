@@ -7,8 +7,11 @@ export type TransitId = 'metro1' | 'metro2' | 'mibus';
 export type DemoCondition = 'normal' | 'delayed' | 'recovering';
 export type DemoUtilityState = 'no_notice' | 'scheduled' | 'interrupted' | 'recovering';
 export interface DemoTransit { id: TransitId; condition: DemoCondition; arrivalMinutes: number; delayMinutes: number }
+export interface DemoQuake { magnitude: number; location: string; minutesAgo: number }
 export interface DemoScene {
   scenario: DemoScenario;
+  quake: DemoQuake;
+  communityReports: number;
   transit: DemoTransit[];
   power: DemoUtilityState;
   water: DemoUtilityState;
@@ -29,7 +32,12 @@ export function makeDemoScene(now: number, scenario: DemoScenario): DemoScene {
       arrivalMinutes: demoCountdown(now, 13, 6) + (disrupted ? 6 : 0), delayMinutes: disrupted ? 6 : 0 },
   ];
   return {
-    scenario, transit, power: disrupted ? 'interrupted' : recovering ? 'recovering' : 'scheduled',
+    scenario,
+    quake: disrupted ? { magnitude: 5.4, location: 'Los Santos', minutesAgo: 12 + Math.floor(now / 3600000) % 7 }
+      : recovering ? { magnitude: 4.8, location: 'Veraguas', minutesAgo: 67 + Math.floor(now / 3600000) % 9 }
+      : { magnitude: 4.6, location: 'Azuero', minutesAgo: 134 + Math.floor(now / 3600000) % 11 },
+    communityReports: (disrupted ? 7 : recovering ? 4 : 2) + Math.floor(now / (5 * 60 * 1000)) % 3,
+    transit, power: disrupted ? 'interrupted' : recovering ? 'recovering' : 'scheduled',
     water: disrupted ? 'interrupted' : recovering ? 'recovering' : 'no_notice',
     generatedAt: now,
   };

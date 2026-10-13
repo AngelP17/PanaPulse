@@ -81,7 +81,7 @@ export function HeroCard({
 }
 
 /** How a chip's fact is known. The icon says it in a shape, the words say it in full. */
-export type PillKind = 'official' | 'forecast' | 'stale' | 'community';
+export type PillKind = 'official' | 'forecast' | 'stale' | 'community' | 'demo';
 
 export function StatusPill({ kind, label, onPress }: { kind: PillKind; label: string; onPress: () => void }) {
   const { c } = useApp();

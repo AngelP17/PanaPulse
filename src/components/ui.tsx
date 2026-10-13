@@ -120,20 +120,20 @@ export function TileGrid({ children }: { children: React.ReactNode }) {
   );
 }
 
-export type Verification = 'official' | 'community' | 'stale' | 'unavailable';
+export type Verification = 'official' | 'community' | 'stale' | 'unavailable' | 'demo';
 
 /** Verification is shown with an icon-free text label plus shape, never color alone. */
 export function StatusChip({ kind }: { kind: Verification }) {
   const { c, t } = useApp();
-  const color = kind === 'official' ? c.official : kind === 'community' ? c.community : kind === 'stale' ? c.stale : c.unknown;
-  const label = kind === 'official' ? t('official') : kind === 'community' ? t('community') : kind === 'stale' ? t('stale') : t('unavailable');
+  const color = kind === 'official' ? c.official : kind === 'community' ? c.community : kind === 'stale' ? c.stale : kind === 'demo' ? c.ink : c.unknown;
+  const label = kind === 'official' ? t('official') : kind === 'community' ? t('community') : kind === 'stale' ? t('stale') : kind === 'demo' ? t('demoChip') : t('unavailable');
   return (
     <View
       style={[
         styles.chip,
         kind === 'official'
           ? { backgroundColor: color }
-          : { borderWidth: 1.5, borderColor: color, borderStyle: kind === 'community' ? 'dashed' : 'solid' },
+          : { borderWidth: 1.5, borderColor: color, borderStyle: kind === 'community' || kind === 'demo' ? 'dashed' : 'solid' },
       ]}
     >
       <Text style={{ fontFamily: font.bold, fontSize: 12, letterSpacing: 0.4, color: kind === 'official' ? c.officialInk : color }}>
