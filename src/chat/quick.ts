@@ -5,6 +5,7 @@ import { clock, dayStamp, pct, place } from '../data/format';
 import { CORREGIMIENTOS, SERVICES } from '../data/services';
 import { noticesFor, providerFor } from '../data/utilities';
 import type { Lang } from '../i18n/strings';
+import type { DemoScene } from '../data/demo';
 
 export interface QuickAnswer {
   text: string;
@@ -35,11 +36,52 @@ function zoneIn(q: string, fallback: string): string {
   return CORREGIMIENTOS.find((z) => q.includes(norm(z).trim())) ?? fallback;
 }
 
-export function quickAnswer(question: string, data: SeismicData, lang: Lang, zone = 'Pueblo Nuevo', now = Date.now()): QuickAnswer | null {
+export function quickAnswer(question: string, data: SeismicData, lang: Lang, zone = 'Pueblo Nuevo', now = Date.now(), preview: DemoScene | null = null): QuickAnswer | null {
   const q = norm(question);
   const es = lang === 'es';
   const asOf = dayStamp(data.fetchedAt, lang);
   const day = data.earthquakes.filter((e) => e.time >= data.fetchedAt - 24 * 3600 * 1000);
+
+  // The preview is a complete, deterministic product walkthrough. These are NEVER official conditions.
+  // Real USGS earthquake/forecast questions intentionally continue below unchanged.
+  if (preview && !has(q, QUAKE) && !has(q, FORECAST)) {
+    const power = preview.power === 'interrupted' ? es ? 'interrupción reportada' : 'reported interruption'
+      : preview.power === 'recovering' ? es ? 'restablecimiento en curso' : 'restoration in progress'
+      : es ? 'mantenimiento previsto' : 'scheduled maintenance';
+    const water = preview.water === 'interrupted' ? es ? 'baja presión' : 'low pressure'
+      : preview.water === 'recovering' ? es ? 'presión recuperándose' : 'pressure recovering'
+      : es ? 'servicio habitual' : 'regular service';
+    const transit = preview.transit[0].condition === 'delayed' ? es ? 'Hay demoras en la ruta.' : 'The route has delays.'
+      : preview.transit[0].condition === 'recovering' ? es ? 'El servicio se está recuperando.' : 'Service is recovering.'
+      : es ? 'La ruta circula con horario habitual.' : 'The route is running on its regular schedule.';
+    let text: string;
+    let intent = 'preview-summary';
+    if (has(q, METRO)) {
+      intent = 'preview-metro';
+      text = es ? `En esta vista previa, la Línea 1 llega en ${preview.transit[0].arrivalMinutes} min y la Línea 2 en ${preview.transit[1].arrivalMinutes} min. ${transit}`
+        : `In this preview, Line 1 arrives in ${preview.transit[0].arrivalMinutes} min and Line 2 in ${preview.transit[1].arrivalMinutes} min. ${transit}`;
+    } else if (has(q, BUS)) {
+      intent = 'preview-bus';
+      text = es ? `En esta vista previa, MiBus llega en ${preview.transit[2].arrivalMinutes} min. ${transit}`
+        : `In this preview, MiBus arrives in ${preview.transit[2].arrivalMinutes} min. ${transit}`;
+    } else if (has(q, POWER)) {
+      intent = 'preview-power';
+      text = es ? `En el escenario de Pueblo Nuevo: ${power}. Abre Servicios para ver más.`
+        : `In the Pueblo Nuevo scenario: ${power}. Open Services for more detail.`;
+    } else if (has(q, WATER)) {
+      intent = 'preview-water';
+      text = es ? `En el escenario actual de Pueblo Nuevo: ${water}. Encontrarás más en Servicios.`
+        : `In the current Pueblo Nuevo scenario: ${water}. See Services for details.`;
+    } else if (has(q, REPORT)) {
+      intent = 'preview-reports';
+      text = es ? `Hay ${preview.communityReports} reportes vecinales en este escenario. Puedes agregar uno en Reportes.`
+        : `There are ${preview.communityReports} neighborhood reports in this scenario. Add one in Reports.`;
+    } else {
+      text = es ? `En esta vista previa de Pueblo Nuevo: luz, ${power}; agua, ${water}; Línea 1 en ${preview.transit[0].arrivalMinutes} min. Pregúntame por un servicio o consulta Sismos para ver datos reales del USGS.`
+        : `In the Pueblo Nuevo preview: power, ${power}; water, ${water}; Line 1 in ${preview.transit[0].arrivalMinutes} min. Ask about a service or open Quakes for real USGS data.`;
+    }
+    return { text, intent };
+  }
 
   // Forecast first: "¿qué tan probable es otra réplica fuerte?" mentions "fuerte" too.
   if (has(q, FORECAST) && data.forecast) {
