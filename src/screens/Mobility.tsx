@@ -3,6 +3,7 @@ import React from 'react';
 import { View } from 'react-native';
 import { Card, LinkChip, SourceLine, StatusChip, Txt, styles } from '../components/ui';
 import { makeDemoScene, TransitId } from '../data/demo';
+import { DemoMobility } from './DemoScreens';
 import { SERVICES } from '../data/services';
 import { useApp } from '../state/AppContext';
 import { radius, space, type } from '../theme/tokens';
@@ -11,6 +12,7 @@ export function Mobility() {
   const { c, t, demoEnabled, demoScenario, now } = useApp();
   const scene = makeDemoScene(now, demoScenario);
   const labels: Record<TransitId, string> = { metro1: t('metroL1'), metro2: t('metroL2'), mibus: t('mibus') };
+  if (demoEnabled) return <DemoMobility />;
   return (
     <View style={{ gap: space.md }}>
       <Txt size={type.hero - 10} weight="bold" style={{ paddingHorizontal: space.xs }} accessibilityRole="header">

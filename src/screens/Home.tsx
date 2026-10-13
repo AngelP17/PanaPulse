@@ -7,6 +7,7 @@ import { Button, Card, CardHeader, SourceLine, Txt, styles } from '../components
 import { ago, clock, dayKey, dayStamp, place } from '../data/format';
 import { joinList, locality, offlineSources, OfflineSource, seismicHero } from '../data/glance';
 import { makeDemoScene } from '../data/demo';
+import { DemoHome } from './DemoScreens';
 import { powerFeedState, usePowerMaintenance } from '../data/maintenance';
 import { useApp } from '../state/AppContext';
 import { space, type } from '../theme/tokens';
@@ -88,6 +89,9 @@ export function Home({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
     : power === 'stale' ? t('powerStale')
     : maintenanceState === 'loading' ? t('loadingMaintenance')
     : t('powerNoFeed');
+
+  // In preview mode, replace real-source cards instead of stacking fictional data above missing feeds.
+  if (demoEnabled) return <DemoHome />;
 
   return (
     <View style={{ gap: space.md }}>
