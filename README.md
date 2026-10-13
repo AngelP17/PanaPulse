@@ -1,5 +1,7 @@
 # PanaPulse v0.2.1 (Brand integration)
 
+**Active Beta 1 proposal:** See CLAUDE_HANDOFF_BETA1.md (exact handoff), design/ART_DIRECTION_BETA1.md (approved-brand art direction) and docs/BETA1_READINESS.md (strict GO/NO-GO). This does not change the app version or claim Beta 1 is released.
+
 Spanish-first civic dashboard for Panama City. Expo SDK 57 (React Native 0.86), Android-first,
 premium atmospheric design in the PanaPulse "Porcelana" palette (see `docs/BRAND.md`), ES/EN, Auto/Light/Dark.
 

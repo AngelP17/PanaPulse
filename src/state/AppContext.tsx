@@ -6,6 +6,8 @@ import { format, Lang, StringKey, strings } from '../i18n/strings';
 import { palettes, Palette, ThemeName } from '../theme/tokens';
 import { loadLive, loadSnapshot, SeismicData } from '../data/usgs';
 import type { DemoScenario } from '../data/demo';
+import type { AnonymousReport, ReportService } from '../data/neighborhood';
+import { safePreviewNote } from '../data/neighborhood';
 
 export type ThemePref = 'auto' | 'light' | 'dark';
 export type Tab = 'home' | 'services' | 'mobility' | 'quakes' | 'chat' | 'report' | 'settings';
@@ -20,7 +22,8 @@ interface AppState {
   demoScenario: DemoScenario;
   setDemoScenario: (s: DemoScenario) => void;
   demoReports: number;
-  addDemoReport: () => void;
+  demoSubmittedReports: AnonymousReport[];
+  addDemoReport: (input: { service: ReportService; corregimiento: string; note: string }) => void;
   demoCommuteSaved: boolean;
   setDemoCommuteSaved: (value: boolean) => void;
   theme: ThemeName;
@@ -66,7 +69,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [themePref, setThemePrefState] = useState<ThemePref>('auto');
   const [demoEnabled, setDemoEnabled] = useState(false);
   const [demoScenario, setDemoScenario] = useState<DemoScenario>('everyday');
-  const [demoReports, setDemoReports] = useState(0);
+  const [demoSubmittedReports, setDemoSubmittedReports] = useState<AnonymousReport[]>([]);
+  const demoReports = demoSubmittedReports.length;
   const [demoCommuteSaved, setDemoCommuteSaved] = useState(true);
   const [prefsLoaded, setPrefsLoaded] = useState(false);
   const [tab, setTab] = useState<Tab>('home');
@@ -110,7 +114,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [prefsLoaded, lang, themePref, demoEnabled, demoScenario]);
   const setLang = useCallback((l: Lang) => setLangState(l), []);
   const setThemePref = useCallback((tp: ThemePref) => setThemePrefState(tp), []);
-  const addDemoReport = useCallback(() => setDemoReports((count) => count + 1), []);
+  const addDemoReport = useCallback((input: { service: ReportService; corregimiento: string; note: string }) => {
+    setDemoSubmittedReports((old) => [{
+      id: `local-${Date.now()}-${old.length}`,
+      service: input.service,
+      // One corregimiento only: never save or display a precise map location.
+      corregimiento: input.corregimiento,
+      note: safePreviewNote(input.note),
+      at: Date.now(),
+      origin: 'local' as const,
+    }, ...old].slice(0, 20));
+  }, []);
 
   const theme: ThemeName = themePref === 'auto' ? (system === 'light' ? 'light' : 'dark') : themePref;
 
@@ -125,6 +139,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       demoScenario,
       setDemoScenario,
       demoReports,
+      demoSubmittedReports,
       addDemoReport,
       demoCommuteSaved,
       setDemoCommuteSaved,
@@ -146,7 +161,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         return q;
       },
     }),
-    [lang, setLang, themePref, setThemePref, demoEnabled, demoScenario, demoReports, addDemoReport, demoCommuteSaved, theme, tab, seismic, now, pendingQuestion],
+    [lang, setLang, themePref, setThemePref, demoEnabled, demoScenario, demoReports, demoSubmittedReports, addDemoReport, demoCommuteSaved, theme, tab, seismic, now, pendingQuestion],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

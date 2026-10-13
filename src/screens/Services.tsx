@@ -3,6 +3,7 @@ import React from 'react';
 import { Linking, View } from 'react-native';
 import { Button, Card, CardHeader, StatusChip, Txt } from '../components/ui';
 import { SectionHeading } from '../components/section';
+import { NeighborhoodFeed } from '../components/NeighborhoodFeed';
 import { makeDemoScene } from '../data/demo';
 import { DemoControls, DemoUtilityCard, PreviewServices } from './DemoScreens';
 import { usePowerMaintenance, powerFeedState } from '../data/maintenance';
@@ -79,12 +80,7 @@ export function Services() {
       ) : null}
       <SectionHeading title={t('categoryCommunity')} subtitle={t('categoryCommunityHint')} />
       {demoEnabled ? (
-        <Card style={{ gap: space.sm }}>
-          <StatusChip kind="demo" />
-          <Txt size={type.body} weight="semibold">{t('demoDemoCount', { n: demo.communityReports })}</Txt>
-          <Txt size={type.label} tone="muted">{t('demoNotice')}</Txt>
-          <Button label={t('reportHomeAction')} onPress={() => go('report')} />
-        </Card>
+        <NeighborhoodFeed limit={3} onViewAll={() => go('report')} />
       ) : (
         <Button label={t('reportCta')} icon={<Megaphone size={18} color={c.community} />} onPress={() => go('report')} />
       )}

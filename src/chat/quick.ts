@@ -3,13 +3,20 @@
 import { bin, SeismicData } from '../data/usgs';
 import { clock, dayStamp, pct, place } from '../data/format';
 import { CORREGIMIENTOS, SERVICES } from '../data/services';
-import { noticesFor, providerFor } from '../data/utilities';
+import { providerFor } from '../data/utilities';
+import type { MaintenanceResult, PowerFeedState } from '../data/maintenance';
 import type { Lang } from '../i18n/strings';
 import type { DemoScene } from '../data/demo';
+import { powerSurfaceSource } from '../data/sourcePolicy';
 
 export interface QuickAnswer {
   text: string;
   intent: string;
+}
+
+export interface PowerChatContext {
+  data: MaintenanceResult | null;
+  state: PowerFeedState;
 }
 
 const norm = (s: string) =>
@@ -31,17 +38,60 @@ const POWER = /\b(luz|electricidad|apagon|apagones|corte de luz|power|electricit
 const WATER = /\b(agua|idaan|water)\b/;
 const REPORT = /\b(reportar|reporto|reportes|reporte|reports|reporting|report)\b/;
 
+/** Read-only, source-backed scheduled interruptions. Never reports actual power availability. */
+function officialMaintenanceAnswer(source: PowerChatContext | undefined, zone: string, lang: Lang): QuickAnswer | null {
+  if (!source?.data || source.state === 'none' || norm(source.data.corregimiento).trim() !== norm(zone).trim()) return null;
+  const es = lang === 'es';
+  const stale = source.state === 'stale';
+  const notices = [...source.data.notices].sort((a, b) => Date.parse(a.start) - Date.parse(b.start));
+  const providers = source.data.sources.map((s) => s.provider === 'ensa' ? 'ENSA' : 'Naturgy').join(' / ');
+  const timestamps = source.data.sources.map((s) => s.last_success_at).filter((s): s is string => !!s);
+  const last = timestamps.length ? dayStamp(Math.min(...timestamps.map((v) => Date.parse(v))), lang) : null;
+  const basis = es
+    ? `Fuente: cronograma de ${providers || 'distribuidora'}${last ? `, consultado ${last}` : ''}.`
+    : `Source: ${providers || 'utility'} maintenance schedule${last ? `, last checked ${last}` : ''}.`;
+  const limit = es
+    ? 'Esto solo cubre cortes programados y NO confirma si tienes luz ahora.'
+    : 'This covers scheduled interruptions only and does NOT confirm electricity is on now.';
+  const caveat = stale
+    ? (es ? 'Los datos oficiales están desactualizados. ' : 'The official data is outdated. ')
+    : '';
+  if (!notices.length) {
+    return {
+      intent: 'official-power-schedule',
+      text: es
+        ? `${zone}: ${caveat}No hay cortes programados publicados en el último cronograma consultado. ${basis} ${limit}`
+        : `${zone}: ${caveat}No scheduled cuts were listed in the last retrieved schedule. ${basis} ${limit}`,
+    };
+  }
+  const first = notices[0];
+  const starts = Date.parse(first.start);
+  const ends = Date.parse(first.end);
+  const window = `${dayStamp(starts, lang)} – ${clock(ends, lang)}`;
+  return {
+    intent: 'official-power-schedule',
+    text: es
+      ? `${zone}: ${caveat}${notices.length} aviso(s) oficiales de mantenimiento programado. Próximo: ${first.place}, ${window}. ${basis} ${limit} Detalles: ${first.source_url}`
+      : `${zone}: ${caveat}${notices.length} official scheduled-maintenance notice(s). Next: ${first.place}, ${window}. ${basis} ${limit} Details: ${first.source_url}`,
+  };
+}
+
 /** The corregimiento named in the question, else the user's saved zone. */
 function zoneIn(q: string, fallback: string): string {
   return CORREGIMIENTOS.find((z) => q.includes(norm(z).trim())) ?? fallback;
 }
 
-export function quickAnswer(question: string, data: SeismicData, lang: Lang, zone = 'Pueblo Nuevo', now = Date.now(), preview: DemoScene | null = null): QuickAnswer | null {
+export function quickAnswer(question: string, data: SeismicData, lang: Lang, zone = 'Pueblo Nuevo', now = Date.now(), preview: DemoScene | null = null, powerFeed?: PowerChatContext): QuickAnswer | null {
   const q = norm(question);
   const es = lang === 'es';
   const asOf = dayStamp(data.fetchedAt, lang);
   const day = data.earthquakes.filter((e) => e.time >= data.fetchedAt - 24 * 3600 * 1000);
   const archived = data.mode !== 'live' || now - data.fetchedAt > 20 * 60 * 1000;
+  // One shared decision with Home and Services: a real current or stale feed is always what Ask reports.
+  const powerSurface = powerSurfaceSource(powerFeed?.state ?? 'none', preview !== null);
+  const powerAnswer = powerSurface === 'official' || powerSurface === 'stale'
+    ? officialMaintenanceAnswer(powerFeed, zoneIn(q, zone), lang)
+    : null;
 
   // The preview is a complete, deterministic product walkthrough. These are NEVER official conditions.
   // Real USGS earthquake/forecast questions intentionally continue below unchanged.
@@ -66,6 +116,7 @@ export function quickAnswer(question: string, data: SeismicData, lang: Lang, zon
       text = es ? `En esta vista previa, MiBus llega en ${preview.transit[2].arrivalMinutes} min. ${transit}`
         : `In this preview, MiBus arrives in ${preview.transit[2].arrivalMinutes} min. ${transit}`;
     } else if (has(q, POWER)) {
+      if (powerAnswer) return powerAnswer;
       intent = 'preview-power';
       text = es ? `En el escenario de Pueblo Nuevo: ${power}. Abre Servicios para ver más.`
         : `In the Pueblo Nuevo scenario: ${power}. Open Services for more detail.`;
@@ -78,8 +129,11 @@ export function quickAnswer(question: string, data: SeismicData, lang: Lang, zon
       text = es ? `Hay ${preview.communityReports} reportes vecinales en este escenario. Puedes agregar uno en Reportes.`
         : `There are ${preview.communityReports} neighborhood reports in this scenario. Add one in Reports.`;
     } else {
-      text = es ? `En esta vista previa de Pueblo Nuevo: luz, ${power}; agua, ${water}; Línea 1 en ${preview.transit[0].arrivalMinutes} min. Pregúntame por un servicio o consulta Sismos para ver datos reales del USGS.`
-        : `In the Pueblo Nuevo preview: power, ${power}; water, ${water}; Line 1 in ${preview.transit[0].arrivalMinutes} min. Ask about a service or open Quakes for real USGS data.`;
+      const summaryPower = powerAnswer
+        ? (es ? 'avisos oficiales programados disponibles' : 'official scheduled notices available')
+        : power;
+      text = es ? `En esta vista previa de Pueblo Nuevo: luz, ${summaryPower}; agua, ${water}; Línea 1 en ${preview.transit[0].arrivalMinutes} min. Pregúntame por un servicio o consulta Sismos para ver datos reales del USGS.`
+        : `In the Pueblo Nuevo preview: power, ${summaryPower}; water, ${water}; Line 1 in ${preview.transit[0].arrivalMinutes} min. Ask about a service or open Quakes for real USGS data.`;
     }
     return { text, intent };
   }
@@ -160,28 +214,15 @@ export function quickAnswer(question: string, data: SeismicData, lang: Lang, zon
   }
 
   if (has(q, POWER)) {
+    if (powerAnswer) return powerAnswer;
     const z = zoneIn(q, zone);
     const p = providerFor(z);
-    const ns = noticesFor(z, now);
-    const who =
-      p.provider === 'border'
-        ? es ? 'zona límite entre Naturgy y ENSA' : 'a border area between Naturgy and ENSA'
-        : p.verified ? `${p.name}${es ? ' (zona de concesión oficial)' : ' (official concession area)'}` : `${p.name}${es ? ' (inferido)' : ' (inferred)'}`;
-    if (ns.length) {
-      const n = ns[0];
-      const when = `${dayStamp(n.start, lang).split(',')[0]}, ${clock(n.start, lang)}–${clock(n.end, lang)}`;
-      return {
-        intent: 'power',
-        text: es
-          ? `${z}: ${who}. Hay ${ns.length} corte${ns.length > 1 ? 's' : ''} programado${ns.length > 1 ? 's' : ''}; el próximo es ${when} en ${n.place} (${n.task.toLowerCase()}). Fuente: avisos de ${n.provider}.`
-          : `${z}: ${who}. ${ns.length} scheduled cut${ns.length > 1 ? 's' : ''}; next is ${when} in ${n.place}. Source: ${n.provider} notices.`,
-      };
-    }
+    const name = p.provider === 'border' ? 'ENSA / Naturgy' : p.name;
     return {
-      intent: 'power',
+      intent: 'power-unavailable',
       text: es
-        ? `${z}: ${who}. No hay cortes programados publicados para esta zona. Esto no cubre apagones imprevistos.`
-        : `${z}: ${who}. No scheduled cuts published for this area. This doesn't cover unplanned outages.`,
+        ? `No puedo comprobar los avisos programados actuales de ${name} para ${z} porque el servidor de fuentes no está disponible. Tampoco puedo confirmar si tienes luz ahora. Consulta el canal oficial de la distribuidora.`
+        : `I can't verify current ${name} scheduled-maintenance notices for ${z} because the source backend is unavailable. I also can't confirm that power is on. Check the provider's official channel.`,
     };
   }
 

@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
 import { CORREGIMIENTOS } from '../data/services';
 import { makeDemoScene } from '../data/demo';
+import { NeighborhoodFeed } from '../components/NeighborhoodFeed';
 import { ago } from '../data/format';
 import { useApp } from '../state/AppContext';
 import { font, radius, space, type } from '../theme/tokens';
@@ -45,7 +46,7 @@ export function Report() {
 
   const submit = async () => {
     if (demoEnabled) {
-      addDemoReport();
+      addDemoReport({ service, corregimiento: where, note });
       setSaved(true);
       setNote('');
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
@@ -77,16 +78,7 @@ export function Report() {
       </View>
 
       {demoEnabled ? (
-        <Card style={{ gap: space.sm }}>
-          <Txt size={type.title} weight="semibold">
-            {t('previewReports', { n: demoCommunityCount })}
-          </Txt>
-          <Txt size={type.body} tone="muted">
-            {demo.water === 'interrupted' ? t('previewWaterIssue') :
-              demo.power === 'interrupted' ? t('previewPowerIssue') : t('previewWaterGood')}
-          </Txt>
-
-        </Card>
+        <NeighborhoodFeed limit={20} />
       ) : null}
       {saved ? (
         <Card>
@@ -162,25 +154,26 @@ export function Report() {
             accessibilityLabel={t('note')}
             style={{ minHeight: 84, borderRadius: radius.tile, backgroundColor: c.tile, padding: space.md, color: c.ink, fontFamily: font.medium, fontSize: type.body, textAlignVertical: 'top' }}
           />
+          <Txt size={type.caption + 1} tone="muted">{t('neighborPrivacy')}</Txt>
           <Button label={t('submit')} variant="solid" onPress={submit} />
         </Card>
       )}
 
-      {mine.length > 0 ? (
-        <Card style={{ gap: space.xs }}>
-          <Txt size={type.body} weight="semibold">
-            {t('myReports')}
-          </Txt>
-          {mine.slice(0, 5).map((r) => (
-            <View key={r.at} style={[styles.row, { backgroundColor: c.tile, borderRadius: radius.tile, padding: space.sm, paddingHorizontal: space.md, minHeight: 52 }]}>
-              {r.service === 'electricity' ? <Zap size={18} color={c.muted} /> : <Droplets size={18} color={c.muted} />}
-              <Txt size={type.body} style={{ flex: 1 }} numberOfLines={1}>
-                {r.corregimiento}
-              </Txt>
-              <Txt size={type.label} tone="muted">
-                {ago(r.at, now, lang)}
-              </Txt>
-              <StatusChip kind="community" />
+      {!demoEnabled && mine.length > 0 ? (
+        <Card style={{ gap: space.sm }}>
+          <Txt size={type.title} weight="semibold">{t('myReports')}</Txt>
+          <Txt size={type.caption + 1} tone="muted">{t('neighborMyLocalOnly')}</Txt>
+          {mine.slice(0, 10).map((r, index) => (
+            <View key={`${r.at}-${index}`}
+              style={{ borderBottomWidth: 1, borderBottomColor: c.line, paddingVertical: space.sm, gap: space.xs }}>
+              <View style={styles.row}>
+                {r.service === 'electricity'
+                  ? <Zap size={18} color={c.ink} />
+                  : <Droplets size={18} color={c.ink} />}
+                <Txt size={type.body} weight="semibold" style={{ flex: 1 }}>{r.corregimiento}</Txt>
+                <Txt size={type.label} tone="muted">{ago(r.at, now, lang)}</Txt>
+              </View>
+              {r.note ? <Txt size={type.body}>{r.note}</Txt> : null}
             </View>
           ))}
         </Card>

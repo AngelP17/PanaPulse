@@ -5,6 +5,7 @@ import { DemoCommuteCard, DemoControls } from './DemoScreens';
 import { SectionHeading } from '../components/section';
 import { Button, Card, CardHeader, SourceLine, Txt } from '../components/ui';
 import { makeDemoScene } from '../data/demo';
+import { NeighborhoodFeed } from '../components/NeighborhoodFeed';
 import { dayStamp, place } from '../data/format';
 import { useApp } from '../state/AppContext';
 import { radius, space, type } from '../theme/tokens';
@@ -16,7 +17,6 @@ import { radius, space, type } from '../theme/tokens';
 export function PreviewHome({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
   const { c, t, lang, now, demoScenario, demoReports, demoCommuteSaved, seismic, go } = useApp();
   const scene = makeDemoScene(now, demoScenario);
-  const reports = scene.communityReports + demoReports;
   const latest = seismic.earthquakes.length
     ? [...seismic.earthquakes].sort((a, b) => b.time - a.time)[0]
     : null;
@@ -79,11 +79,7 @@ export function PreviewHome({ onOpenQuake }: { onOpenQuake: (id: string) => void
       )}
 
       <SectionHeading title={t('previewSectionCommunity')} subtitle={t('categoryCommunityHint')} />
-      <Card style={{ gap: space.sm }}>
-        <CardHeader title={t('reportHomeTitle')} icon={<Megaphone size={19} color={c.ink} />} />
-        <Txt size={type.title + 2} weight="bold" numeric>{t('previewReports', { n: reports })}</Txt>
-        <Button label={t('reportHomeAction')} onPress={() => go('report')} />
-      </Card>
+      <NeighborhoodFeed limit={2} onViewAll={() => go('report')} />
 
       <SectionHeading title={t('categorySeismic')} subtitle={t('categorySeismicHint')} />
       <Card style={{ gap: space.sm }}>

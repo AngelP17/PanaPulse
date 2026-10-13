@@ -18,6 +18,8 @@ jobs:
       - name: Run offline tests
         run: python -m pytest tests -q
         working-directory: backend
+      - name: Validate real-source pilot script
+        run: bash -n scripts/first-live-test.sh
   mobile-types:
     runs-on: ubuntu-latest
     steps:
@@ -31,5 +33,7 @@ jobs:
         run: node --stack-size=8000 node_modules/typescript/bin/tsc --noEmit
       - name: Source precedence regression
         run: node scripts/test-source-policy.cjs
+      - name: Seismic UI filtering and catalog integrity
+        run: node scripts/test-seismic-view.cjs
       - name: Interactive preview regression
         run: node scripts/test-preview-flow.cjs

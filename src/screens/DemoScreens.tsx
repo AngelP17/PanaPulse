@@ -1,11 +1,12 @@
 import { Bus, Droplets, Megaphone, TrainFront, Zap } from 'lucide-react-native';
 import React from 'react';
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 import { PressScale } from '../components/motion';
 import { Button, Card, CardHeader, LinkChip, Txt } from '../components/ui';
 import type { DemoScenario, DemoUtilityState, TransitId } from '../data/demo';
 import { makeDemoScene } from '../data/demo';
 import { useApp } from '../state/AppContext';
+import { NeighborhoodFeed } from '../components/NeighborhoodFeed';
 import { radius, space, type } from '../theme/tokens';
 
 /** One global Preview indicator is in the Shell; content here reads like a real product. */
@@ -19,8 +20,7 @@ export function DemoControls() {
   return (
     <View style={{ borderRadius: radius.tile, backgroundColor: c.tileStrong, padding: space.sm, gap: space.xs }}>
       <Txt size={type.caption + 1} weight="semibold" tone="muted">{t('previewControlsTitle')}</Txt>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ gap: space.xs }} accessibilityLabel={t('demoChange')}>
+      <View accessibilityLabel={t('demoChange')} style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.xs }}>
         {choices.map(({ id, label }) => {
           const selected = demoScenario === id;
           return (
@@ -33,7 +33,7 @@ export function DemoControls() {
             </PressScale>
           );
         })}
-      </ScrollView>
+      </View>
     </View>
   );
 }
@@ -125,13 +125,7 @@ export function PreviewServices() {
       <DemoControls />
       <DemoUtilityCard service="power" state={scene.power} />
       <DemoUtilityCard service="water" state={scene.water} />
-      <Card style={{ gap: space.sm }}>
-        <CardHeader icon={<Megaphone size={20} color={c.ink} />} title={t('previewSectionCommunity')} />
-        <Txt size={type.title + 3} weight="bold" numeric>
-          {t('previewReports', { n: scene.communityReports + demoReports })}
-        </Txt>
-        <Button label={t('reportHomeAction')} onPress={() => go('report')} />
-      </Card>
+      <NeighborhoodFeed limit={3} onViewAll={() => go('report')} />
       <Card style={{ gap: space.xs }}>
         <Txt size={type.label} weight="semibold" tone="muted">{t('realSourceLinksTitle')}</Txt>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.xs }}>

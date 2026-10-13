@@ -28,7 +28,9 @@ assert.equal(recovery.power, 'recovering');
 assert.ok(incidents.transit[0].arrivalMinutes > everyday.transit[0].arrivalMinutes);
 assert.notEqual(makeDemoScene(now + 60000, 'everyday').transit[0].arrivalMinutes, everyday.transit[0].arrivalMinutes);
 
+const sourcePolicy = load('src/data/sourcePolicy.ts');
 const { quickAnswer } = load('src/chat/quick.ts', {
+  '../data/sourcePolicy': sourcePolicy,
   '../data/usgs': { bin: () => null },
   '../data/format': {
     clock: (v) => new Date(v).toISOString(),
@@ -66,3 +68,48 @@ assert.match(ask('¿Hubo un sismo?', incidents), /M4.8/);
 assert.match(ask('¿Hubo un sismo?', incidents), /histórica/);
 assert.match(ask('¿Cómo está el Metro?'), /No tenemos datos/);
 console.log('Preview scenario chat, time evolution, report interactions and real-USGS integrity: 14 assertions passed.');
+
+const connectedPower = {
+  state: 'scheduled',
+  data: {
+    corregimiento: 'Pueblo Nuevo',
+    service_state: 'unknown',
+    scope: 'scheduled_maintenance_only',
+    sources: [{ provider: 'naturgy', freshness: 'current', last_success_at: new Date(now - 120000).toISOString() }],
+    notices: [{
+      id: 'official-notice-1', place: 'Hato Pintado', provider: 'Naturgy',
+      start: new Date(now + 3600000).toISOString(),
+      end: new Date(now + 4 * 3600000).toISOString(),
+      source_url: 'https://example.org/official-maintenance',
+      verification: 'official_scheduled', source_freshness: 'current',
+    }],
+  },
+};
+const livePower = (q, powerFeed, preview = incidents, lang = 'es') =>
+  quickAnswer(q, usgs, lang, 'Pueblo Nuevo', now, preview, powerFeed)?.text;
+assert.match(livePower('¿Hay luz en Pueblo Nuevo?', connectedPower), /Hato Pintado/);
+assert.match(livePower('¿Hay luz en Pueblo Nuevo?', connectedPower), /cronograma/);
+assert.doesNotMatch(livePower('¿Hay luz en Pueblo Nuevo?', connectedPower), /interrupción reportada/);
+assert.match(livePower('¿Qué pasa en mi zona?', connectedPower), /avisos oficiales programados/);
+assert.match(livePower('¿Hay cortes de luz?', { ...connectedPower, state: 'stale' }), /desactualizados/);
+assert.match(livePower('¿Hay luz?', { ...connectedPower, data: { ...connectedPower.data, notices: [] } }), /No hay cortes programados publicados/);
+assert.match(livePower('¿Hay luz?', { state: 'none', data: null }, null), /No puedo comprobar/);
+assert.match(livePower('¿Hay luz?', { state: 'none', data: null }), /interrupción reportada/);
+assert.match(livePower('¿Hay luz?', connectedPower, null), /Hato Pintado/);
+assert.match(livePower('¿Hay luz?', connectedPower, incidents, 'en'), /scheduled-maintenance/);
+// One selector for Home, Services and Ask: the visible power source must agree on every state.
+const { powerSurfaceSource } = sourcePolicy;
+for (const [state, data, expectKind] of [['scheduled', connectedPower.data, 'official'], ['stale', connectedPower.data, 'stale'], ['none', null, null]]) {
+  for (const previewOn of [false, true]) {
+    const surface = powerSurfaceSource(state, previewOn);
+    const text = quickAnswer('¿Hay luz en Pueblo Nuevo?', usgs, 'es', 'Pueblo Nuevo', now, previewOn ? incidents : null, { state, data });
+    if (expectKind) {
+      assert.equal(surface, expectKind);
+      assert.match(text.text ?? text, /Hato Pintado/, `Ask must show the real ${state} notice (preview ${previewOn}).`);
+    } else {
+      assert.equal(surface, previewOn ? 'example' : 'missing');
+      assert.match(text.text ?? text, previewOn ? /interrupción reportada/ : /No puedo comprobar/);
+    }
+  }
+}
+console.log('Official maintenance beats preview incidents; stale and unavailable source states stay distinct.');
