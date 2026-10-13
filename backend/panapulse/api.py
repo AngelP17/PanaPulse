@@ -9,7 +9,8 @@ from sqlalchemy.orm import sessionmaker, Session
 
 from .config import Settings
 from .ask import Asker, AskError, DataTools, RateLimiter
-from .models import AftershockForecast, Base, Earthquake, EarthquakeRevision, SourceHealth, make_session_factory
+from .models import AftershockForecast, Base, Earthquake, EarthquakeRevision, SourceHealth, UtilityNotice, make_session_factory
+from .utilities import ENSA_URL, NATURGY_URL, key, provider_for
 
 
 def as_utc(value: datetime | None) -> str | None:
@@ -106,6 +107,54 @@ def create_app(sessions: sessionmaker[Session], asker: Asker | None = None,
                     "last_error": health.last_error if health else None,
                     "last_event_count": health.last_event_count if health else None,
                     "note": "Data freshness does not mean the absence of nearby earthquakes."}
+
+    @app.get("/v0/power-maintenance")
+    def power_maintenance(corregimiento: str = Query(..., min_length=2, max_length=100)):
+        """Official scheduled work only; never confirms current electricity availability."""
+        zone = corregimiento.strip()
+        match = provider_for(zone)
+        providers = ["ensa", "naturgy"] if match["provider"] == "border" else [match["provider"]]
+        current = datetime.now(timezone.utc)
+        sources, notices = [], []
+        with sessions() as s:
+            for provider in providers:
+                h = s.get(SourceHealth, provider)
+                success = h.last_success_at if h else None
+                if success and success.tzinfo is None:
+                    success = success.replace(tzinfo=timezone.utc)
+                age = current - success if success else None
+                freshness = "current" if age is not None and timedelta(0) <= age < timedelta(hours=36) and not h.last_error else "stale_or_unavailable"
+                sources.append({
+                    "provider": provider, "freshness": freshness,
+                    "source_url": ENSA_URL if provider == "ensa" else NATURGY_URL,
+                    "last_success_at": as_utc(success),
+                    "last_attempt_at": as_utc(h.last_attempt_at) if h else None,
+                    "last_error": h.last_error if h else None,
+                })
+                if success is None:
+                    continue
+                rows = s.scalars(select(UtilityNotice).where(
+                    UtilityNotice.provider == ("ENSA" if provider == "ensa" else "Naturgy"),
+                    UtilityNotice.ends_at >= current,
+                    UtilityNotice.last_seen_at == h.last_success_at,
+                ).order_by(UtilityNotice.starts_at.asc()).limit(500)).all()
+                for row in rows:
+                    if key(row.corregimiento) != key(zone):
+                        continue
+                    notices.append({
+                        "id": row.id, "provider": row.provider, "place": row.place,
+                        "start": as_utc(row.starts_at), "end": as_utc(row.ends_at),
+                        "task": row.task, "affected": row.affected,
+                        "source_url": row.source_url, "verification": "official_scheduled",
+                        "source_freshness": freshness,
+                    })
+        notices.sort(key=lambda n: n["start"])
+        return {
+            "corregimiento": zone, "coverage": match, "sources": sources,
+            "notices": notices, "service_state": "unknown",
+            "scope": "scheduled_maintenance_only",
+            "note": "No scheduled notice does not imply service is normal.",
+        }
 
     @app.get("/v0/earthquakes")
     def earthquakes(limit: int = Query(50, ge=1, le=200)):

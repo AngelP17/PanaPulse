@@ -5,6 +5,8 @@ import { PulseRail } from '../components/pulse';
 import { Button, Card, CardHeader, SourceLine, StatusChip, Tile, TileGrid, Txt, styles } from '../components/ui';
 import { ago, clock, dayStamp, longDate, pct, place } from '../data/format';
 import { bin } from '../data/usgs';
+import { usePowerMaintenance } from '../data/maintenance';
+import { SectionHeading } from '../components/section';
 import { useApp } from '../state/AppContext';
 import { radius, space, type } from '../theme/tokens';
 
@@ -13,6 +15,9 @@ const MAPS_TRIP =
 
 export function Home({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
   const { c, t, lang, seismic, now, go } = useApp();
+  const { data: maintenance, state: maintenanceState } = usePowerMaintenance('Pueblo Nuevo');
+  const plannedCuts = maintenance?.notices ?? [];
+  const currentSource = maintenanceState === 'ready' && maintenance?.sources.every((s) => s.freshness === 'current') === true;
   const f = seismic.forecast;
   const main = useMemo(() => seismic.earthquakes.find((q) => q.id === f?.mainshockId) ?? null, [seismic, f]);
   const recent = seismic.earthquakes.slice(0, 3);
@@ -45,7 +50,7 @@ export function Home({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
         <CardHeader icon={<Activity size={18} color={c.accent} />} title={t('pulseTitle')} />
         <PulseRail
           nodes={[
-            { label: t('power'), status: t('pulsePowerStale'), state: 'stale' },
+            { label: t('power'), status: currentSource ? (plannedCuts.length ? t('scheduledBrief') : t('pulseNoPlans')) : t('pulsePowerStale'), state: currentSource ? 'scheduled' : 'stale' },
             { label: t('water'), status: t('pulseNone'), state: 'none' },
             { label: 'Metro', status: t('pulseNoFeed'), state: 'none' },
             { label: 'MiBus', status: t('pulseNoFeed'), state: 'none' },
@@ -57,6 +62,57 @@ export function Home({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
         </Txt>
       </Card>
 
+      <SectionHeading title={t('categoryServices')} subtitle={t('categoryServicesHint')} />
+      {/* Separate floating cards for power and water, each with its own verification line. */}
+      <View style={{ flexDirection: 'row', gap: space.sm }}>
+        <Card style={{ flex: 1, minWidth: 0, padding: space.md, gap: space.xs }}>
+          <View style={styles.row}>
+            <Zap size={18} color={c.stale} />
+            <Txt size={type.body} weight="bold">
+              {t('power')}
+            </Txt>
+          </View>
+          <Txt size={type.label} tone="muted" numberOfLines={1}>
+            {t('powerCardProvider')}
+          </Txt>
+          <Txt size={type.title} weight="bold" style={{ color: c.stale }}>
+            {currentSource ? (plannedCuts.length ? t('scheduledCount', { n: plannedCuts.length }) : t('noPlannedNotices')) : t('maintenanceUnavailable')}
+          </Txt>
+          <StatusChip kind={currentSource && plannedCuts.length ? "official" : "unavailable"} />
+          <Txt size={type.caption} tone="muted">
+            {currentSource ? t('maintenanceOnly') : t('maintenanceUnavailable')}
+          </Txt>
+        </Card>
+        <Card style={{ flex: 1, minWidth: 0, padding: space.md, gap: space.xs }}>
+          <View style={styles.row}>
+            <Droplets size={18} color={c.muted} />
+            <Txt size={type.body} weight="bold">
+              {t('water')}
+            </Txt>
+          </View>
+          <Txt size={type.label} tone="muted">
+            IDAAN
+          </Txt>
+          <Txt size={type.title} weight="bold" tone="muted">
+            {t('waterCardState')}
+          </Txt>
+          <View style={{ gap: 6 }}>
+            <View style={[styles.row, { gap: 6 }]}>
+              <StatusChip kind="unavailable" />
+            </View>
+            <Txt size={type.caption} tone="muted">
+              {t('waterOfficial')}
+            </Txt>
+            <Txt size={type.caption} tone="muted">
+              {t('waterCommunity')}
+            </Txt>
+          </View>
+        </Card>
+      </View>
+
+      <Button label={t('serviceDetails')} onPress={() => go('services')} />
+
+      <SectionHeading title={t('categoryMobility')} subtitle={t('categoryMobilityHint')} />
       {/* Everyday use: the commute, as a station timeline. No invented times. */}
       <Card style={{ backgroundColor: c.card }}>
         <CardHeader
@@ -92,53 +148,7 @@ export function Home({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
         <Button label={t('tripMaps')} variant="solid" onPress={() => Linking.openURL(MAPS_TRIP).catch(() => {})} />
       </Card>
 
-      {/* Separate floating cards for power and water, each with its own verification line. */}
-      <View style={{ flexDirection: 'row', gap: space.sm }}>
-        <Card style={{ flex: 1, minWidth: 0, padding: space.md, gap: space.xs }}>
-          <View style={styles.row}>
-            <Zap size={18} color={c.stale} />
-            <Txt size={type.body} weight="bold">
-              {t('power')}
-            </Txt>
-          </View>
-          <Txt size={type.label} tone="muted" numberOfLines={1}>
-            {t('powerCardProvider')}
-          </Txt>
-          <Txt size={type.title} weight="bold" style={{ color: c.stale }}>
-            {t('powerCardState')}
-          </Txt>
-          <StatusChip kind="stale" />
-          <Txt size={type.caption} tone="muted">
-            {t('powerCardBasis')}
-          </Txt>
-        </Card>
-        <Card style={{ flex: 1, minWidth: 0, padding: space.md, gap: space.xs }}>
-          <View style={styles.row}>
-            <Droplets size={18} color={c.muted} />
-            <Txt size={type.body} weight="bold">
-              {t('water')}
-            </Txt>
-          </View>
-          <Txt size={type.label} tone="muted">
-            IDAAN
-          </Txt>
-          <Txt size={type.title} weight="bold" tone="muted">
-            {t('waterCardState')}
-          </Txt>
-          <View style={{ gap: 6 }}>
-            <View style={[styles.row, { gap: 6 }]}>
-              <StatusChip kind="unavailable" />
-            </View>
-            <Txt size={type.caption} tone="muted">
-              {t('waterOfficial')}
-            </Txt>
-            <Txt size={type.caption} tone="muted">
-              {t('waterCommunity')}
-            </Txt>
-          </View>
-        </Card>
-      </View>
-
+      <SectionHeading title={t('categorySeismic')} subtitle={t('categorySeismicHint')} />
       {f ? (
         <Card>
           <CardHeader icon={<Activity size={18} color={c.ink} />} title={t('aftershocks')} />
@@ -150,33 +160,10 @@ export function Home({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
           <TileGrid>
             <Tile label={`M6+ · ${t('nextWeek')}`} value={w6 ? pct(w6.probability) : '–'} />
             <Tile label={`M6+ · ${t('next24')}`} value={d6 ? pct(d6.probability) : '–'} />
-            <Tile label={`M7+ · ${t('nextWeek')}`} value={w7 ? pct(w7.probability) : '–'} dim />
-            <Tile label={`M7+ · ${t('next24')}`} value={d7 ? pct(d7.probability) : '–'} dim />
           </TileGrid>
           <Txt size={type.label} tone="muted">
             {t('forecastCaveat')}
           </Txt>
-          <View style={{ gap: space.xs }}>
-            {recent.map((q) => (
-              <Pressable
-                key={q.id}
-                accessibilityRole="button"
-                accessibilityLabel={`M${q.mag.toFixed(1)}, ${place(q.place, lang)}, ${clock(q.time, lang)}`}
-                onPress={() => onOpenQuake(q.id)}
-                style={({ pressed }) => [styles.row, { backgroundColor: c.tile, borderRadius: radius.tile, paddingHorizontal: space.md, minHeight: 52, opacity: pressed ? 0.75 : 1 }]}
-              >
-                <Txt size={type.body} weight="bold" numeric style={{ width: 40 }}>
-                  {q.mag.toFixed(1)}
-                </Txt>
-                <Txt size={type.body} style={{ flex: 1 }} numberOfLines={1}>
-                  {place(q.place, lang)}
-                </Txt>
-                <Txt size={type.label} tone="muted" numeric>
-                  {clock(q.time, lang)}
-                </Txt>
-              </Pressable>
-            ))}
-          </View>
           <Button label={t('seeAll')} onPress={() => go('quakes')} />
           <SourceLine source="USGS" kind="official" detail={`${t('issued')} ${dayStamp(f.creationTime, lang)} · ${t('updated', { ago: ago(seismic.fetchedAt, now, lang) })}`} />
         </Card>

@@ -60,7 +60,7 @@ export function BottomNav() {
     <View style={[s.navWrap, { paddingBottom: Math.max(insets.bottom, space.sm) }]}>
       <View style={[s.nav, { backgroundColor: c.nav }]} accessibilityRole="tablist">
         {items.map(({ id, label, Icon }) => {
-          const active = tab === id;
+          const active = tab === id || (id === 'home' && tab === 'services');
           return (
             <Pressable
               key={id}
