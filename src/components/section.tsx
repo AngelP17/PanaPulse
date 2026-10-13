@@ -1,17 +1,16 @@
 import React from 'react';
 import { View } from 'react-native';
-import { useApp } from '../state/AppContext';
 import { space, type } from '../theme/tokens';
 import { Txt } from './ui';
 
+/**
+ * A typographic chapter break. No decorative accent stripe; preserve the
+ * approved Porcelana atmosphere and let hierarchy come from size and space.
+ */
 export function SectionHeading({ title, subtitle }: { title: string; subtitle: string }) {
-  const { c } = useApp();
   return (
-    <View style={{ paddingHorizontal: space.xs, gap: 4, marginTop: space.md }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
-        <View style={{ width: 4, height: 24, borderRadius: 3, backgroundColor: c.accent }} />
-        <Txt size={type.title + 3} weight="bold" accessibilityRole="header">{title}</Txt>
-      </View>
+    <View style={{ paddingHorizontal: space.xs, gap: 5, marginTop: space.lg }}>
+      <Txt size={type.title + 3} weight="bold" accessibilityRole="header">{title}</Txt>
       <Txt size={type.label} tone="muted">{subtitle}</Txt>
     </View>
   );

@@ -31,8 +31,10 @@ export interface PulseNode {
 }
 
 /**
- * Signature component. One line across the user's area: solid where an official source is current,
- * amber dots where it's stale, faint dashes where there's no data, and a spike sized by real activity.
+ * Signature component: a neutral ink waveform indicates seismic activity,
+ * an ink dashed segment denotes a checked scheduled-maintenance feed,
+ * amber dots denote stale sources, and faint dashes mark missing data.
+ * It never asserts that electricity or water service is currently available.
  */
 export function PulseRail({ nodes }: { nodes: PulseNode[] }) {
   const { c } = useApp();
@@ -41,7 +43,8 @@ export function PulseRail({ nodes }: { nodes: PulseNode[] }) {
   const base = 42;
   const step = w / nodes.length;
   const x = (i: number) => step * i + step / 2;
-  const tone = (st: PulseState) => (st === 'live' || st === 'scheduled' ? c.accent : st === 'stale' ? c.stale : c.faint);
+  // Brand coral is reserved for interaction; source status uses neutral ink and line shape.
+  const tone = (st: PulseState) => (st === 'live' || st === 'scheduled' ? c.ink : st === 'stale' ? c.stale : c.faint);
 
   return (
     <View accessibilityRole="summary" accessibilityLabel={nodes.map((n) => `${n.label}: ${n.status}`).join('. ')}>
@@ -55,7 +58,7 @@ export function PulseRail({ nodes }: { nodes: PulseNode[] }) {
               if (n.state === 'live' && n.intensity && n.intensity > 0) {
                 const h = 10 + Math.min(1, n.intensity) * 26;
                 return (
-                  <Path key={i} d={`M${x0} ${base} H${cx - 15} l5 -6 l5 12 l5 ${-h - 6} l4 ${h + 4} l3 -4 H${x1}`} stroke={c.accent} strokeWidth={2.6} fill="none" strokeLinejoin="round" strokeLinecap="round" />
+                  <Path key={i} d={`M${x0} ${base} H${cx - 15} l5 -6 l5 12 l5 ${-h - 6} l4 ${h + 4} l3 -4 H${x1}`} stroke={tone(n.state)} strokeWidth={2.6} fill="none" strokeLinejoin="round" strokeLinecap="round" />
                 );
               }
               return (
@@ -70,7 +73,7 @@ export function PulseRail({ nodes }: { nodes: PulseNode[] }) {
               );
             })}
             {nodes.map((n, i) => (
-              <Circle key={i} cx={x(i)} cy={base} r={6.5} fill={n.state === 'live' ? c.accent : c.card} stroke={tone(n.state)} strokeWidth={2} />
+              <Circle key={i} cx={x(i)} cy={base} r={6.5} fill={n.state === 'live' ? c.ink : c.card} stroke={tone(n.state)} strokeWidth={2} />
             ))}
           </Svg>
         ) : null}
@@ -85,7 +88,7 @@ export function PulseRail({ nodes }: { nodes: PulseNode[] }) {
               size={type.caption + 1}
               weight="semibold"
               numberOfLines={2}
-              style={{ textAlign: 'center', color: n.state === 'live' || n.state === 'scheduled' ? c.accent : n.state === 'stale' ? c.stale : c.muted }}
+              style={{ textAlign: 'center', color: n.state === 'live' || n.state === 'scheduled' ? c.ink : n.state === 'stale' ? c.stale : c.muted }}
             >
               {n.status}
             </Txt>
