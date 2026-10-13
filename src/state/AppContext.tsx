@@ -5,6 +5,7 @@ import { useColorScheme } from 'react-native';
 import { format, Lang, StringKey, strings } from '../i18n/strings';
 import { palettes, Palette, ThemeName } from '../theme/tokens';
 import { loadLive, loadSnapshot, SeismicData } from '../data/usgs';
+import type { DemoScenario } from '../data/demo';
 
 export type ThemePref = 'auto' | 'light' | 'dark';
 export type Tab = 'home' | 'services' | 'mobility' | 'quakes' | 'chat' | 'report' | 'settings';
@@ -14,6 +15,10 @@ interface AppState {
   setLang: (l: Lang) => void;
   themePref: ThemePref;
   setThemePref: (t: ThemePref) => void;
+  demoEnabled: boolean;
+  setDemoEnabled: (b: boolean) => void;
+  demoScenario: DemoScenario;
+  setDemoScenario: (s: DemoScenario) => void;
   theme: ThemeName;
   c: Palette;
   t: (key: StringKey, vars?: Record<string, string | number>) => string;
@@ -30,20 +35,17 @@ const Ctx = createContext<AppState | null>(null);
 const KEY = 'panapulse.prefs.v1';
 
 // Storage can be unavailable (private windows, sandboxed previews). Never let it break render.
-async function readPrefs(): Promise<Partial<{ lang: Lang; themePref: ThemePref }>> {
+type StoredPrefs = Partial<{ lang: Lang; themePref: ThemePref; demoEnabled: boolean; demoScenario: DemoScenario }>;
+async function readPrefs(): Promise<StoredPrefs> {
   try {
     const raw = await AsyncStorage.getItem(KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
-  }
+    const value = raw ? JSON.parse(raw) : {};
+    return value && typeof value === 'object' ? value : {};
+  } catch { return {}; }
 }
-async function writePrefs(p: { lang: Lang; themePref: ThemePref }) {
-  try {
-    await AsyncStorage.setItem(KEY, JSON.stringify(p));
-  } catch {
-    /* per-device convenience only */
-  }
+async function writePrefs(p: StoredPrefs) {
+  try { await AsyncStorage.setItem(KEY, JSON.stringify(p)); }
+  catch { /* Settings still work in this session. */ }
 }
 
 function deviceLang(): Lang {
@@ -58,6 +60,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const system = useColorScheme();
   const [lang, setLangState] = useState<Lang>(deviceLang());
   const [themePref, setThemePrefState] = useState<ThemePref>('auto');
+  const [demoEnabled, setDemoEnabled] = useState(false);
+  const [demoScenario, setDemoScenario] = useState<DemoScenario>('everyday');
+  const [prefsLoaded, setPrefsLoaded] = useState(false);
   const [tab, setTab] = useState<Tab>('home');
   const [seismic, setSeismic] = useState<SeismicData>(() => loadSnapshot());
   const [now, setNow] = useState(() => Date.now());
@@ -65,9 +70,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     readPrefs().then((p) => {
-      if (p.lang) setLangState(p.lang);
-      if (p.themePref) setThemePrefState(p.themePref);
-    });
+      if (p.lang === 'es' || p.lang === 'en') setLangState(p.lang);
+      if (p.themePref === 'auto' || p.themePref === 'dark' || p.themePref === 'light') setThemePrefState(p.themePref);
+      if (typeof p.demoEnabled === 'boolean') setDemoEnabled(p.demoEnabled);
+      if (p.demoScenario === 'everyday' || p.demoScenario === 'disruption' || p.demoScenario === 'recovery') setDemoScenario(p.demoScenario);
+    }).finally(() => setPrefsLoaded(true));
   }, []);
 
   // Every build tries live USGS data; on failure (offline, or a sandbox that blocks outside requests)
@@ -91,20 +98,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => clearInterval(id);
   }, []);
 
-  const setLang = useCallback((l: Lang) => {
-    setLangState(l);
-    setThemePrefState((tp) => {
-      writePrefs({ lang: l, themePref: tp });
-      return tp;
-    });
-  }, []);
-  const setThemePref = useCallback((tp: ThemePref) => {
-    setThemePrefState(tp);
-    setLangState((l) => {
-      writePrefs({ lang: l, themePref: tp });
-      return l;
-    });
-  }, []);
+  // Hydration guard prevents the initial defaults overwriting saved preferences.
+  useEffect(() => {
+    if (prefsLoaded) void writePrefs({ lang, themePref, demoEnabled, demoScenario });
+  }, [prefsLoaded, lang, themePref, demoEnabled, demoScenario]);
+  const setLang = useCallback((l: Lang) => setLangState(l), []);
+  const setThemePref = useCallback((tp: ThemePref) => setThemePrefState(tp), []);
 
   const theme: ThemeName = themePref === 'auto' ? (system === 'light' ? 'light' : 'dark') : themePref;
 
@@ -114,6 +113,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setLang,
       themePref,
       setThemePref,
+      demoEnabled,
+      setDemoEnabled,
+      demoScenario,
+      setDemoScenario,
       theme,
       c: palettes[theme],
       t: (key, vars) => format(strings[lang][key], vars),
@@ -132,7 +135,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         return q;
       },
     }),
-    [lang, setLang, themePref, setThemePref, theme, tab, seismic, now, pendingQuestion],
+    [lang, setLang, themePref, setThemePref, demoEnabled, demoScenario, theme, tab, seismic, now, pendingQuestion],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
