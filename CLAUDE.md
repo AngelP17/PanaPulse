@@ -1,5 +1,7 @@
 # PanaPulse implementation rules
 
+**Beta 1 handoff is binding for continuing work:** read CLAUDE_HANDOFF_BETA1.md, design/ART_DIRECTION_BETA1.md and docs/BETA1_READINESS.md *before* starting design or readiness changes. The default TasteSkill v2 is marketing/web-oriented and must not overwrite the native Porcelana brand.
+
 Read `DESIGN.md`, `docs/BRAND.md`, `src/theme/tokens.ts`, `docs/ANTISLOP-RN.md` and `docs/DATA_SOURCES.md` before changing the interface.
 
 - Keep Expo/React Native native surfaces, both language options, and Auto/Light/Dark intact.
