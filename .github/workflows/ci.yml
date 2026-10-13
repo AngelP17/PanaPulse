@@ -18,6 +18,8 @@ jobs:
       - name: Run offline tests
         run: python -m pytest tests -q
         working-directory: backend
+      - name: Validate real-source pilot script
+        run: bash -n scripts/first-live-test.sh
   mobile-types:
     runs-on: ubuntu-latest
     steps:
