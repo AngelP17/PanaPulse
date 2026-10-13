@@ -67,3 +67,16 @@ export function usePowerMaintenance(zone: string) {
   }, [zone]);
   return { data, state };
 }
+
+/**
+ * One reading of the scheduled-maintenance feed, shared by the pulse rail and the Luz card so they never disagree.
+ * - `none`: no usable data (server not configured, still loading, or the request failed).
+ * - `stale`: the feed answered but at least one provider source is out of date.
+ * - `scheduled`: every provider source is current; notices (possibly zero) are official schedules.
+ * None of these says anything about whether power is on right now.
+ */
+export type PowerFeedState = 'none' | 'stale' | 'scheduled';
+export function powerFeedState(data: MaintenanceResult | null, state: ReturnType<typeof usePowerMaintenance>['state']): PowerFeedState {
+  if (state !== 'ready' || !data) return 'none';
+  return data.sources.length > 0 && data.sources.every((s) => s.freshness === 'current') ? 'scheduled' : 'stale';
+}

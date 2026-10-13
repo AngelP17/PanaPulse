@@ -1,9 +1,14 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
+import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { useApp } from '../state/AppContext';
 import { mark, type } from '../theme/tokens';
+import { EASE_OUT } from './motion';
 import { Txt } from './ui';
+
+/** The rail draws in once per app session; returning to Home must not replay it. */
+let railDrawn = false;
 
 /** Custom PanaPulse P: the same connected-path geometry as the brand-kit app icon. */
 export function PulseMark({ size = 36 }: { size?: number }) {
@@ -32,13 +37,23 @@ export interface PulseNode {
 
 /**
  * Signature component: a neutral ink waveform indicates seismic activity,
- * an ink dashed segment denotes a checked scheduled-maintenance feed,
+ * an ink dashed segment with a dotted node denotes a checked scheduled-maintenance feed,
  * amber dots denote stale sources, and faint dashes mark missing data.
  * It never asserts that electricity or water service is currently available.
  */
 export function PulseRail({ nodes }: { nodes: PulseNode[] }) {
   const { c } = useApp();
   const [w, setW] = useState(0);
+  const reduced = useReducedMotion();
+  // Draw-in reads the rail left to right, service by service. Reduce Motion or a revisit shows it complete.
+  const reveal = useSharedValue(railDrawn || reduced ? 1 : 0);
+  useEffect(() => {
+    if (w <= 0 || railDrawn) return;
+    railDrawn = true;
+    if (!reduced) reveal.set(withTiming(1, { duration: 560, easing: EASE_OUT }));
+  }, [w, reduced, reveal]);
+  // Width of an absolutely positioned clip whose only child has a fixed size, so no sibling re-lays-out.
+  const clip = useAnimatedStyle(() => ({ width: reveal.get() * w }), [w]);
   const H = 64;
   const base = 42;
   const step = w / nodes.length;
@@ -50,6 +65,7 @@ export function PulseRail({ nodes }: { nodes: PulseNode[] }) {
     <View accessibilityRole="summary" accessibilityLabel={nodes.map((n) => `${n.label}: ${n.status}`).join('. ')}>
       <View onLayout={(e) => setW(e.nativeEvent.layout.width)} style={{ height: H }}>
         {w > 0 ? (
+          <Animated.View style={[{ position: 'absolute', left: 0, top: 0, height: H, overflow: 'hidden' }, clip]}>
           <Svg width={w} height={H}>
             {nodes.map((n, i) => {
               const x0 = step * i;
@@ -75,7 +91,10 @@ export function PulseRail({ nodes }: { nodes: PulseNode[] }) {
             {nodes.map((n, i) => (
               <Circle key={i} cx={x(i)} cy={base} r={6.5} fill={n.state === 'live' ? c.ink : c.card} stroke={tone(n.state)} strokeWidth={2} />
             ))}
+            {/* A checked schedule gets a centre dot, so it differs from "no data" by shape, not only by darkness. */}
+            {nodes.map((n, i) => (n.state === 'scheduled' ? <Circle key={`d${i}`} cx={x(i)} cy={base} r={2.6} fill={tone(n.state)} /> : null))}
           </Svg>
+          </Animated.View>
         ) : null}
       </View>
       <View style={{ flexDirection: 'row' }}>

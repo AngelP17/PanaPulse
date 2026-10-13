@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MAX_INPUT } from '../chat/engine';
 import { Tab, useApp } from '../state/AppContext';
 import { font, radius, space, type } from '../theme/tokens';
+import { PressScale } from './motion';
 import { PulseMark } from './pulse';
 import { Txt, styles as ui } from './ui';
 
@@ -23,25 +24,25 @@ export function Header() {
           <Txt size={type.title + 1} weight="bold" style={{ color: c.accent }}>Pulse</Txt>
         </View>
       </Pressable>
-      <Pressable
+      <PressScale
         accessibilityRole="button"
         accessibilityLabel={t('askButton')}
         onPress={() => go('chat')}
-        style={({ pressed }) => [s.ask, { backgroundColor: tab === 'chat' ? c.navActive : c.nav, opacity: pressed ? 0.75 : 1 }]}
+        style={[s.ask, { backgroundColor: tab === 'chat' ? c.navActive : c.nav }]}
       >
         <MessageCircle size={18} color={tab === 'chat' ? c.navActiveInk : c.accent} strokeWidth={2.2} />
         <Txt size={type.label} weight="bold" style={{ color: tab === 'chat' ? c.navActiveInk : c.ink }}>
           {t('askButton')}
         </Txt>
-      </Pressable>
-      <Pressable
+      </PressScale>
+      <PressScale
         accessibilityRole="button"
         accessibilityLabel={t('settings')}
         onPress={() => go('settings')}
-        style={({ pressed }) => [s.round, { backgroundColor: tab === 'settings' ? c.navActive : c.nav, opacity: pressed ? 0.75 : 1 }]}
+        style={[s.round, { backgroundColor: tab === 'settings' ? c.navActive : c.nav }]}
       >
         <Settings2 size={22} color={tab === 'settings' ? c.navActiveInk : c.ink} strokeWidth={2} />
-      </Pressable>
+      </PressScale>
     </View>
   );
 }

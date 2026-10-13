@@ -3,7 +3,7 @@ import React from 'react';
 import { Linking, View } from 'react-native';
 import { Button, Card, CardHeader, StatusChip, Txt } from '../components/ui';
 import { SectionHeading } from '../components/section';
-import { usePowerMaintenance } from '../data/maintenance';
+import { usePowerMaintenance, powerFeedState } from '../data/maintenance';
 import { useApp } from '../state/AppContext';
 import { radius, space, type } from '../theme/tokens';
 
@@ -11,7 +11,7 @@ const ZONE = 'Pueblo Nuevo';
 export function Services() {
   const { c, t, lang, go } = useApp();
   const { data, state } = usePowerMaintenance(ZONE);
-  const current = state === 'ready' && data?.sources.every((s) => s.freshness === 'current') === true;
+  const current = powerFeedState(data, state) === 'scheduled';
   const notices = data?.notices ?? [];
   const fmt = new Intl.DateTimeFormat(lang === 'es' ? 'es-PA' : 'en-US', {
     timeZone: 'America/Panama', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit',

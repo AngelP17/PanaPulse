@@ -2,6 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import { Linking, Pressable, StyleSheet, Text, TextProps, View, ViewProps, ViewStyle } from 'react-native';
 import { useApp } from '../state/AppContext';
+import { PressScale } from './motion';
 import { font, radius, space, type } from '../theme/tokens';
 
 type Tone = 'ink' | 'muted' | 'faint' | 'official' | 'community' | 'alert';
@@ -152,36 +153,32 @@ export function Button({
   const { c } = useApp();
   const solid = variant === 'solid';
   return (
-    <Pressable
+    <PressScale
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
-      style={({ pressed }) => [
-        styles.button,
-        { backgroundColor: solid ? c.accent : c.tileStrong, opacity: pressed ? 0.72 : 1 },
-        style,
-      ]}
+      style={[styles.button, { backgroundColor: solid ? c.accent : c.tileStrong }, style]}
     >
       {icon}
       <Txt size={type.body} weight="semibold" style={{ color: solid ? c.accentInk : c.ink }}>
         {label}
       </Txt>
-    </Pressable>
+    </PressScale>
   );
 }
 
 export function LinkChip({ label, url }: { label: string; url: string }) {
   const { c } = useApp();
   return (
-    <Pressable
+    <PressScale
       accessibilityRole="link"
       onPress={() => Linking.openURL(url).catch(() => {})}
-      style={({ pressed }) => [styles.linkChip, { backgroundColor: c.tileStrong, opacity: pressed ? 0.7 : 1 }]}
+      style={[styles.linkChip, { backgroundColor: c.tileStrong }]}
     >
       <Txt size={type.caption + 1} weight="semibold">
         {label} ↗
       </Txt>
-    </Pressable>
+    </PressScale>
   );
 }
 
