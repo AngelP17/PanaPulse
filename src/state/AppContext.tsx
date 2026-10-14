@@ -35,6 +35,7 @@ interface AppState {
   chatHistory: ChatTurn[];
   setChatHistory: (turns: ChatTurn[]) => void;
   clearChatHistory: () => void;
+  clearLocalActivity: () => void;
   /** Preview-scoped slices, kept for the preview screens. */
   demoReports: number;
   demoSubmittedReports: AnonymousReport[];
@@ -119,6 +120,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const setDemoCommuteSaved = useCallback((saved: boolean) => dispatch({ type: 'setCommute', patch: { saved } }), []);
   const setChatHistory = useCallback((turns: ChatTurn[]) => dispatch({ type: 'setChat', turns }), []);
   const clearChatHistory = useCallback(() => dispatch({ type: 'clearChat' }), []);
+  const clearLocalActivity = useCallback(() => dispatch({ type: 'clearLocalActivity' }), []);
   const removeReport = useCallback((id: string) => dispatch({ type: 'removeReport', id }), []);
   const addReport = useCallback((input: { service: ReportService; corregimiento: string; note: string }) => {
     dispatch({ type: 'addReport', input, at: Date.now(), scope: demoEnabled ? 'preview' : 'device' });
@@ -156,6 +158,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       chatHistory: local.chat,
       setChatHistory,
       clearChatHistory,
+      clearLocalActivity,
       demoReports,
       demoSubmittedReports,
       demoCommuteSaved,
@@ -179,7 +182,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         return q;
       },
     }),
-    [lang, setLang, themePref, setThemePref, demoEnabled, setDemoEnabled, demoScenario, setDemoScenario, area, setArea, onboarded, completeOnboarding, local.reports, addReport, removeReport, commute, setCommute, local.chat, setChatHistory, clearChatHistory, demoReports, demoSubmittedReports, demoCommuteSaved, setDemoCommuteSaved, hydrated, theme, tab, seismic, now, pendingQuestion],
+    [lang, setLang, themePref, setThemePref, demoEnabled, setDemoEnabled, demoScenario, setDemoScenario, area, setArea, onboarded, completeOnboarding, local.reports, addReport, removeReport, commute, setCommute, local.chat, setChatHistory, clearChatHistory, clearLocalActivity, demoReports, demoSubmittedReports, demoCommuteSaved, setDemoCommuteSaved, hydrated, theme, tab, seismic, now, pendingQuestion],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
