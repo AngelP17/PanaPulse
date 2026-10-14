@@ -10,6 +10,7 @@ import { radius, type } from './theme/tokens';
 import { Chat, ChatHandle } from './screens/Chat';
 import { Home } from './screens/Home';
 import { Mobility } from './screens/Mobility';
+import { Onboarding } from './screens/Onboarding';
 import { QuakeSheet, Quakes } from './screens/Quakes';
 import { Report } from './screens/Report';
 import { Settings } from './screens/Settings';
@@ -18,7 +19,7 @@ import { AppProvider, useApp } from './state/AppContext';
 import { space } from './theme/tokens';
 
 function Shell() {
-  const { tab, go, theme, askFromHome, demoEnabled, demoScenario, t, c } = useApp();
+  const { tab, go, theme, askFromHome, demoEnabled, demoScenario, t, c, hydrated, onboarded } = useApp();
   const insets = useSafeAreaInsets();
   const [quakeId, setQuakeId] = useState<string | null>(null);
   const [chatBusy, setChatBusy] = useState(false);
@@ -53,6 +54,15 @@ function Shell() {
     [tab, askFromHome],
   );
 
+
+  if (!hydrated || !onboarded) {
+    return (
+      <View style={{ flex: 1 }}>
+        <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
+        <Scene>{hydrated ? <Onboarding /> : null}</Scene>
+      </View>
+    );
+  }
 
   return (
     <View style={{ flex: 1 }}>
