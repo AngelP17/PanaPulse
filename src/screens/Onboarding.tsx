@@ -1,6 +1,6 @@
 import { Activity, Check, MapPin, TrainFront, Zap } from 'lucide-react-native';
 import React from 'react';
-import { ScrollView, View } from 'react-native';
+import { ScrollView, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CORREGIMIENTOS } from '../data/services';
 import { useApp } from '../state/AppContext';
@@ -20,6 +20,10 @@ const NODE = 48;
 export function Onboarding() {
   const { c, t, lang, setLang, themePref, setThemePref, area, setArea, completeOnboarding } = useApp();
   const insets = useSafeAreaInsets();
+  const { fontScale } = useWindowDimensions();
+  // The non-breaking space keeps the last two words together at normal sizes. At large text it would force
+  // one unbreakable chunk wider than the line, so it reverts to an ordinary space and may wrap.
+  const headline = fontScale > 1.15 ? t('onboardTitle').replace(/\u00A0/g, ' ') : t('onboardTitle');
   const steps = [
     { Icon: Activity, title: t('onboardQuake'), text: t('onboardQuakeDetail'), last: false },
     { Icon: Zap, title: t('onboardServices'), text: t('onboardServicesDetail'), last: false },
@@ -36,7 +40,7 @@ export function Onboarding() {
       <View style={{ paddingHorizontal: space.xs, gap: space.xs }}>
         <Txt size={type.label} weight="semibold" tone="muted">{t('onboardEyebrow')}</Txt>
         <Txt size={type.hero - 4} weight="bold" accessibilityRole="header">
-          {t('onboardTitle')}
+          {headline}
         </Txt>
         <Txt size={type.body} tone="muted">{t('onboardSubtitle')}</Txt>
       </View>
