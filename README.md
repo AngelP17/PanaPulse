@@ -1,3 +1,5 @@
+**Current priority:** finish and visually verify the local app experience before APK builds or APIs. See [Feature Complete handoff](docs/FEATURE_COMPLETE_HANDOFF.md). This repository is **not** yet a device-verified Beta 1 release.
+
 # PanaPulse v0.2.1 (Brand integration)
 
 **Active Beta 1 proposal:** See CLAUDE_HANDOFF_BETA1.md (exact handoff), design/ART_DIRECTION_BETA1.md (approved-brand art direction) and docs/BETA1_READINESS.md (strict GO/NO-GO). This does not change the app version or claim Beta 1 is released.

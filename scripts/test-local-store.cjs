@@ -55,6 +55,13 @@ assert.deepEqual(m.sanitize(JSON.parse(JSON.stringify(savedReply)), base).chat, 
 // persistence round trip survives JSON exactly
 st = m.reduce(st, { type: 'setScenario', scenario: 'disruption' }); st = m.reduce(st, { type: 'setLang', lang: 'en' }); st = m.reduce(st, { type: 'completeOnboarding' });
 assert.deepEqual(m.sanitize(JSON.parse(JSON.stringify(st)), base), st);
+const cleared = m.reduce(st, { type: 'clearLocalActivity' });
+assert.equal(cleared.reports.length, 0);
+assert.equal(cleared.chat.length, 0);
+assert.equal(cleared.commute.saved, false);
+assert.equal(cleared.area, st.area);
+assert.equal(cleared.lang, st.lang);
+assert.equal(cleared.onboarded, st.onboarded);
 // v1 migration keeps prefs, commute and reports; existing installs skip onboarding; fresh installs do not
 const mig = m.migrateLegacy({ lang: 'en', themePref: 'dark', demoEnabled: true, demoScenario: 'recovery', demoCommuteSaved: false },
   [{ service: 'water', corregimiento: 'Ancón', note: 'sin agua', at: 5 }, { service: 'x' }], base);

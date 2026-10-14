@@ -1,3 +1,6 @@
+# ACTIVE PRIORITY: App feature completeness (before APK/API)
+Read docs/FEATURE_COMPLETE_HANDOFF.md before making changes. The owner explicitly deferred EAS/APK builds, backend scraping and hosting. Preserve Porcelana and finish app flows/UX with measured ES/EN visual verification. Don't claim native QA when only browser tests exist.
+
 # PanaPulse implementation rules
 
 **Beta 1 handoff is binding for continuing work:** read CLAUDE_HANDOFF_BETA1.md, design/ART_DIRECTION_BETA1.md and docs/BETA1_READINESS.md *before* starting design or readiness changes. The default TasteSkill v2 is marketing/web-oriented and must not overwrite the native Porcelana brand.

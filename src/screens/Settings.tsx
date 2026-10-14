@@ -1,9 +1,9 @@
 import React from 'react';
-import { Pressable, View } from 'react-native';
+import { Alert, Platform, Pressable, View } from 'react-native';
 import { Lang } from '../i18n/strings';
 import { ThemePref, useApp } from '../state/AppContext';
 import { radius, space, type } from '../theme/tokens';
-import { Card, LinkChip, StatusChip, Txt } from '../components/ui';
+import { Button, Card, LinkChip, StatusChip, Txt } from '../components/ui';
 import { PressScale } from '../components/motion';
 import { CORREGIMIENTOS } from '../data/services';
 import { usePowerMaintenance, powerFeedState } from '../data/maintenance';
@@ -36,11 +36,23 @@ function Segmented<T extends string>({ value, options, onChange }: { value: T; o
 }
 
 export function Settings() {
-  const { t, lang, setLang, themePref, setThemePref, demoEnabled, setDemoEnabled, demoScenario, setDemoScenario, now, seismic, c, area, setArea } = useApp();
+  const { t, lang, setLang, themePref, setThemePref, demoEnabled, setDemoEnabled, demoScenario, setDemoScenario, now, seismic, c, area, setArea, clearLocalActivity } = useApp();
   const { data: powerData, state: powerStatus } = usePowerMaintenance(area);
   const powerFeed = powerFeedState(powerData, powerStatus);
   const usgsCurrent = seismic.mode === 'live' && Math.abs(now - seismic.fetchedAt) <= LIVE_MAX_AGE_MS;
   const lastPowerCheck = powerData?.sources.map((s) => s.last_success_at).filter((s): s is string => !!s).sort().at(-1);
+  const confirmClear = () => {
+    const title = t('settingsClearConfirmTitle');
+    const body = t('settingsClearConfirmBody');
+    if (Platform.OS === 'web') {
+      if (typeof window !== 'undefined' && window.confirm(title + '\n\n' + body)) clearLocalActivity();
+      return;
+    }
+    Alert.alert(title, body, [
+      { text: t('settingsClearCancel'), style: 'cancel' },
+      { text: t('settingsClearProceed'), style: 'destructive', onPress: clearLocalActivity },
+    ]);
+  };
   return (
     <View style={{ gap: space.md }}>
       <Txt size={type.hero - 10} weight="bold" style={{ paddingHorizontal: space.xs }} accessibilityRole="header">
@@ -147,6 +159,11 @@ export function Settings() {
           <LinkChip label="MiBus" url="https://www.mibus.com.pa/" />
         </View>
         <Txt size={type.caption + 1} tone="faint">{t('version')}</Txt>
+      </Card>
+      <Card style={{ gap: space.sm }}>
+        <Txt size={type.title} weight="semibold" accessibilityRole="header">{t('settingsPrivacyTitle')}</Txt>
+        <Txt size={type.body} tone="muted">{t('settingsPrivacyBody')}</Txt>
+        <Button label={t('settingsClearLocal')} onPress={confirmClear} />
       </Card>
     </View>
   );

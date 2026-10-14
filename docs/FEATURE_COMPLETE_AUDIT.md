@@ -1,3 +1,5 @@
+> **Historical audit:** This document reflects the application before PRs #13–#19. The NEXT entries below were the original plan, not current outstanding work. For current implementation status and remaining QA, see [Feature Complete handoff](FEATURE_COMPLETE_HANDOFF.md).
+
 # Feature Complete audit, 2026-10-13
 
 Scope: application completeness only (no APK, EAS, backend, hosting). Method: code read of every screen and the state layer, plus the web renders captured in `design/review/beta1/`. Status key: DONE in this PR, NEXT (planned PR), OPEN.
