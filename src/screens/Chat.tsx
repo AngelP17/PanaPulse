@@ -1,11 +1,11 @@
 import { ShieldCheck } from 'lucide-react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
-import { ask, ChatError, detectTransport, MAX_INPUT, MODEL, Transport, Turn } from '../chat/engine';
+import { ask, ChatError, detectTransport, MAX_INPUT, MODEL, Transport } from '../chat/engine';
 import { useApp } from '../state/AppContext';
 import { makeDemoScene } from '../data/demo';
 import type { ChatTurn } from '../data/localModel';
-import { clock, dayStamp } from '../data/format';
+import { dayStamp } from '../data/format';
 import { powerFeedState, usePowerMaintenance } from '../data/maintenance';
 import { radius, space, type } from '../theme/tokens';
 import { PressScale } from '../components/motion';
