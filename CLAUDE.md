@@ -1,5 +1,5 @@
 # ACTIVE PRIORITY: App feature completeness (before APK/API)
-Read docs/FEATURE_COMPLETE_HANDOFF.md before making changes. The owner explicitly deferred EAS/APK builds, backend scraping and hosting. Preserve Porcelana and finish app flows/UX with measured ES/EN visual verification. Don't claim native QA when only browser tests exist.
+Read docs/FEATURE_COMPLETE_HANDOFF.md before making changes. For the owner's latest premium design inspiration, read design/PREMIUM_MOBILE_REFERENCE_2026-10-14.md, treating it as a reference study, never a replacement for approved Porcelana branding or ongoing feature QA. The owner explicitly deferred EAS/APK builds, backend scraping and hosting. Preserve Porcelana and finish app flows/UX with measured ES/EN visual verification. Don't claim native QA when only browser tests exist.
 
 # PanaPulse implementation rules
 
