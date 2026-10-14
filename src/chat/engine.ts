@@ -25,7 +25,9 @@ export interface Answer {
 
 export type Transport = 'artifact' | 'server' | 'none';
 
-const API_URL: string | undefined = process.env.EXPO_PUBLIC_API_URL;
+// No paid/server-backed AI requests from a standalone showcase APK.
+const API_URL: string | undefined = process.env.EXPO_PUBLIC_APP_MODE === 'showcase'
+  ? undefined : process.env.EXPO_PUBLIC_API_URL;
 
 function claudeRuntime(): { use: (name: string) => Promise<any> } | null {
   const w = typeof window !== 'undefined' ? (window as any) : null;

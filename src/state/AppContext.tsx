@@ -42,7 +42,7 @@ const Ctx = createContext<AppState | null>(null);
 const KEY = 'panapulse.prefs.v1';
 
 // Storage can be unavailable (private windows, sandboxed previews). Never let it break render.
-type StoredPrefs = Partial<{ lang: Lang; themePref: ThemePref; demoEnabled: boolean; demoScenario: DemoScenario }>;
+type StoredPrefs = Partial<{ lang: Lang; themePref: ThemePref; demoEnabled: boolean; demoScenario: DemoScenario; demoCommuteSaved: boolean }>;
 async function readPrefs(): Promise<StoredPrefs> {
   try {
     const raw = await AsyncStorage.getItem(KEY);
@@ -67,7 +67,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const system = useColorScheme();
   const [lang, setLangState] = useState<Lang>(deviceLang());
   const [themePref, setThemePrefState] = useState<ThemePref>('auto');
-  const [demoEnabled, setDemoEnabled] = useState(false);
+  const [demoEnabled, setDemoEnabled] = useState(process.env.EXPO_PUBLIC_APP_MODE === 'showcase');
   const [demoScenario, setDemoScenario] = useState<DemoScenario>('everyday');
   const [demoSubmittedReports, setDemoSubmittedReports] = useState<AnonymousReport[]>([]);
   const demoReports = demoSubmittedReports.length;
@@ -84,6 +84,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (p.themePref === 'auto' || p.themePref === 'dark' || p.themePref === 'light') setThemePrefState(p.themePref);
       if (typeof p.demoEnabled === 'boolean') setDemoEnabled(p.demoEnabled);
       if (p.demoScenario === 'everyday' || p.demoScenario === 'disruption' || p.demoScenario === 'recovery') setDemoScenario(p.demoScenario);
+      if (typeof p.demoCommuteSaved === 'boolean') setDemoCommuteSaved(p.demoCommuteSaved);
     }).finally(() => setPrefsLoaded(true));
   }, []);
 
@@ -110,8 +111,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Hydration guard prevents the initial defaults overwriting saved preferences.
   useEffect(() => {
-    if (prefsLoaded) void writePrefs({ lang, themePref, demoEnabled, demoScenario });
-  }, [prefsLoaded, lang, themePref, demoEnabled, demoScenario]);
+    if (prefsLoaded) void writePrefs({ lang, themePref, demoEnabled, demoScenario, demoCommuteSaved });
+  }, [prefsLoaded, lang, themePref, demoEnabled, demoScenario, demoCommuteSaved]);
   const setLang = useCallback((l: Lang) => setLangState(l), []);
   const setThemePref = useCallback((tp: ThemePref) => setThemePrefState(tp), []);
   const addDemoReport = useCallback((input: { service: ReportService; corregimiento: string; note: string }) => {
