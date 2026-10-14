@@ -45,3 +45,17 @@ If asked to “finish the app,” optimize usable screens, state coherence, evid
 ## Next agent handoff, exact brief
 
 > Inspect current GitHub main (not a stale SHA), read DESIGN.md, docs/BRAND.md, design/ART_DIRECTION_BETA1.md, this document and CLAUDE_HANDOFF_BETA1.md. The local app feature flow has merged through PR #19. Run an end-to-end app UX audit, fix reproducible dead buttons, clipping, navigation, empty states and persistence bugs with minimal targeted commits. Capture before/after ES/EN and light/dark screenshots and run CI. Do not redesign Porcelana, launch an APK, configure EAS, add an API or publicly release. Report test evidence honestly; don't call device QA complete from browser renders alone.
+
+## October 14 continuation: Beta 1 app-first closure order
+
+**Current implementation:** PRs #13–#19 merged. PR #20 is an open design-reference study, not a code/UI change. This audit's first small app change enlarges the preview badge tap target from 30pt to 44pt. That is a source-level improvement, not native-device validation.
+
+**Do these in order, creating focused PRs rather than another broad planning-only PR:**
+
+1. **P0 native walkthrough and screen inventory:** Run Expo on Android device/emulator or reliable native simulator, compare Home, Sismos, Mobility, Services, Reports, Ask, Settings, onboarding. Capture ES/EN × light/dark/auto and 360/393/412dp + 200% font screenshots. Record any broken tap, clipping or navigation issue with steps, screenshot, device and expected/actual behavior.
+2. **P0 integrity/regression:** Test full preview scenario switching, authentic USGS event/source timestamps, real scheduled notice precedence vs fictional power/water examples, local report labeling, saved route synchronization, reset confirmations, and stale/offline source treatment. Verify restart/migration persistence and missing-data handling.
+3. **P1 premium polish implementation:** Use PR #20's linked reference sites as discovery inputs. Make an original **Home-first** UX adjustment to hierarchy, spacing and component affordances using existing Porcelana tokens. No logo/nav/type palette or background changes without owner approval. Include true before/after renders and tests; no glowing meters, speculative service status or web-only CSS imitation.
+4. **P0 acceptance:** Run the repository TypeScript, backend fixture and all available regression checks on integrated code; repeat native smoke tests, accessibility checks and Reduce Motion. Archive real evidence and known limitations. Green CI alone is insufficient.
+5. **Release authorization:** Once the owner accepts local UX, explicitly ask to reopen internal Android build/distribution work. Only then produce a signed internal beta and test install/cold start; connected API, real crowdsourcing, MiBus ETA, and broad public launch remain deferred.
+
+**Truthful completion criteria:** Application UX is accepted only when evidence exists for the above. This document should be updated with actual screenshots, test outputs, device details and remaining blocker tickets, not a guessed completion percentage.
