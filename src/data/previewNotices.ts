@@ -9,7 +9,7 @@ export interface PreviewNotice {
   service: PreviewNoticeKind;
   corregimiento: string;
   headline: PreviewNoticeKey;
-  detail: PreviewNoticeKey;
+  detail: `${PreviewNoticeKey}Detail`;
   postedAt: number;
   /** Fictional preview fixture, never an official/provider record. */
   origin: 'preview';
@@ -28,7 +28,7 @@ export function previewServiceNotices(now: number, scenario: DemoScenario, area:
     service,
     corregimiento: area,
     headline: map[scenario][index],
-    detail: map[scenario][index],
+    detail: `${map[scenario][index]}Detail` as `${PreviewNoticeKey}Detail`,
     postedAt: minute - (index + 1) * 13 * 60000,
     origin: 'preview',
   }));
