@@ -35,7 +35,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
-    "export:web": "expo export -p web"
+    "export:web": "expo export -p web",
+    "eas-build-pre-install": "node scripts/check-build-env.cjs"
   },
   "private": true
 }

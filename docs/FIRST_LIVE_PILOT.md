@@ -84,3 +84,6 @@ USGS: https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php
 - Expo Go displays the API results over local Wi-Fi and refreshes after a successful new poll.
 - Preview OFF contains no fictional outages or arrival times.
 - Native Android testing is complete before public release.
+
+## Android internal build needs a backend URL
+`eas.json` no longer sets an empty `EXPO_PUBLIC_API_URL`. The pre-install guard (`scripts/check-build-env.cjs`) fails the build unless the profile provides an `https://` API origin, because an APK without one has no scheduled power notices and no server chat, and it would not say so. Set it with `eas env:create --environment preview` (name `EXPO_PUBLIC_API_URL`), or build knowingly offline with `ALLOW_NO_BACKEND=1`. A successful install does not mean live data is connected: check Settings > source health after installing.
