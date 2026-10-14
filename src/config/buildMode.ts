@@ -6,4 +6,4 @@
 export const IS_SHOWCASE_BUILD = process.env.EXPO_PUBLIC_APP_MODE === 'showcase';
 export const API_ORIGIN = IS_SHOWCASE_BUILD
   ? ''
-  : (process.env.EXPO_PUBLIC_API_URL || '').replace(/\\/$/, '');
+  : (process.env.EXPO_PUBLIC_API_URL || '').replace(/\/$/, '');
