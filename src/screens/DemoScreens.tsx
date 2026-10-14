@@ -7,6 +7,8 @@ import type { DemoScenario, DemoUtilityState, TransitId } from '../data/demo';
 import { makeDemoScene } from '../data/demo';
 import { useApp } from '../state/AppContext';
 import { NeighborhoodFeed } from '../components/NeighborhoodFeed';
+import { previewServiceNotices } from '../data/previewNotices';
+import { ago } from '../data/format';
 import { radius, space, type } from '../theme/tokens';
 import { CORREGIMIENTOS } from '../data/services';
 
@@ -195,25 +197,65 @@ export function DemoMobility() {
 }
 
 export function PreviewServices() {
-  const { c, t, now, demoScenario, demoReports, go } = useApp();
+  const { c, t, lang, now, demoScenario, go, area } = useApp();
+  const [selected, setSelected] = useState<string | null>(null);
   const scene = makeDemoScene(now, demoScenario);
+  const notices = previewServiceNotices(now, demoScenario, area);
+  const selectedNotice = notices.find((n) => n.id === selected);
   return (
     <View style={{ gap: space.md }}>
-      <Txt size={type.hero - 10} weight="bold" accessibilityRole="header">{t('categoryServices')}</Txt>
-      <Txt size={type.label} tone="muted">{t('previewHomeCaption')}</Txt>
+      <View style={{ gap: space.xs }}>
+        <Txt size={type.hero - 10} weight="bold" accessibilityRole="header">{t('categoryServices')}</Txt>
+        <Txt size={type.label} tone="muted">{area} · {t('previewHomeCaption')}</Txt>
+      </View>
       <DemoControls />
-      <DemoUtilityCard service="power" state={scene.power} />
-      <DemoUtilityCard service="water" state={scene.water} />
-      <NeighborhoodFeed limit={3} onViewAll={() => go('report')} />
-      <Card style={{ gap: space.xs }}>
-        <Txt size={type.label} weight="semibold" tone="muted">{t('realSourceLinksTitle')}</Txt>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.xs }}>
-          <LinkChip label="Naturgy" url="https://www.naturgy.com.pa/cronogramas-mantenimiento/" />
-          <LinkChip label="ENSA" url="https://ensa.com.pa/mantenimientos-programados/" />
-          <LinkChip label="IDAAN" url="https://www.idaan.gob.pa/" />
-        </View>
-      </Card>
-      <Button label={t('previewSourceDetails')} onPress={() => go('settings')} />
+      {selectedNotice ? (
+        <Card style={{ gap: space.md }}>
+          <Button label={t('servicePreviewBack')} onPress={() => setSelected(null)} />
+          <CardHeader title={t(selectedNotice.headline)}
+            icon={selectedNotice.service === 'electricity'
+              ? <Zap size={20} color={c.ink} /> : <Droplets size={20} color={c.ink} />} />
+          <Txt size={type.body} tone="muted">{selectedNotice.corregimiento} · {ago(selectedNotice.postedAt, now, lang)}</Txt>
+          <Txt size={type.body}>{t(selectedNotice.detail)}</Txt>
+          <Txt size={type.label} tone="muted">{t('servicePreviewDisclaimer')}</Txt>
+          <Button label={t('servicePreviewToReports')} onPress={() => go('report')} />
+        </Card>
+      ) : (
+        <>
+          <View style={{ flexDirection: 'row', gap: space.sm }}>
+            <View style={{ flex: 1, minWidth: 0 }}><DemoUtilityCard service="power" state={scene.power} /></View>
+            <View style={{ flex: 1, minWidth: 0 }}><DemoUtilityCard service="water" state={scene.water} /></View>
+          </View>
+          <Card style={{ gap: space.sm }}>
+            <Txt size={type.title} weight="semibold" accessibilityRole="header">{t('servicePreviewNotices')}</Txt>
+            <Txt size={type.label} tone="muted">{t('servicePreviewIntro')}</Txt>
+            {notices.map((notice) => (
+              <PressScale key={notice.id} accessibilityRole="button"
+                accessibilityLabel={t(notice.headline)}
+                onPress={() => setSelected(notice.id)}
+                style={{ minHeight: 76, backgroundColor: c.tile, borderRadius: radius.tile,
+                  padding: space.md, flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
+                {notice.service === 'electricity'
+                  ? <Zap size={20} color={c.ink} /> : <Droplets size={20} color={c.ink} />}
+                <View style={{ flex: 1, gap: 3 }}>
+                  <Txt size={type.body} weight="semibold">{t(notice.headline)}</Txt>
+                  <Txt size={type.label} tone="muted">{notice.corregimiento} · {ago(notice.postedAt, now, lang)}</Txt>
+                </View>
+              </PressScale>
+            ))}
+          </Card>
+          <NeighborhoodFeed limit={3} onViewAll={() => go('report')} />
+          <Card style={{ gap: space.xs }}>
+            <Txt size={type.label} weight="semibold" tone="muted">{t('realSourceLinksTitle')}</Txt>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.xs }}>
+              <LinkChip label="Naturgy" url="https://www.naturgy.com.pa/cronogramas-mantenimiento/" />
+              <LinkChip label="ENSA" url="https://ensa.com.pa/mantenimientos-programados/" />
+              <LinkChip label="IDAAN" url="https://www.idaan.gob.pa/" />
+            </View>
+          </Card>
+          <Button label={t('previewSourceDetails')} onPress={() => go('settings')} />
+        </>
+      )}
     </View>
   );
 }
