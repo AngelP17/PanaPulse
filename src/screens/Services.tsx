@@ -30,13 +30,13 @@ export function Services() {
       </View>
       {demoEnabled ? <DemoControls /> : null}
       <SectionHeading title={t(powerSource === 'example' ? 'power' : 'scheduledMaintenance')}
-        subtitle={t(demoEnabled && state !== 'ready' ? 'demoRealtimeDescription' : 'scheduledOnlyCaption')} />
-      {demoEnabled && state !== 'ready' ? <DemoUtilityCard service="power" state={demo.power} /> : (
+        subtitle={t(powerSource === 'example' ? 'demoRealtimeDescription' : 'scheduledOnlyCaption')} />
+      {powerSource === 'example' ? <DemoUtilityCard service="power" state={demo.power} /> : (
       <Card>
         <CardHeader icon={<Zap size={19} color={c.stale} />} title={t('power')}
-          right={<StatusChip kind={current && notices.length ? 'official' : 'unavailable'} />} />
+          right={<StatusChip kind={powerSource === 'official' ? 'official' : powerSource === 'stale' ? 'stale' : 'unavailable'} />} />
         <Txt size={type.body} tone="muted">
-          {current ? (notices.length ? t('scheduledNearYou') : t('noPlannedNoticesExplain'))
+          {powerSource === 'stale' ? t('powerStale') : current ? (notices.length ? t('scheduledNearYou') : t('noPlannedNoticesExplain'))
             : state === 'loading' ? t('loadingMaintenance')
             : state === 'error' ? t('maintenanceFetchFailed') : t('maintenanceNotConnected')}
         </Txt>

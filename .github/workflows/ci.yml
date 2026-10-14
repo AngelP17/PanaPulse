@@ -37,6 +37,8 @@ jobs:
         run: node scripts/test-seismic-view.cjs
       - name: Interactive preview regression
         run: node scripts/test-preview-flow.cjs
+      - name: Service preview notice regression
+        run: node scripts/test-service-preview.cjs
 
       - name: APK build profile checks
         run: node scripts/test-build-env.cjs
