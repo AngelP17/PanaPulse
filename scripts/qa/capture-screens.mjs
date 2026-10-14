@@ -1,6 +1,7 @@
 // WEB-ONLY screen capture + smoke walk. Usage:
 //   node scripts/qa/capture-screens.mjs <siteDir> <outDir> [--width 393] [--langs es,en] [--themes light,dark] [--preview off,on]
-// Visits every tab, records page errors and saves one PNG per screen. Not native QA.
+// Visits every tab, records page errors and saves one PNG per screen. Not native QA:
+// every file name ends in _WEB<width> so a detached image can't pass as an Android/iOS capture.
 import { baseState, launch, openApp } from './harness.mjs';
 import fs from 'fs';
 
@@ -22,7 +23,7 @@ for (const lang of langs) for (const theme of themes) for (const pv of previews)
   const seed = baseState({ lang, themePref: theme, demoEnabled: pv === 'on' });
   const { ctx, page, errors } = await openApp(browser, site, { seed, width, scheme: theme, locale: lang === 'es' ? 'es-PA' : 'en-US' });
   const tag = `${lang}_${theme}_preview-${pv}`;
-  const shot = async (name) => { await page.waitForTimeout(450); await page.screenshot({ path: `${out}/${name}_${tag}.png` }); };
+  const shot = async (name) => { await page.waitForTimeout(450); await page.screenshot({ path: `${out}/${name}_${tag}_WEB${width}.png` }); };
   const tab = async (label) => page.getByRole('tab', { name: label }).first().click();
   const btn = async (label) => page.getByRole('button', { name: label }).first().click();
   const steps = [
