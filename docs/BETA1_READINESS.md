@@ -21,6 +21,20 @@ Date: 2026-10-13. Owner review required. This document is a release checklist, *
 - **Not verified in this audit:** CI result for new changes; native rendering, interaction on a phone, 200% font fit, behavior across actual offline/restart transitions, upstream source reliability, Android package installation, and final Beta 1 sign-off. Do not label these green without evidence.
 - **Current design intake:** PR #20 on `design/premium-mobile-references` captures the owner's mobile references and remains a separate reviewable PR, not a visual runtime implementation.
 
+### Continuation status (2026-10-14, evidence is WEB-only unless stated)
+
+| Item | State | Evidence / note |
+|---|---|---|
+| #20 premium references, #21 accessibility + release gates | Merged, CI green | Docs/reference and small a11y changes only |
+| #22 onboarding visual refinement | Open, CI green, **awaiting owner acceptance** | Handoff says owner accepts onboarding first |
+| #23 onboarding polish (stacked on #22) | Open, CI green | `design/review/beta1/2026-10-14/onboarding/` before/pr22/after |
+| #24 audit fixes (Ask works on-device, no dev env copy, no clipped preview cards at 360/393) | Open, CI green | `audit-fixes/`; flows check: 8 failures on main, 0 on branch |
+| #25 Home: USGS fetch time shown once (stacked on #24) | Open | `home-source-line/` ES/EN light/dark WEB393 |
+| Web functional checks (`scripts/qa/`) | Pass on branch | onboarding 10/10, flows 31, 7 screens x 8 combos no page errors. Not in CI. |
+| Verified in web harness | scenario coherence, persistence across reload, preview reports not leaking to live, clear-activity keeps prefs, stale USGS never an all-clear, v1 migration, corrupt storage fallback |
+| **Not verified (blockers need a device or owner action)** | native rendering, 200% OS font scale, TalkBack/VoiceOver order, Reduce Motion on device, safe areas/keyboard, Android install | No native tooling in the working environment. Do not mark gates A-D green from web captures. |
+| Still to do on Home | preview Home hero copy/hierarchy; Mobility/Quakes/Reports detail audit | After owner accepts onboarding |
+
 ## What exists on main, as inspected October 13
 
 | Product area | Implemented | Verification / caveat |

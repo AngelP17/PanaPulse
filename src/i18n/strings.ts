@@ -394,7 +394,6 @@ const es = {
   mobilityTitle: 'Movilidad',
   // Home glance (copy contract 2026-10-12)
   areaEyebrow: 'MI ZONA',
-  lastData: 'Últimos datos: {time} · USGS',
   heroEyebrow: 'ACTIVIDAD SÍSMICA',
   heroQuakeNear: 'Sismo M{mag} cerca de {place}',
   heroQuakeAt: 'Sismo M{mag}: {place}',
@@ -411,7 +410,7 @@ const es = {
   heroCalmAction: 'Explorar sismos',
   heroStaleHeadline: 'Sin actualización reciente',
   heroStaleDetail: 'No podemos confirmar la actividad sísmica más reciente.',
-  heroStaleProvenance: 'Últimos datos disponibles: {time}',
+  heroStaleProvenance: 'USGS · Últimos datos: {time}',
   heroStaleAction: 'Ver últimos datos',
   chipAftershocks: 'Réplicas · Pronóstico USGS',
   chipPowerCuts: 'Luz · {n} cortes programados',
@@ -818,7 +817,6 @@ const en: Record<StringKey, string> = {
   mobilityTitle: 'Transit',
   // Home glance (copy contract 2026-10-12)
   areaEyebrow: 'MY AREA',
-  lastData: 'Latest data: {time} · USGS',
   heroEyebrow: 'SEISMIC ACTIVITY',
   heroQuakeNear: 'M{mag} earthquake near {place}',
   heroQuakeAt: 'M{mag} earthquake: {place}',
@@ -835,7 +833,7 @@ const en: Record<StringKey, string> = {
   heroCalmAction: 'Explore earthquakes',
   heroStaleHeadline: 'No recent update',
   heroStaleDetail: "We can't confirm the latest seismic activity.",
-  heroStaleProvenance: 'Last available data: {time}',
+  heroStaleProvenance: 'USGS · Last data: {time}',
   heroStaleAction: 'View last available data',
   chipAftershocks: 'Aftershocks · USGS forecast',
   chipPowerCuts: 'Power · {n} scheduled cuts',
