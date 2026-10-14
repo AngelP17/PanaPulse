@@ -42,3 +42,5 @@ jobs:
         run: node scripts/test-build-env.cjs
       - name: Shared local store
         run: node scripts/test-local-store.cjs
+      - name: Reports view
+        run: node scripts/test-reports-view.cjs
