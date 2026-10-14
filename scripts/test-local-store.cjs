@@ -43,6 +43,15 @@ const id = st.reports[0].id; st = m.reduce(st, { type: 'removeReport', id }); as
 st = m.reduce(st, { type: 'setChat', turns: Array.from({ length: 50 }, (_, i) => ({ role: i % 2 ? 'assistant' : 'user', content: 'm' + i })) });
 assert.equal(st.chat.length, m.MAX_CHAT_TURNS); assert.equal(st.chat.at(-1).content, 'm49');
 assert.deepEqual(m.reduce(st, { type: 'clearChat' }).chat, []);
+const savedReply = m.reduce(st, { type: 'setChat', turns: [
+  { role: 'user', content: 'Metro?', at: 1700000000000, context: 'preview', scenario: 'disruption' },
+  { role: 'assistant', content: '12 min', at: 1700000000500, context: 'preview', scenario: 'disruption', quick: true },
+] });
+assert.equal(savedReply.chat[1].at, 1700000000500);
+assert.equal(savedReply.chat[1].context, 'preview');
+assert.equal(savedReply.chat[1].scenario, 'disruption');
+assert.deepEqual(m.sanitize(JSON.parse(JSON.stringify(savedReply)), base).chat, savedReply.chat);
+
 // persistence round trip survives JSON exactly
 st = m.reduce(st, { type: 'setScenario', scenario: 'disruption' }); st = m.reduce(st, { type: 'setLang', lang: 'en' }); st = m.reduce(st, { type: 'completeOnboarding' });
 assert.deepEqual(m.sanitize(JSON.parse(JSON.stringify(st)), base), st);

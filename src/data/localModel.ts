@@ -24,7 +24,15 @@ export interface LocalReport {
   scope: 'preview' | 'device';
 }
 
-export interface ChatTurn { role: 'user' | 'assistant'; content: string; quick?: boolean }
+/** Historical reply metadata, saved so an old preview ETA cannot read as today's live status. */
+export interface ChatTurn {
+  role: 'user' | 'assistant';
+  content: string;
+  quick?: boolean;
+  at?: number;
+  context?: 'preview' | 'real';
+  scenario?: DemoScenario;
+}
 
 export interface Commute {
   origin: string;
@@ -108,7 +116,14 @@ function cleanChat(raw: unknown): ChatTurn[] {
     if (!t || typeof t !== 'object') continue;
     const o = t as Record<string, unknown>;
     if ((o.role !== 'user' && o.role !== 'assistant') || typeof o.content !== 'string' || !o.content) continue;
-    out.push({ role: o.role, content: o.content.slice(0, 4000), quick: o.quick === true ? true : undefined });
+    out.push({
+      role: o.role,
+      content: o.content.slice(0, 4000),
+      quick: o.quick === true ? true : undefined,
+      at: typeof o.at === 'number' && Number.isFinite(o.at) && o.at > 0 ? o.at : undefined,
+      context: o.context === 'preview' || o.context === 'real' ? o.context : undefined,
+      scenario: SCENARIOS.includes(o.scenario as DemoScenario) ? o.scenario as DemoScenario : undefined,
+    });
   }
   return out.slice(-MAX_CHAT_TURNS);
 }

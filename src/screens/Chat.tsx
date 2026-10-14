@@ -1,9 +1,11 @@
 import { ShieldCheck } from 'lucide-react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
-import { ask, ChatError, detectTransport, MAX_INPUT, MODEL, Transport, Turn } from '../chat/engine';
+import { ask, ChatError, detectTransport, MAX_INPUT, MODEL, Transport } from '../chat/engine';
 import { useApp } from '../state/AppContext';
 import { makeDemoScene } from '../data/demo';
+import type { ChatTurn } from '../data/localModel';
+import { dayStamp } from '../data/format';
 import { powerFeedState, usePowerMaintenance } from '../data/maintenance';
 import { radius, space, type } from '../theme/tokens';
 import { PressScale } from '../components/motion';
@@ -17,7 +19,7 @@ export const Chat = React.forwardRef<ChatHandle, { onBusy: (b: boolean) => void 
   const { c, t, lang, seismic, pendingQuestion, takePendingQuestion, demoEnabled, demoScenario, demoReports, now, area, chatHistory, setChatHistory, clearChatHistory } = useApp();
   const { data: maintenance, state: maintenanceState } = usePowerMaintenance(area);
   // The conversation lives in the shared local store, so it survives navigation and restarts.
-  const turns: Turn[] = chatHistory;
+  const turns: ChatTurn[] = chatHistory;
   const setTurns = setChatHistory;
   const [draft, setDraft] = useState<string | null>(null); // streaming answer
   const [busy, setBusy] = useState(false);
@@ -40,7 +42,10 @@ export const Chat = React.forwardRef<ChatHandle, { onBusy: (b: boolean) => void 
         return;
       }
       setError(null);
-      const history: Turn[] = [...turns, { role: 'user', content: q }];
+      const context = demoEnabled ? 'preview' as const : 'real' as const;
+      const when = Date.now();
+      const meta = { at: when, context, scenario: demoEnabled ? demoScenario : undefined };
+      const history: ChatTurn[] = [...turns, { role: 'user', content: q, ...meta }];
       setTurns(history);
       setBusy(true);
       setDraft(null);
@@ -52,12 +57,12 @@ export const Chat = React.forwardRef<ChatHandle, { onBusy: (b: boolean) => void 
           signal: ctl.current.signal, onText: setDraft, zone: area, preview,
           powerFeed: { data: maintenance, state: powerFeedState(maintenance, maintenanceState) },
         });
-        setTurns([...history, { role: 'assistant', content: answer.text, quick: answer.quick }]);
+        setTurns([...history, { role: 'assistant', content: answer.text, quick: answer.quick, ...meta }]);
       } catch (e) {
         const code = e instanceof ChatError ? e.code : 'failed';
         if (code === 'cancelled') return;
         setError(code === 'unavailable' || code === 'not_granted' ? t('chatUnavailable') : t('chatError'));
-        setTurns(history.slice(0, -1).concat({ role: 'user', content: q }));
+        setTurns(history);
       } finally {
         setDraft(null);
         setBusy(false);
@@ -76,7 +81,9 @@ export const Chat = React.forwardRef<ChatHandle, { onBusy: (b: boolean) => void 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingQuestion]);
 
-  const suggestions = [t('chatSuggest1'), t('chatSuggest2'), t('chatSuggest3')];
+  const suggestions = demoEnabled
+    ? [t('chatSuggest2'), t('chatSuggest3'), t('chatSuggestReports')]
+    : [t('chatSuggest1'), t('chatSuggest2'), t('chatSuggest3')];
 
   return (
     <View style={{ gap: space.md }}>
@@ -108,7 +115,8 @@ export const Chat = React.forwardRef<ChatHandle, { onBusy: (b: boolean) => void 
       ) : null}
 
       {turns.map((m, i) => (
-        <Bubble key={i} role={m.role} text={m.content} />
+        <Bubble key={i} role={m.role} text={m.content}
+          at={m.at} context={m.context} scenario={m.scenario} />
       ))}
       {busy ? <Bubble role="assistant" text={draft || t('chatThinking')} muted={!draft} /> : null}
       {turns.length > 0 && !busy ? (
@@ -133,8 +141,17 @@ export const Chat = React.forwardRef<ChatHandle, { onBusy: (b: boolean) => void 
   );
 });
 
-function Bubble({ role, text, muted }: { role: 'user' | 'assistant'; text: string; muted?: boolean }) {
-  const { c } = useApp();
+function Bubble({ role, text, muted, at, context, scenario }: {
+  role: 'user' | 'assistant'; text: string; muted?: boolean;
+  at?: number; context?: 'preview' | 'real'; scenario?: 'everyday' | 'disruption' | 'recovery';
+}) {
+  const { c, t, lang } = useApp();
+  const when = at ? dayStamp(at, lang) : undefined;
+  const scenarioLabel = scenario === 'disruption' ? t('demoDisruption')
+    : scenario === 'recovery' ? t('demoRecovery') : t('demoEveryday');
+  const meta = !when ? t('chatHistoryUnverified')
+    : context === 'preview' ? t('chatHistoryPreview', { scenario: scenarioLabel, when })
+    : t('chatHistoryReal', { when });
   const mine = role === 'user';
   return (
     <View
@@ -153,6 +170,12 @@ function Bubble({ role, text, muted }: { role: 'user' | 'assistant'; text: strin
       <Txt size={type.body + 1} weight="medium" tone={muted ? 'muted' : 'ink'} style={mine ? { color: c.bubbleUserInk } : undefined} selectable>
         {text}
       </Txt>
+      {role === 'assistant' && !muted && at !== undefined ? (
+        <Txt size={type.caption} tone="muted" style={{ marginTop: space.xs }}>{meta}</Txt>
+      ) : null}
+      {role === 'assistant' && !muted && at === undefined ? (
+        <Txt size={type.caption} tone="muted" style={{ marginTop: space.xs }}>{t('chatHistoryUnverified')}</Txt>
+      ) : null}
     </View>
   );
 }
