@@ -8,14 +8,23 @@ import { radius, space, type } from '../theme/tokens';
 import { PressScale } from '../components/motion';
 import { Button, Card, Txt } from '../components/ui';
 
-/** Offline-first welcome: one real preference form, never a fake location permission. */
+const NODE = 48;
+
+/**
+ * Offline-first welcome: one real preference form, never a fake location permission.
+ *
+ * The connected path (the product's own motif) runs from what the app shows to the one decision the
+ * user makes first: their corregimiento. Nodes are decorative and carry no status meaning, so they
+ * stay neutral (coral is reserved for interaction) and are hidden from screen readers.
+ */
 export function Onboarding() {
   const { c, t, lang, setLang, themePref, setThemePref, area, setArea, completeOnboarding } = useApp();
   const insets = useSafeAreaInsets();
-  const features = [
-    { Icon: Activity, title: t('onboardQuake'), text: t('onboardQuakeDetail') },
-    { Icon: Zap, title: t('onboardServices'), text: t('onboardServicesDetail') },
-    { Icon: TrainFront, title: t('onboardCommute'), text: t('onboardCommuteDetail') },
+  const steps = [
+    { Icon: Activity, title: t('onboardQuake'), text: t('onboardQuakeDetail'), last: false },
+    { Icon: Zap, title: t('onboardServices'), text: t('onboardServicesDetail'), last: false },
+    { Icon: TrainFront, title: t('onboardCommute'), text: t('onboardCommuteDetail'), last: false },
+    { Icon: MapPin, title: t('onboardAreaTitle'), text: t('onboardAreaHint'), last: true },
   ];
   return (
     <ScrollView keyboardShouldPersistTaps="handled"
@@ -31,35 +40,31 @@ export function Onboarding() {
         </Txt>
         <Txt size={type.body} tone="muted">{t('onboardSubtitle')}</Txt>
       </View>
-      {/* A connected neighborhood path: an original product motif, not a fictional live map. */}
-      <View style={{ paddingHorizontal: space.sm, paddingVertical: space.md }}>
-        {features.map(({ Icon, title, text }, index) => (
-          <View key={title} style={{ flexDirection: 'row', gap: space.md, minHeight: 92 }}>
-            <View style={{ width: 52, alignItems: 'center' }} accessible={false}>
-              {index < features.length - 1 ? (
-                <View style={{ position: 'absolute', top: 48, bottom: 0, width: 2,
+      <View style={{ paddingHorizontal: space.sm, paddingTop: space.xs }}>
+        {steps.map(({ Icon, title, text, last }) => (
+          <View key={title} style={{ flexDirection: 'row', gap: space.md }}>
+            <View style={{ width: NODE, alignItems: 'center' }}
+              accessible={false} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
+              {!last ? (
+                <View style={{ position: 'absolute', top: NODE + 4, bottom: 4, width: 2, borderRadius: 1,
                   backgroundColor: c.line }} />
               ) : null}
-              <View style={{ width: 48, height: 48, borderRadius: 24,
-                borderWidth: 1, borderColor: index === 0 ? c.accent : c.line,
-                backgroundColor: index === 0 ? c.tileStrong : c.tile,
+              <View style={{ width: NODE, height: NODE, borderRadius: NODE / 2,
+                borderWidth: last ? 1.5 : 1, borderColor: last ? c.ink : c.line,
+                backgroundColor: last ? c.tileStrong : c.tile,
                 alignItems: 'center', justifyContent: 'center' }}>
-                <Icon size={22} color={index === 0 ? c.accent : c.ink} />
+                <Icon size={22} color={c.ink} />
               </View>
             </View>
-            <View style={{ flex: 1, gap: space.xxs, paddingTop: space.xs, paddingBottom: space.lg }}>
-              <Txt size={index === 0 ? type.title : type.body} weight="semibold">{title}</Txt>
+            <View style={{ flex: 1, gap: space.xxs, paddingTop: space.xs,
+              paddingBottom: last ? space.xs : space.md }}>
+              <Txt size={type.title} weight="semibold" accessibilityRole={last ? 'header' : undefined}>{title}</Txt>
               <Txt size={type.label} tone="muted">{text}</Txt>
             </View>
           </View>
         ))}
       </View>
       <Card style={{ gap: space.md }}>
-        <View style={{ flexDirection: 'row', gap: space.sm, alignItems: 'center' }}>
-          <MapPin size={20} color={c.ink} />
-          <Txt size={type.title} weight="semibold">{t('onboardAreaTitle')}</Txt>
-        </View>
-        <Txt size={type.label} tone="muted">{t('onboardAreaHint')}</Txt>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.xs }}>
           {CORREGIMIENTOS.map((name) => {
             const selected = name === area;
