@@ -73,7 +73,7 @@ function Shell() {
           <Header />
           {demoEnabled ? (
             <PressScale accessibilityRole="button" accessibilityLabel={t('previewBadgeScenario', { scenario: t(demoScenario === 'everyday' ? 'demoEveryday' : demoScenario === 'disruption' ? 'demoDisruption' : 'demoRecovery') })}
-              onPress={() => go('settings')} style={{ alignSelf: 'flex-start', marginHorizontal: space.lg, marginBottom: 4, paddingHorizontal: space.md, minHeight: 30, justifyContent: 'center', borderRadius: radius.pill, backgroundColor: c.tileStrong }}>
+              onPress={() => go('settings')} style={{ alignSelf: 'flex-start', marginHorizontal: space.lg, marginBottom: 4, paddingHorizontal: space.md, minHeight: 44, justifyContent: 'center', borderRadius: radius.pill, backgroundColor: c.tileStrong }}>
               <Txt size={type.caption + 1} weight="semibold">{t('previewBadgeScenario', { scenario: t(demoScenario === 'everyday' ? 'demoEveryday' : demoScenario === 'disruption' ? 'demoDisruption' : 'demoRecovery') })}</Txt>
             </PressScale>
           ) : null}
