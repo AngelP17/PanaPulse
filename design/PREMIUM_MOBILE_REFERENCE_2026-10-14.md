@@ -53,3 +53,7 @@ PanaPulse's unique signature remains **the connected-path P, the Porcelana/ember
 6. Keep the screenshots and reference notes in the PR so another Claude/Codex agent cannot "improvise" a wholly new visual system.
 
 **Success criterion:** An instantly recognizable **PanaPulse**, now as polished and deliberate as the reference designs. The user should recognize the original Porcelana app and find every service detail easier to understand.
+
+## Additional reference submitted October 14
+
+The owner shared one more visual inspiration alongside this reference study. **Its image details have not been independently inspected**, so do not invent or implement specific elements from it. Review the actual reference with the owner before adding design recommendations. Apply the same guardrails: PanaPulse-specific originality, native ergonomics, Porcelana tokens, and no visual distractions around sourced safety/service information.
