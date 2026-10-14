@@ -2,7 +2,7 @@
 // so each rule is testable and the same shapes can later be fed by a server without rebuilding screens.
 import { CORREGIMIENTOS } from './services';
 import type { Lang } from '../i18n/strings';
-import type { DemoScenario } from './demo';
+import type { DemoScenario, TransitId } from './demo';
 import { safePreviewNote } from './neighborhood';
 import type { ReportService } from './neighborhood';
 
@@ -30,6 +30,7 @@ export interface Commute {
   origin: string;
   destination: string;
   saved: boolean;
+  preferred: TransitId;
 }
 
 export interface LocalState {
@@ -72,7 +73,7 @@ export function defaultState(lang: Lang = 'es', demoEnabled = false): LocalState
     onboarded: false,
     demoEnabled,
     demoScenario: 'everyday',
-    commute: { origin: DEFAULT_AREA, destination: 'Albrook', saved: true },
+    commute: { origin: DEFAULT_AREA, destination: 'Albrook', saved: true, preferred: 'metro1' },
     reports: [],
     chat: [],
   };
@@ -129,6 +130,7 @@ export function sanitize(raw: unknown, base: LocalState): LocalState {
       origin: isArea(c.origin) ? c.origin : base.commute.origin,
       destination: typeof c.destination === 'string' && c.destination ? c.destination.slice(0, 40) : base.commute.destination,
       saved: typeof c.saved === 'boolean' ? c.saved : base.commute.saved,
+      preferred: c.preferred === 'metro1' || c.preferred === 'metro2' || c.preferred === 'mibus' ? c.preferred : base.commute.preferred,
     },
     reports: cleanReports(o.reports),
     chat: cleanChat(o.chat),
@@ -159,6 +161,7 @@ export function reduce(state: LocalState, a: Action): LocalState {
       const next = { ...state.commute, ...a.patch };
       if (!isArea(next.origin)) next.origin = state.commute.origin;
       if (!next.destination) next.destination = state.commute.destination;
+      if (!['metro1', 'metro2', 'mibus'].includes(next.preferred)) next.preferred = state.commute.preferred;
       return { ...state, commute: next };
     }
     case 'addReport': {
