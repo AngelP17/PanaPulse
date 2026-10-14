@@ -1,6 +1,6 @@
 import { Activity, Check, MapPin, TrainFront, Zap } from 'lucide-react-native';
 import React from 'react';
-import { ScrollView, View } from 'react-native';
+import { ScrollView, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CORREGIMIENTOS } from '../data/services';
 import { useApp } from '../state/AppContext';
@@ -8,14 +8,27 @@ import { radius, space, type } from '../theme/tokens';
 import { PressScale } from '../components/motion';
 import { Button, Card, Txt } from '../components/ui';
 
-/** Offline-first welcome: one real preference form, never a fake location permission. */
+const NODE = 48;
+
+/**
+ * Offline-first welcome: one real preference form, never a fake location permission.
+ *
+ * The connected path (the product's own motif) runs from what the app shows to the one decision the
+ * user makes first: their corregimiento. Nodes are decorative and carry no status meaning, so they
+ * stay neutral (coral is reserved for interaction) and are hidden from screen readers.
+ */
 export function Onboarding() {
   const { c, t, lang, setLang, themePref, setThemePref, area, setArea, completeOnboarding } = useApp();
   const insets = useSafeAreaInsets();
-  const features = [
-    { Icon: Activity, title: t('onboardQuake'), text: t('onboardQuakeDetail') },
-    { Icon: Zap, title: t('onboardServices'), text: t('onboardServicesDetail') },
-    { Icon: TrainFront, title: t('onboardCommute'), text: t('onboardCommuteDetail') },
+  const { fontScale } = useWindowDimensions();
+  // The non-breaking space keeps the last two words together at normal sizes. At large text it would force
+  // one unbreakable chunk wider than the line, so it reverts to an ordinary space and may wrap.
+  const headline = fontScale > 1.15 ? t('onboardTitle').replace(/\u00A0/g, ' ') : t('onboardTitle');
+  const steps = [
+    { Icon: Activity, title: t('onboardQuake'), text: t('onboardQuakeDetail'), last: false },
+    { Icon: Zap, title: t('onboardServices'), text: t('onboardServicesDetail'), last: false },
+    { Icon: TrainFront, title: t('onboardCommute'), text: t('onboardCommuteDetail'), last: false },
+    { Icon: MapPin, title: t('onboardAreaTitle'), text: t('onboardAreaHint'), last: true },
   ];
   return (
     <ScrollView keyboardShouldPersistTaps="handled"
@@ -27,30 +40,35 @@ export function Onboarding() {
       <View style={{ paddingHorizontal: space.xs, gap: space.xs }}>
         <Txt size={type.label} weight="semibold" tone="muted">{t('onboardEyebrow')}</Txt>
         <Txt size={type.hero - 4} weight="bold" accessibilityRole="header">
-          {t('onboardTitle')}
+          {headline}
         </Txt>
         <Txt size={type.body} tone="muted">{t('onboardSubtitle')}</Txt>
       </View>
-      <Card style={{ gap: space.md }}>
-        {features.map(({ Icon, title, text }) => (
-          <View key={title} style={{ flexDirection: 'row', gap: space.md, alignItems: 'center' }}>
-            <View style={{ height: 44, width: 44, borderRadius: radius.tile,
-              backgroundColor: c.tileStrong, justifyContent: 'center', alignItems: 'center' }}>
-              <Icon size={20} color={c.ink} />
+      <View style={{ paddingHorizontal: space.sm, paddingTop: space.xs }}>
+        {steps.map(({ Icon, title, text, last }) => (
+          <View key={title} style={{ flexDirection: 'row', gap: space.md }}>
+            <View style={{ width: NODE, alignItems: 'center' }}
+              accessible={false} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
+              {!last ? (
+                <View style={{ position: 'absolute', top: NODE + 4, bottom: 4, width: 2, borderRadius: 1,
+                  backgroundColor: c.line }} />
+              ) : null}
+              <View style={{ width: NODE, height: NODE, borderRadius: NODE / 2,
+                borderWidth: last ? 1.5 : 1, borderColor: last ? c.ink : c.line,
+                backgroundColor: last ? c.tileStrong : c.tile,
+                alignItems: 'center', justifyContent: 'center' }}>
+                <Icon size={22} color={c.ink} />
+              </View>
             </View>
-            <View style={{ flex: 1, gap: 2 }}>
-              <Txt size={type.body} weight="semibold">{title}</Txt>
+            <View style={{ flex: 1, gap: space.xxs, paddingTop: space.xs,
+              paddingBottom: last ? space.xs : space.md }}>
+              <Txt size={type.title} weight="semibold" accessibilityRole={last ? 'header' : undefined}>{title}</Txt>
               <Txt size={type.label} tone="muted">{text}</Txt>
             </View>
           </View>
         ))}
-      </Card>
+      </View>
       <Card style={{ gap: space.md }}>
-        <View style={{ flexDirection: 'row', gap: space.sm, alignItems: 'center' }}>
-          <MapPin size={20} color={c.ink} />
-          <Txt size={type.title} weight="semibold">{t('onboardAreaTitle')}</Txt>
-        </View>
-        <Txt size={type.label} tone="muted">{t('onboardAreaHint')}</Txt>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.xs }}>
           {CORREGIMIENTOS.map((name) => {
             const selected = name === area;
