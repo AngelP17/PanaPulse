@@ -31,20 +31,29 @@ export function Onboarding() {
         </Txt>
         <Txt size={type.body} tone="muted">{t('onboardSubtitle')}</Txt>
       </View>
-      <Card style={{ gap: space.md }}>
-        {features.map(({ Icon, title, text }) => (
-          <View key={title} style={{ flexDirection: 'row', gap: space.md, alignItems: 'center' }}>
-            <View style={{ height: 44, width: 44, borderRadius: radius.tile,
-              backgroundColor: c.tileStrong, justifyContent: 'center', alignItems: 'center' }}>
-              <Icon size={20} color={c.ink} />
+      {/* A connected neighborhood path: an original product motif, not a fictional live map. */}
+      <View style={{ paddingHorizontal: space.sm, paddingVertical: space.md }}>
+        {features.map(({ Icon, title, text }, index) => (
+          <View key={title} style={{ flexDirection: 'row', gap: space.md, minHeight: 92 }}>
+            <View style={{ width: 52, alignItems: 'center' }} accessible={false}>
+              {index < features.length - 1 ? (
+                <View style={{ position: 'absolute', top: 48, bottom: 0, width: 2,
+                  backgroundColor: c.line }} />
+              ) : null}
+              <View style={{ width: 48, height: 48, borderRadius: 24,
+                borderWidth: 1, borderColor: index === 0 ? c.accent : c.line,
+                backgroundColor: index === 0 ? c.tileStrong : c.tile,
+                alignItems: 'center', justifyContent: 'center' }}>
+                <Icon size={22} color={index === 0 ? c.accent : c.ink} />
+              </View>
             </View>
-            <View style={{ flex: 1, gap: 2 }}>
-              <Txt size={type.body} weight="semibold">{title}</Txt>
+            <View style={{ flex: 1, gap: space.xxs, paddingTop: space.xs, paddingBottom: space.lg }}>
+              <Txt size={index === 0 ? type.title : type.body} weight="semibold">{title}</Txt>
               <Txt size={type.label} tone="muted">{text}</Txt>
             </View>
           </View>
         ))}
-      </Card>
+      </View>
       <Card style={{ gap: space.md }}>
         <View style={{ flexDirection: 'row', gap: space.sm, alignItems: 'center' }}>
           <MapPin size={20} color={c.ink} />
