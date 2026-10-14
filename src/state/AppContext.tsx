@@ -1,15 +1,15 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getLocales } from 'expo-localization';
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState } from 'react';
 import { useColorScheme } from 'react-native';
 import { format, Lang, StringKey, strings } from '../i18n/strings';
 import { palettes, Palette, ThemeName } from '../theme/tokens';
 import { loadLive, loadSnapshot, SeismicData } from '../data/usgs';
 import type { DemoScenario } from '../data/demo';
 import type { AnonymousReport, ReportService } from '../data/neighborhood';
-import { safePreviewNote } from '../data/neighborhood';
+import { ChatTurn, Commute, defaultState, LocalReport, reduce, ThemePref } from '../data/localModel';
+import { loadLocalState, saveLocalState } from './persist';
 
-export type ThemePref = 'auto' | 'light' | 'dark';
+export type { ThemePref };
 export type Tab = 'home' | 'services' | 'mobility' | 'quakes' | 'chat' | 'report' | 'settings';
 
 interface AppState {
@@ -21,11 +21,26 @@ interface AppState {
   setDemoEnabled: (b: boolean) => void;
   demoScenario: DemoScenario;
   setDemoScenario: (s: DemoScenario) => void;
+  /** The user's corregimiento. Home, Services, Reports and Ask all read it from here. */
+  area: string;
+  setArea: (area: string) => void;
+  onboarded: boolean;
+  completeOnboarding: () => void;
+  /** Reports written on this device. Local only; never presented as public submissions. */
+  reports: LocalReport[];
+  addReport: (input: { service: ReportService; corregimiento: string; note: string }) => void;
+  removeReport: (id: string) => void;
+  commute: Commute;
+  setCommute: (patch: Partial<Commute>) => void;
+  chatHistory: ChatTurn[];
+  setChatHistory: (turns: ChatTurn[]) => void;
+  clearChatHistory: () => void;
+  /** Preview-scoped slices, kept for the preview screens. */
   demoReports: number;
   demoSubmittedReports: AnonymousReport[];
-  addDemoReport: (input: { service: ReportService; corregimiento: string; note: string }) => void;
   demoCommuteSaved: boolean;
   setDemoCommuteSaved: (value: boolean) => void;
+  hydrated: boolean;
   theme: ThemeName;
   c: Palette;
   t: (key: StringKey, vars?: Record<string, string | number>) => string;
@@ -39,22 +54,6 @@ interface AppState {
 }
 
 const Ctx = createContext<AppState | null>(null);
-const KEY = 'panapulse.prefs.v1';
-
-// Storage can be unavailable (private windows, sandboxed previews). Never let it break render.
-type StoredPrefs = Partial<{ lang: Lang; themePref: ThemePref; demoEnabled: boolean; demoScenario: DemoScenario; demoCommuteSaved: boolean }>;
-async function readPrefs(): Promise<StoredPrefs> {
-  try {
-    const raw = await AsyncStorage.getItem(KEY);
-    const value = raw ? JSON.parse(raw) : {};
-    return value && typeof value === 'object' ? value : {};
-  } catch { return {}; }
-}
-async function writePrefs(p: StoredPrefs) {
-  try { await AsyncStorage.setItem(KEY, JSON.stringify(p)); }
-  catch { /* Settings still work in this session. */ }
-}
-
 function deviceLang(): Lang {
   try {
     return getLocales()[0]?.languageCode === 'en' ? 'en' : 'es';
@@ -65,28 +64,24 @@ function deviceLang(): Lang {
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const system = useColorScheme();
-  const [lang, setLangState] = useState<Lang>(deviceLang());
-  const [themePref, setThemePrefState] = useState<ThemePref>('auto');
-  const [demoEnabled, setDemoEnabled] = useState(process.env.EXPO_PUBLIC_APP_MODE === 'showcase');
-  const [demoScenario, setDemoScenario] = useState<DemoScenario>('everyday');
-  const [demoSubmittedReports, setDemoSubmittedReports] = useState<AnonymousReport[]>([]);
-  const demoReports = demoSubmittedReports.length;
-  const [demoCommuteSaved, setDemoCommuteSaved] = useState(true);
-  const [prefsLoaded, setPrefsLoaded] = useState(false);
+  const showcase = process.env.EXPO_PUBLIC_APP_MODE === 'showcase';
+  const [local, dispatch] = useReducer(reduce, undefined, () => defaultState(deviceLang(), showcase));
+  const [hydrated, setHydrated] = useState(false);
+  const { lang, themePref, demoEnabled, demoScenario, area, onboarded, commute } = local;
   const [tab, setTab] = useState<Tab>('home');
   const [seismic, setSeismic] = useState<SeismicData>(() => loadSnapshot());
   const [now, setNow] = useState(() => Date.now());
   const [pendingQuestion, setPending] = useState<string | null>(null);
 
   useEffect(() => {
-    readPrefs().then((p) => {
-      if (p.lang === 'es' || p.lang === 'en') setLangState(p.lang);
-      if (p.themePref === 'auto' || p.themePref === 'dark' || p.themePref === 'light') setThemePrefState(p.themePref);
-      if (typeof p.demoEnabled === 'boolean') setDemoEnabled(p.demoEnabled);
-      if (p.demoScenario === 'everyday' || p.demoScenario === 'disruption' || p.demoScenario === 'recovery') setDemoScenario(p.demoScenario);
-      if (typeof p.demoCommuteSaved === 'boolean') setDemoCommuteSaved(p.demoCommuteSaved);
-    }).finally(() => setPrefsLoaded(true));
-  }, []);
+    let alive = true;
+    loadLocalState(deviceLang(), showcase).then((st) => {
+      if (!alive) return;
+      dispatch({ type: 'hydrate', state: st });
+      setHydrated(true);
+    });
+    return () => { alive = false; };
+  }, [showcase]);
 
   // Every build tries live USGS data; on failure (offline, or a sandbox that blocks outside requests)
   // the bundled snapshot stays, labeled with its real time and never presented as live.
@@ -109,23 +104,33 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => clearInterval(id);
   }, []);
 
-  // Hydration guard prevents the initial defaults overwriting saved preferences.
+  // Hydration guard: the initial defaults must never overwrite what is stored.
   useEffect(() => {
-    if (prefsLoaded) void writePrefs({ lang, themePref, demoEnabled, demoScenario, demoCommuteSaved });
-  }, [prefsLoaded, lang, themePref, demoEnabled, demoScenario, demoCommuteSaved]);
-  const setLang = useCallback((l: Lang) => setLangState(l), []);
-  const setThemePref = useCallback((tp: ThemePref) => setThemePrefState(tp), []);
-  const addDemoReport = useCallback((input: { service: ReportService; corregimiento: string; note: string }) => {
-    setDemoSubmittedReports((old) => [{
-      id: `local-${Date.now()}-${old.length}`,
-      service: input.service,
-      // One corregimiento only: never save or display a precise map location.
-      corregimiento: input.corregimiento,
-      note: safePreviewNote(input.note),
-      at: Date.now(),
-      origin: 'local' as const,
-    }, ...old].slice(0, 20));
-  }, []);
+    if (hydrated) void saveLocalState(local);
+  }, [hydrated, local]);
+
+  const setLang = useCallback((l: Lang) => dispatch({ type: 'setLang', lang: l }), []);
+  const setThemePref = useCallback((tp: ThemePref) => dispatch({ type: 'setTheme', themePref: tp }), []);
+  const setDemoEnabled = useCallback((value: boolean) => dispatch({ type: 'setDemoEnabled', value }), []);
+  const setDemoScenario = useCallback((scenario: DemoScenario) => dispatch({ type: 'setScenario', scenario }), []);
+  const setArea = useCallback((a: string) => dispatch({ type: 'setArea', area: a }), []);
+  const completeOnboarding = useCallback(() => dispatch({ type: 'completeOnboarding' }), []);
+  const setCommute = useCallback((patch: Partial<Commute>) => dispatch({ type: 'setCommute', patch }), []);
+  const setDemoCommuteSaved = useCallback((saved: boolean) => dispatch({ type: 'setCommute', patch: { saved } }), []);
+  const setChatHistory = useCallback((turns: ChatTurn[]) => dispatch({ type: 'setChat', turns }), []);
+  const clearChatHistory = useCallback(() => dispatch({ type: 'clearChat' }), []);
+  const removeReport = useCallback((id: string) => dispatch({ type: 'removeReport', id }), []);
+  const addReport = useCallback((input: { service: ReportService; corregimiento: string; note: string }) => {
+    dispatch({ type: 'addReport', input, at: Date.now(), scope: demoEnabled ? 'preview' : 'device' });
+  }, [demoEnabled]);
+
+  // Preview feed: every report written on this device, labeled local by origin. Live mode never mixes preview text.
+  const demoSubmittedReports = useMemo<AnonymousReport[]>(
+    () => local.reports.map((r) => ({ id: r.id, service: r.service, corregimiento: r.corregimiento, note: r.note, at: r.at, origin: 'local' as const })),
+    [local.reports],
+  );
+  const demoReports = demoSubmittedReports.length;
+  const demoCommuteSaved = commute.saved;
 
   const theme: ThemeName = themePref === 'auto' ? (system === 'light' ? 'light' : 'dark') : themePref;
 
@@ -139,14 +144,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setDemoEnabled,
       demoScenario,
       setDemoScenario,
+      area,
+      setArea,
+      onboarded,
+      completeOnboarding,
+      reports: local.reports,
+      addReport,
+      removeReport,
+      commute,
+      setCommute,
+      chatHistory: local.chat,
+      setChatHistory,
+      clearChatHistory,
       demoReports,
       demoSubmittedReports,
-      addDemoReport,
       demoCommuteSaved,
       setDemoCommuteSaved,
+      hydrated,
       theme,
       c: palettes[theme],
-      t: (key, vars) => format(strings[lang][key], vars),
+      t: (key, vars) => format(strings[lang][key], { area, ...vars }),
       tab,
       go: setTab,
       seismic,
@@ -162,7 +179,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         return q;
       },
     }),
-    [lang, setLang, themePref, setThemePref, demoEnabled, demoScenario, demoReports, demoSubmittedReports, addDemoReport, demoCommuteSaved, theme, tab, seismic, now, pendingQuestion],
+    [lang, setLang, themePref, setThemePref, demoEnabled, setDemoEnabled, demoScenario, setDemoScenario, area, setArea, onboarded, completeOnboarding, local.reports, addReport, removeReport, commute, setCommute, local.chat, setChatHistory, clearChatHistory, demoReports, demoSubmittedReports, demoCommuteSaved, setDemoCommuteSaved, hydrated, theme, tab, seismic, now, pendingQuestion],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

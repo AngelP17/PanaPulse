@@ -14,14 +14,13 @@ import { powerSurfaceSource } from '../data/sourcePolicy';
 import { useApp } from '../state/AppContext';
 import { space, type } from '../theme/tokens';
 
-const ZONE = 'Pueblo Nuevo';
 
 /**
  * Home answers three things at a glance: is anything wrong near me, how sure are we, what to check next.
  * Order: area summary, one hero, up to three status chips, one offline line, one utility card, one secondary card.
  */
 export function Home({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
-  const { c, t, lang, seismic, now, go, demoEnabled, demoScenario } = useApp();
+  const { c, t, lang, seismic, now, go, demoEnabled, demoScenario, area: ZONE } = useApp();
   const demo = makeDemoScene(now, demoScenario);
   const latestRecorded = seismic.earthquakes.length ? [...seismic.earthquakes].sort((a, b) => b.time - a.time)[0] : null;
   const { data: maintenance, state: maintenanceState } = usePowerMaintenance(ZONE);

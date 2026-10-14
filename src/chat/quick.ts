@@ -118,12 +118,12 @@ export function quickAnswer(question: string, data: SeismicData, lang: Lang, zon
     } else if (has(q, POWER)) {
       if (powerAnswer) return powerAnswer;
       intent = 'preview-power';
-      text = es ? `En el escenario de Pueblo Nuevo: ${power}. Abre Servicios para ver más.`
-        : `In the Pueblo Nuevo scenario: ${power}. Open Services for more detail.`;
+      text = es ? `En el escenario de ${zone}: ${power}. Abre Servicios para ver más.`
+        : `In the ${zone} scenario: ${power}. Open Services for more detail.`;
     } else if (has(q, WATER)) {
       intent = 'preview-water';
-      text = es ? `En el escenario actual de Pueblo Nuevo: ${water}. Encontrarás más en Servicios.`
-        : `In the current Pueblo Nuevo scenario: ${water}. See Services for details.`;
+      text = es ? `En el escenario actual de ${zone}: ${water}. Encontrarás más en Servicios.`
+        : `In the current ${zone} scenario: ${water}. See Services for details.`;
     } else if (has(q, REPORT)) {
       intent = 'preview-reports';
       text = es ? `Hay ${preview.communityReports} reportes vecinales en este escenario. Puedes agregar uno en Reportes.`
@@ -132,8 +132,8 @@ export function quickAnswer(question: string, data: SeismicData, lang: Lang, zon
       const summaryPower = powerAnswer
         ? (es ? 'avisos oficiales programados disponibles' : 'official scheduled notices available')
         : power;
-      text = es ? `En esta vista previa de Pueblo Nuevo: luz, ${summaryPower}; agua, ${water}; Línea 1 en ${preview.transit[0].arrivalMinutes} min. Pregúntame por un servicio o consulta Sismos para ver datos reales del USGS.`
-        : `In the Pueblo Nuevo preview: power, ${summaryPower}; water, ${water}; Line 1 in ${preview.transit[0].arrivalMinutes} min. Ask about a service or open Quakes for real USGS data.`;
+      text = es ? `En esta vista previa de ${zone}: luz, ${summaryPower}; agua, ${water}; Línea 1 en ${preview.transit[0].arrivalMinutes} min. Pregúntame por un servicio o consulta Sismos para ver datos reales del USGS.`
+        : `In the ${zone} preview: power, ${summaryPower}; water, ${water}; Line 1 in ${preview.transit[0].arrivalMinutes} min. Ask about a service or open Quakes for real USGS data.`;
     }
     return { text, intent };
   }

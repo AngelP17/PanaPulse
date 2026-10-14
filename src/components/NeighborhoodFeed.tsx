@@ -36,9 +36,9 @@ function AnonymousReportRow({ report }: { report: AnonymousReport }) {
 export function NeighborhoodFeed({ limit = 3, onViewAll, header = true }: {
   limit?: number; onViewAll?: () => void; header?: boolean;
 }) {
-  const { t, now, demoScenario, demoSubmittedReports } = useApp();
+  const { t, now, demoScenario, demoSubmittedReports, area } = useApp();
   const scene = makeDemoScene(now, demoScenario);
-  const feed = neighborhoodFeed(now, demoScenario, scene.communityReports, demoSubmittedReports);
+  const feed = neighborhoodFeed(now, demoScenario, scene.communityReports, demoSubmittedReports, area);
   return (
     <Card style={{ gap: space.sm }}>
       {header ? (

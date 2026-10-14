@@ -1,7 +1,6 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { CheckCircle2, Droplets, Zap } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
 import { CORREGIMIENTOS } from '../data/services';
 import { makeDemoScene } from '../data/demo';
@@ -12,54 +11,20 @@ import { font, radius, space, type } from '../theme/tokens';
 import { PressScale } from '../components/motion';
 import { Button, Card, StatusChip, Txt, styles } from '../components/ui';
 
-interface LocalReport {
-  service: 'electricity' | 'water';
-  corregimiento: string;
-  note: string;
-  at: number;
-}
-const KEY = 'panapulse.reports.v1';
-
-async function loadReports(): Promise<LocalReport[]> {
-  try {
-    const raw = await AsyncStorage.getItem(KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
 export function Report() {
-  const { c, t, lang, now, demoEnabled, demoScenario, demoReports, addDemoReport } = useApp();
+  const { c, t, lang, now, demoEnabled, demoScenario, demoReports, area, reports, addReport, removeReport } = useApp();
   const demo = makeDemoScene(now, demoScenario);
   // Same scenario/count as Home and Services, so demo surfaces cannot contradict each other.
   const demoCommunityCount = demo.communityReports + demoReports;
   const [service, setService] = useState<'electricity' | 'water'>('electricity');
-  const [where, setWhere] = useState('Pueblo Nuevo');
+  const [where, setWhere] = useState(area);
   const [note, setNote] = useState('');
   const [saved, setSaved] = useState(false);
-  const [mine, setMine] = useState<LocalReport[]>([]);
+  // Live mode shows only what was written outside preview; preview text stays inside the preview.
+  const mine = reports.filter((r) => r.scope === 'device');
 
-  useEffect(() => {
-    loadReports().then(setMine);
-  }, []);
-
-  const submit = async () => {
-    if (demoEnabled) {
-      addDemoReport({ service, corregimiento: where, note });
-      setSaved(true);
-      setNote('');
-      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      return;
-    }
-    const r: LocalReport = { service, corregimiento: where, note: note.trim().slice(0, 200), at: Date.now() };
-    const next = [r, ...mine].slice(0, 20);
-    setMine(next);
-    try {
-      await AsyncStorage.setItem(KEY, JSON.stringify(next));
-    } catch {
-      /* still shown for this session */
-    }
+  const submit = () => {
+    addReport({ service, corregimiento: where, note });
     setSaved(true);
     setNote('');
     // One haptic for the one committed action, alongside the visible "saved" card. Never the only feedback.
@@ -163,8 +128,8 @@ export function Report() {
         <Card style={{ gap: space.sm }}>
           <Txt size={type.title} weight="semibold">{t('myReports')}</Txt>
           <Txt size={type.caption + 1} tone="muted">{t('neighborMyLocalOnly')}</Txt>
-          {mine.slice(0, 10).map((r, index) => (
-            <View key={`${r.at}-${index}`}
+          {mine.slice(0, 10).map((r) => (
+            <View key={r.id}
               style={{ borderBottomWidth: 1, borderBottomColor: c.line, paddingVertical: space.sm, gap: space.xs }}>
               <View style={styles.row}>
                 {r.service === 'electricity'
@@ -174,6 +139,10 @@ export function Report() {
                 <Txt size={type.label} tone="muted">{ago(r.at, now, lang)}</Txt>
               </View>
               {r.note ? <Txt size={type.body}>{r.note}</Txt> : null}
+              <Pressable accessibilityRole="button" accessibilityLabel={t('deleteReport')} onPress={() => removeReport(r.id)}
+                hitSlop={8} style={{ alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' }}>
+                <Txt size={type.label} weight="semibold" style={{ color: c.accent }}>{t('deleteReport')}</Txt>
+              </Pressable>
             </View>
           ))}
         </Card>

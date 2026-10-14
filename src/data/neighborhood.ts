@@ -22,7 +22,7 @@ export function safePreviewNote(raw: string): string {
     .replace(/(?:\+?\d[\d\s().-]{6,}\d)/g, '[…]');
 }
 
-export function neighborhoodFeed(now: number, scenario: DemoScenario, count: number, submitted: AnonymousReport[]): AnonymousReport[] {
+export function neighborhoodFeed(now: number, scenario: DemoScenario, count: number, submitted: AnonymousReport[], area = 'Pueblo Nuevo'): AnonymousReport[] {
   const notes: Record<DemoScenario, AnonymousReport['descriptionKey'][]> = {
     everyday: ['neighborNotePowerScheduled', 'neighborNoteWaterNormal', 'neighborNotePowerSlow'],
     disruption: ['neighborNotePowerInterrupted', 'neighborNoteWaterLow', 'neighborNotePowerSlow', 'neighborNoteWaterNoSupply'],
@@ -35,7 +35,7 @@ export function neighborhoodFeed(now: number, scenario: DemoScenario, count: num
     return {
       id: `example-${scenario}-${index}`,
       service: key?.toLowerCase().includes('water') ? 'water' : 'electricity',
-      corregimiento: index % 4 === 3 ? 'Betania' : 'Pueblo Nuevo',
+      corregimiento: index % 4 === 3 ? (area === 'Betania' ? 'Bella Vista' : 'Betania') : area,
       at: anchor - (index * 6 + 3) * 60000,
       descriptionKey: key,
       origin: 'example',
