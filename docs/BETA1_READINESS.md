@@ -26,14 +26,14 @@ Date: 2026-10-13. Owner review required. This document is a release checklist, *
 | Item | State | Evidence / note |
 |---|---|---|
 | #20 premium references, #21 accessibility + release gates | Merged, CI green | Docs/reference and small a11y changes only |
-| #22 onboarding visual refinement | Open, CI green, **awaiting owner acceptance** | Handoff says owner accepts onboarding first |
-| #23 onboarding polish (stacked on #22) | Open, CI green | `design/review/beta1/2026-10-14/onboarding/` before/pr22/after |
-| #24 audit fixes (Ask works on-device, no dev env copy, no clipped preview cards at 360/393) | Open, CI green | `audit-fixes/`; flows check: 8 failures on main, 0 on branch |
-| #25 Home: USGS fetch time shown once (stacked on #24) | Open | `home-source-line/` ES/EN light/dark WEB393 |
+| #22 onboarding visual refinement | **Merged** (owner reviewed 2026-10-14) | Native look still unverified |
+| #23 onboarding polish | **Merged** | `design/review/beta1/2026-10-14/onboarding/` (WEB). Title drops its non-breaking space above fontScale 1.15; untested on a device |
+| #24 audit fixes (Ask works on-device, no dev env copy, no clipped preview cards at 360/393) | **Merged** | `audit-fixes/` (WEB); flows check: 8 failures before, 0 after |
+| #25 Home: USGS fetch time shown once | **Merged** | `home-source-line/` ES/EN light/dark WEB393 |
 | Web functional checks (`scripts/qa/`) | Pass on branch | onboarding 10/10, flows 31, 7 screens x 8 combos no page errors. Not in CI. |
 | Verified in web harness | scenario coherence, persistence across reload, preview reports not leaking to live, clear-activity keeps prefs, stale USGS never an all-clear, v1 migration, corrupt storage fallback |
 | **Not verified (blockers need a device or owner action)** | native rendering, 200% OS font scale, TalkBack/VoiceOver order, Reduce Motion on device, safe areas/keyboard, Android install | No native tooling in the working environment. Do not mark gates A-D green from web captures. |
-| Still to do on Home | preview Home hero copy/hierarchy; Mobility/Quakes/Reports detail audit | After owner accepts onboarding |
+| Still to do on Home | preview Home hero copy/hierarchy; Mobility/Quakes/Reports detail audit | Next focused PRs |
 
 ## What exists on main, as inspected October 13
 
