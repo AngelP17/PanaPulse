@@ -54,6 +54,25 @@ PanaPulse's unique signature remains **the connected-path P, the Porcelana/ember
 
 **Success criterion:** An instantly recognizable **PanaPulse**, now as polished and deliberate as the reference designs. The user should recognize the original Porcelana app and find every service detail easier to understand.
 
-## Additional reference submitted October 14
+## Additional reference submitted October 14: design discovery directory
 
-The owner shared one more visual inspiration alongside this reference study. **Its image details have not been independently inspected**, so do not invent or implement specific elements from it. Review the actual reference with the owner before adding design recommendations. Apply the same guardrails: PanaPulse-specific originality, native ergonomics, Porcelana tokens, and no visual distractions around sourced safety/service information.
+**Source:** Owner-provided screenshot of an X post by Nero (@neropursue), captioned “The best design inspiration sites you need to save,” shared October 14, 2026. This image is a **directory of design-inspiration resources**, not a PanaPulse screen mockup. Site content has not been individually audited; use these as research starting points, not as verified design patterns or a license to reuse other people's assets.
+
+- **60fps.design** (https://60fps.design): Mobile interaction and animation references. Highest priority for implementation-ready interaction studies, respecting Reduce Motion.
+- **collectui.com** (https://collectui.com): UI concepts, component hierarchy, and mobile layout ideas. Adapt rather than copy.
+- **inspora.design** (https://inspora.design): Daily curated design references for composition and visual hierarchy.
+- **minimal.gallery** (https://minimal.gallery): Restrained typography, whitespace, and precise spacing.
+- **land-book.com** (https://land-book.com): Website design references; useful for hierarchy, but web layouts must not be transplanted into React Native.
+- **footer.design** (https://footer.design): Footer patterns; low relevance for the native app.
+- **posts.design** (https://posts.design): Social media visuals; low relevance to the in-app UX.
+- **landdding.com** (https://landdding.com): Landing-page references; defer until marketing/web work is explicitly authorized.
+
+### PanaPulse translation and priorities
+
+1. Start with **Home**: make the existing most-relevant local information instantly legible, then carefully tune card spacing, type levels, source timestamps, and existing CTA affordances.
+2. Use interaction references for small, responsive **tap/selection feedback**, subtle state transitions and meaningful confirmations in Reports and Mobility. Keep real data stable and avoid decorative animation near earthquakes or service incidents.
+3. Use minimal-layout references to remove clutter in Ask/onboarding without removing source provenance, preview labels, operational/verification/freshness distinctions, or required settings.
+4. Preserve **Porcelana**, the existing connected-path identity, native components, ES/EN support, and distinct approved light/dark treatments. These sites are inspiration inputs, not instructions to rebrand.
+5. **No more documentation-only PRs for this particular reference.** This note closes reference intake; the next approved work item must be a focused, reviewable UI implementation with before/after captures, tested interactions, and the regression/QA checks enumerated above.
+
+**What the screenshot does not provide:** actual examples from those websites, their licensing terms, a direct mockup, or verified animation specifications. Do not infer any of those from this image alone.
