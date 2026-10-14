@@ -1,6 +1,7 @@
 import { Bus, Droplets, Megaphone, TrainFront, Zap } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { ScrollView, View } from 'react-native';
+import { useStackedPair } from '../components/layout';
 import { PressScale } from '../components/motion';
 import { Button, Card, CardHeader, LinkChip, Txt } from '../components/ui';
 import type { DemoScenario, DemoUtilityState, TransitId } from '../data/demo';
@@ -30,7 +31,7 @@ export function DemoControls() {
             <PressScale key={id} onPress={() => setDemoScenario(id)}
               accessibilityRole="button" accessibilityLabel={label}
               accessibilityState={{ selected }}
-              style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: space.md,
+              style={{ minHeight: 44, justifyContent: 'center', alignItems: 'center', flexGrow: 1, paddingHorizontal: space.md,
                 borderRadius: radius.pill, backgroundColor: selected ? c.navActive : c.card }}>
               <Txt size={type.label} weight="semibold" style={{ color: selected ? c.navActiveInk : c.ink }}>{label}</Txt>
             </PressScale>
@@ -48,17 +49,19 @@ export function demoUtilityCopy(state: DemoUtilityState, service: 'power' | 'wat
     : state === 'recovering' ? t('previewWaterRecover') : t('previewWaterGood');
 }
 
-export function DemoUtilityCard({ service, state, onDetails }: {
+export function DemoUtilityCard({ service, state, onDetails, compact = false }: {
   service: 'power' | 'water'; state: DemoUtilityState; onDetails?: () => void;
+  /** Used in a two-column pair: smaller headline and padding so long words never break mid-word. */
+  compact?: boolean;
 }) {
   const { c, t } = useApp();
   const name = service === 'power' ? t('power') : t('water');
   return (
-    <Card style={{ gap: space.sm }}>
+    <Card style={compact ? { gap: space.sm, padding: space.md, flex: 1 } : { gap: space.sm }}>
       <CardHeader icon={service === 'power' ? <Zap size={20} color={c.ink} /> : <Droplets size={20} color={c.ink} />}
         title={name} />
-      <Txt size={type.title + 4} weight="bold">{demoUtilityCopy(state, service, t)}</Txt>
-      <Txt size={type.label} tone="muted">{t('previewHomeCaption')}</Txt>
+      <Txt size={compact ? type.body : type.title + 4} weight="bold">{demoUtilityCopy(state, service, t)}</Txt>
+      {compact ? null : <Txt size={type.label} tone="muted">{t('previewHomeCaption')}</Txt>}
       {onDetails ? <Button label={t('viewServices')} onPress={onDetails} /> : null}
     </Card>
   );
@@ -199,6 +202,7 @@ export function DemoMobility() {
 export function PreviewServices() {
   const { c, t, lang, now, demoScenario, go, area } = useApp();
   const [selected, setSelected] = useState<string | null>(null);
+  const stacked = useStackedPair();
   const scene = makeDemoScene(now, demoScenario);
   const notices = previewServiceNotices(now, demoScenario, area);
   const selectedNotice = notices.find((n) => n.id === selected);
@@ -206,7 +210,7 @@ export function PreviewServices() {
     <View style={{ gap: space.md }}>
       <View style={{ gap: space.xs }}>
         <Txt size={type.hero - 10} weight="bold" accessibilityRole="header">{t('categoryServices')}</Txt>
-        <Txt size={type.label} tone="muted">{area} · {t('previewHomeCaption')}</Txt>
+        <Txt size={type.label} tone="muted">{t('previewHomeCaption')}</Txt>
       </View>
       <DemoControls />
       {selectedNotice ? (
@@ -222,9 +226,9 @@ export function PreviewServices() {
         </Card>
       ) : (
         <>
-          <View style={{ flexDirection: 'row', gap: space.sm }}>
-            <View style={{ flex: 1, minWidth: 0 }}><DemoUtilityCard service="power" state={scene.power} /></View>
-            <View style={{ flex: 1, minWidth: 0 }}><DemoUtilityCard service="water" state={scene.water} /></View>
+          <View style={{ flexDirection: stacked ? 'column' : 'row', gap: space.sm }}>
+            <View style={{ flex: stacked ? undefined : 1, minWidth: 0 }}><DemoUtilityCard compact service="power" state={scene.power} /></View>
+            <View style={{ flex: stacked ? undefined : 1, minWidth: 0 }}><DemoUtilityCard compact service="water" state={scene.water} /></View>
           </View>
           <Card style={{ gap: space.sm }}>
             <Txt size={type.title} weight="semibold" accessibilityRole="header">{t('servicePreviewNotices')}</Txt>

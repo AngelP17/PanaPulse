@@ -1,6 +1,7 @@
 import { Activity, Droplets, Megaphone, TrainFront, Zap } from 'lucide-react-native';
 import React from 'react';
 import { View } from 'react-native';
+import { useStackedPair } from '../components/layout';
 import { DemoCommuteCard, DemoControls } from './DemoScreens';
 import { SectionHeading } from '../components/section';
 import { Button, Card, CardHeader, SourceLine, Txt } from '../components/ui';
@@ -16,6 +17,7 @@ import { radius, space, type } from '../theme/tokens';
  */
 export function PreviewHome({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
   const { c, t, lang, now, demoScenario, demoReports, demoCommuteSaved, seismic, go, area } = useApp();
+  const stacked = useStackedPair();
   const scene = makeDemoScene(now, demoScenario);
   const latest = seismic.earthquakes.length
     ? [...seismic.earthquakes].sort((a, b) => b.time - a.time)[0]
@@ -48,17 +50,17 @@ export function PreviewHome({ onOpenQuake }: { onOpenQuake: (id: string) => void
 
       <DemoControls />
 
-      <SectionHeading title={t('categoryServices')} subtitle={t('previewHomeCaption')} />
-      <View style={{ flexDirection: 'row', gap: space.sm }}>
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Card style={{ gap: space.sm, padding: space.md, minHeight: 128 }}>
+      <SectionHeading title={t('categoryServices')} subtitle={t('servicesSummaryHint')} />
+      <View style={{ flexDirection: stacked ? 'column' : 'row', gap: space.sm }}>
+        <View style={{ flex: stacked ? undefined : 1, minWidth: 0 }}>
+          <Card style={{ gap: space.sm, padding: space.md, minHeight: stacked ? undefined : 128 }}>
             <Zap size={21} color={c.ink} />
             <Txt size={type.label} tone="muted">{t('power')}</Txt>
             <Txt size={type.body} weight="bold">{power}</Txt>
           </Card>
         </View>
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Card style={{ gap: space.sm, padding: space.md, minHeight: 128 }}>
+        <View style={{ flex: stacked ? undefined : 1, minWidth: 0 }}>
+          <Card style={{ gap: space.sm, padding: space.md, minHeight: stacked ? undefined : 128 }}>
             <Droplets size={21} color={c.ink} />
             <Txt size={type.label} tone="muted">{t('water')}</Txt>
             <Txt size={type.body} weight="bold">{water}</Txt>

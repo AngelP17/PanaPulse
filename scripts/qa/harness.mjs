@@ -53,6 +53,7 @@ export async function openApp(browser, site, { seed = null, legacy = null, width
     } catch { /* storage unavailable */ }
   }, [seed, legacy]);
   const page = await ctx.newPage();
+  page.setDefaultTimeout(6000);
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e).slice(0, 200)));
   await page.goto(`${ORIGIN}/`, { waitUntil: 'load' });

@@ -1,7 +1,7 @@
 import { ShieldCheck } from 'lucide-react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
-import { ask, ChatError, detectTransport, MAX_INPUT, MODEL, Transport } from '../chat/engine';
+import { ask, ChatError, detectTransport, MAX_INPUT, Transport } from '../chat/engine';
 import { useApp } from '../state/AppContext';
 import { makeDemoScene } from '../data/demo';
 import type { ChatTurn } from '../data/localModel';
@@ -90,11 +90,14 @@ export const Chat = React.forwardRef<ChatHandle, { onBusy: (b: boolean) => void 
       <View style={[styles.row, { paddingHorizontal: space.xs }]}>
         <ShieldCheck size={16} color={c.muted} />
         <Txt size={type.caption + 1} tone="muted">
-          {demoEnabled ? t('previewChatScope') : t('chatScope', { model: transport === 'server' ? 'Haiku 5.5' : transport === 'artifact' ? 'Haiku 5.5 / Claude' : MODEL })}
+          {demoEnabled ? t('previewChatScope')
+            : transport === 'server' ? t('chatScope', { model: 'Haiku 5.5' })
+            : transport === 'artifact' ? t('chatScope', { model: 'Haiku 5.5 / Claude' })
+            : t('chatScopeDevice')}
         </Txt>
       </View>
 
-      <Bubble role="assistant" text={t(demoEnabled ? 'previewChatIntro' : 'chatIntro')} />
+      <Bubble role="assistant" intro text={t(demoEnabled ? 'previewChatIntro' : 'chatIntro')} />
 
       {turns.length === 0 ? (
         <View style={{ gap: space.xs }}>
@@ -103,8 +106,8 @@ export const Chat = React.forwardRef<ChatHandle, { onBusy: (b: boolean) => void 
               key={s}
               accessibilityRole="button"
               onPress={() => submit(s)}
-              disabled={busy || (transport === 'none' && !demoEnabled)}
-              style={{ alignSelf: 'flex-end', backgroundColor: c.nav, borderRadius: radius.pill, paddingHorizontal: space.lg, paddingVertical: space.sm, minHeight: 48, justifyContent: 'center', opacity: transport === 'none' && !demoEnabled ? 0.5 : 1 }}
+              disabled={busy}
+              style={{ alignSelf: 'flex-end', backgroundColor: c.nav, borderRadius: radius.pill, paddingHorizontal: space.lg, paddingVertical: space.sm, minHeight: 48, justifyContent: 'center' }}
             >
               <Txt size={type.body} weight="medium">
                 {s}
@@ -134,15 +137,17 @@ export const Chat = React.forwardRef<ChatHandle, { onBusy: (b: boolean) => void 
       ) : null}
       {transport === 'none' && !demoEnabled && !error ? (
         <Txt size={type.label} tone="muted" style={{ paddingHorizontal: space.xs }}>
-          {t('chatUnavailable')}
+          {t('chatOnDeviceNote')}
         </Txt>
       ) : null}
     </View>
   );
 });
 
-function Bubble({ role, text, muted, at, context, scenario }: {
+function Bubble({ role, text, muted, intro, at, context, scenario }: {
   role: 'user' | 'assistant'; text: string; muted?: boolean;
+  /** The static greeting: not a stored answer, so it carries no "saved earlier" note. */
+  intro?: boolean;
   at?: number; context?: 'preview' | 'real'; scenario?: 'everyday' | 'disruption' | 'recovery';
 }) {
   const { c, t, lang } = useApp();
@@ -170,10 +175,10 @@ function Bubble({ role, text, muted, at, context, scenario }: {
       <Txt size={type.body + 1} weight="medium" tone={muted ? 'muted' : 'ink'} style={mine ? { color: c.bubbleUserInk } : undefined} selectable>
         {text}
       </Txt>
-      {role === 'assistant' && !muted && at !== undefined ? (
+      {role === 'assistant' && !muted && !intro && at !== undefined ? (
         <Txt size={type.caption} tone="muted" style={{ marginTop: space.xs }}>{meta}</Txt>
       ) : null}
-      {role === 'assistant' && !muted && at === undefined ? (
+      {role === 'assistant' && !muted && !intro && at === undefined ? (
         <Txt size={type.caption} tone="muted" style={{ marginTop: space.xs }}>{t('chatHistoryUnverified')}</Txt>
       ) : null}
     </View>
