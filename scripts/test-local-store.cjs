@@ -15,6 +15,7 @@ const base = m.defaultState('es', false);
 
 // defaults
 assert.equal(base.area, 'Pueblo Nuevo'); assert.equal(base.onboarded, false); assert.equal(base.commute.saved, true);
+assert.equal(base.commute.preferred, 'metro1');
 // garbage never throws and falls back
 for (const junk of [null, 5, 'x', [], { lang: 'fr', area: 'Narnia', demoScenario: 'chaos', reports: 'no', chat: [1, null] }]) {
   const s = m.sanitize(junk, base);
@@ -27,6 +28,10 @@ assert.equal(m.reduce(st, { type: 'setArea', area: 'Narnia' }).area, 'Betania');
 // commute save/remove and destination
 st = m.reduce(st, { type: 'setCommute', patch: { saved: false } }); assert.equal(st.commute.saved, false);
 st = m.reduce(st, { type: 'setCommute', patch: { destination: 'Albrook', origin: 'Narnia' } }); assert.equal(st.commute.origin, 'Betania');
+st = m.reduce(st, { type: 'setCommute', patch: { preferred: 'mibus', destination: 'Tocumen' } });
+assert.equal(st.commute.preferred, 'mibus'); assert.equal(st.commute.destination, 'Tocumen');
+st = m.reduce(st, { type: 'setCommute', patch: { preferred: 'teleportation' } });
+assert.equal(st.commute.preferred, 'mibus', 'Invalid route modes must be rejected');
 // reports: contact details scrubbed, one corregimiento, cap, scope, delete
 st = m.reduce(st, { type: 'addReport', at: 1000, scope: 'preview', input: { service: 'water', corregimiento: 'Betania', note: 'llámame 6123-4567 o a@b.com' } });
 assert.doesNotMatch(st.reports[0].note, /6123|@/); assert.equal(st.reports[0].scope, 'preview'); assert.equal(st.reports[0].origin, 'local');
