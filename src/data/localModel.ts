@@ -67,7 +67,8 @@ export type Action =
   | { type: 'addReport'; input: { service: ReportService; corregimiento: string; note: string }; at: number; scope: LocalReport['scope'] }
   | { type: 'removeReport'; id: string }
   | { type: 'setChat'; turns: ChatTurn[] }
-  | { type: 'clearChat' };
+  | { type: 'clearChat' }
+  | { type: 'clearLocalActivity' };
 
 export const isArea = (v: unknown): v is string => typeof v === 'string' && CORREGIMIENTOS.includes(v);
 const SCENARIOS: DemoScenario[] = ['everyday', 'disruption', 'recovery'];
@@ -195,5 +196,6 @@ export function reduce(state: LocalState, a: Action): LocalState {
     case 'removeReport': return { ...state, reports: state.reports.filter((r) => r.id !== a.id) };
     case 'setChat': return { ...state, chat: cleanChat(a.turns) };
     case 'clearChat': return { ...state, chat: [] };
+    case 'clearLocalActivity': return { ...state, chat: [], reports: [], commute: { ...state.commute, saved: false } };
   }
 }
