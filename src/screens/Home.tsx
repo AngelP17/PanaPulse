@@ -120,9 +120,6 @@ export function Home({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
         <Txt size={type.hero} weight="bold" accessibilityRole="header" style={{ letterSpacing: -1 }}>
           {ZONE}
         </Txt>
-        <Txt size={type.label} tone="muted" numeric>
-          {t('lastData', { time: when(seismic.fetchedAt) })}
-        </Txt>
       </View>
 
       {/* Alert hero: one primary card */}

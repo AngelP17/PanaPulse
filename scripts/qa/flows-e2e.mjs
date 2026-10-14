@@ -122,6 +122,8 @@ const settle = (page, ms = 600) => page.waitForTimeout(ms);
   const body = await page.locator('body').innerText();
   k.ok(/No recent update/i.test(body) && /Stale|Outdated/i.test(body), 'offline/stale USGS shows a stale hero, not an all-clear', body.slice(0, 260));
   k.ok(!/all clear|everything normal|no earthquakes/i.test(body), 'no reassuring all-clear language');
+  k.ok((body.match(/6:30 PM|\d{1,2}:\d{2}\s?[AP]M/g) ?? []).length <= 2 && /USGS · Last data/.test(body),
+    'stale Home states the fetch time once and keeps USGS attribution', body.slice(0, 300));
   k.ok(/No live data|not connected|Water|Metro/i.test(body), 'unavailable feeds are named');
   k.ok(errors.length === 0, 'no page errors offline', errors.join(' | '));
   await ctx.close();
