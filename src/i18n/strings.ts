@@ -40,7 +40,7 @@ const es = {
   noSourceBody: 'Todavía no leemos avisos de {source}. No mostramos “todo normal” sin datos.',
   // mobility
   onboardEyebrow: 'BIENVENIDO A PANAPULSE',
-  onboardTitle: 'Tu ciudad, más clara',
+  onboardTitle: 'Tu ciudad, más\u00A0clara',
   onboardSubtitle: 'Elige tu zona y descubre tus servicios, trayectos y actividad sísmica en un solo lugar.',
   onboardQuake: 'Sismos registrados',
   onboardQuakeDetail: 'Observaciones reales del USGS con fecha y fuente.',
@@ -469,7 +469,7 @@ const en: Record<StringKey, string> = {
   noSource: 'No source connected',
   noSourceBody: "We don't read {source} notices yet. We never show “all normal” without data.",
   onboardEyebrow: 'WELCOME TO PANAPULSE',
-  onboardTitle: 'Your city, made clearer',
+  onboardTitle: 'Your city, made\u00A0clearer',
   onboardSubtitle: 'Choose your area and explore local services, journeys and earthquake activity in one place.',
   onboardQuake: 'Recorded earthquakes',
   onboardQuakeDetail: 'Real USGS observations with original dates and sources.',
