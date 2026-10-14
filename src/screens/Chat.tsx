@@ -1,6 +1,6 @@
 import { ShieldCheck } from 'lucide-react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { ask, ChatError, detectTransport, MAX_INPUT, MODEL, Transport, Turn } from '../chat/engine';
 import { useApp } from '../state/AppContext';
 import { makeDemoScene } from '../data/demo';
@@ -14,9 +14,11 @@ export interface ChatHandle {
 }
 
 export const Chat = React.forwardRef<ChatHandle, { onBusy: (b: boolean) => void }>(function Chat({ onBusy }, ref) {
-  const { c, t, lang, seismic, pendingQuestion, takePendingQuestion, demoEnabled, demoScenario, demoReports, now } = useApp();
-  const { data: maintenance, state: maintenanceState } = usePowerMaintenance('Pueblo Nuevo');
-  const [turns, setTurns] = useState<Turn[]>([]);
+  const { c, t, lang, seismic, pendingQuestion, takePendingQuestion, demoEnabled, demoScenario, demoReports, now, area, chatHistory, setChatHistory, clearChatHistory } = useApp();
+  const { data: maintenance, state: maintenanceState } = usePowerMaintenance(area);
+  // The conversation lives in the shared local store, so it survives navigation and restarts.
+  const turns: Turn[] = chatHistory;
+  const setTurns = setChatHistory;
   const [draft, setDraft] = useState<string | null>(null); // streaming answer
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +49,7 @@ export const Chat = React.forwardRef<ChatHandle, { onBusy: (b: boolean) => void 
         const preview = demoEnabled ? makeDemoScene(now, demoScenario) : null;
         if (preview) preview.communityReports += demoReports;
         const answer = await ask(history, seismic, lang, {
-          signal: ctl.current.signal, onText: setDraft, zone: 'Pueblo Nuevo', preview,
+          signal: ctl.current.signal, onText: setDraft, zone: area, preview,
           powerFeed: { data: maintenance, state: powerFeedState(maintenance, maintenanceState) },
         });
         setTurns([...history, { role: 'assistant', content: answer.text, quick: answer.quick }]);
@@ -61,7 +63,7 @@ export const Chat = React.forwardRef<ChatHandle, { onBusy: (b: boolean) => void 
         setBusy(false);
       }
     },
-    [busy, turns, seismic, lang, t, demoEnabled, demoScenario, demoReports, now, maintenance, maintenanceState],
+    [busy, turns, setTurns, seismic, lang, t, demoEnabled, demoScenario, demoReports, now, maintenance, maintenanceState, area],
   );
 
   React.useImperativeHandle(ref, () => ({ submit }), [submit]);
@@ -109,6 +111,12 @@ export const Chat = React.forwardRef<ChatHandle, { onBusy: (b: boolean) => void 
         <Bubble key={i} role={m.role} text={m.content} />
       ))}
       {busy ? <Bubble role="assistant" text={draft || t('chatThinking')} muted={!draft} /> : null}
+      {turns.length > 0 && !busy ? (
+        <Pressable accessibilityRole="button" accessibilityLabel={t('chatClear')} onPress={clearChatHistory} hitSlop={8}
+          style={{ alignSelf: 'center', minHeight: 44, justifyContent: 'center', paddingHorizontal: space.md }}>
+          <Txt size={type.label} weight="semibold" style={{ color: c.accent }}>{t('chatClear')}</Txt>
+        </Pressable>
+      ) : null}
       {error ? (
         <View style={{ backgroundColor: c.card, borderRadius: radius.tile, padding: space.md, borderWidth: 1.5, borderColor: c.alert }}>
           <Txt size={type.label} tone="alert" weight="semibold">

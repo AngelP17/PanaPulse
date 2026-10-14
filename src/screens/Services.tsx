@@ -11,9 +11,8 @@ import { powerSurfaceSource } from '../data/sourcePolicy';
 import { useApp } from '../state/AppContext';
 import { radius, space, type } from '../theme/tokens';
 
-const ZONE = 'Pueblo Nuevo';
 export function Services() {
-  const { c, t, lang, go, demoEnabled, demoScenario, now } = useApp();
+  const { c, t, lang, go, demoEnabled, demoScenario, now, area: ZONE } = useApp();
   const demo = makeDemoScene(now, demoScenario);
   const { data, state } = usePowerMaintenance(ZONE);
   const powerSource = powerSurfaceSource(powerFeedState(data, state), demoEnabled);

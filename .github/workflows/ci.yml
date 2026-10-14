@@ -40,3 +40,5 @@ jobs:
 
       - name: APK build profile checks
         run: node scripts/test-build-env.cjs
+      - name: Shared local store
+        run: node scripts/test-local-store.cjs

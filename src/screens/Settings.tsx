@@ -4,6 +4,8 @@ import { Lang } from '../i18n/strings';
 import { ThemePref, useApp } from '../state/AppContext';
 import { radius, space, type } from '../theme/tokens';
 import { Card, LinkChip, StatusChip, Txt } from '../components/ui';
+import { PressScale } from '../components/motion';
+import { CORREGIMIENTOS } from '../data/services';
 import { usePowerMaintenance, powerFeedState } from '../data/maintenance';
 import { dayStamp } from '../data/format';
 import { LIVE_MAX_AGE_MS } from '../data/glance';
@@ -34,8 +36,8 @@ function Segmented<T extends string>({ value, options, onChange }: { value: T; o
 }
 
 export function Settings() {
-  const { t, lang, setLang, themePref, setThemePref, demoEnabled, setDemoEnabled, demoScenario, setDemoScenario, now, seismic, c } = useApp();
-  const { data: powerData, state: powerStatus } = usePowerMaintenance('Pueblo Nuevo');
+  const { t, lang, setLang, themePref, setThemePref, demoEnabled, setDemoEnabled, demoScenario, setDemoScenario, now, seismic, c, area, setArea } = useApp();
+  const { data: powerData, state: powerStatus } = usePowerMaintenance(area);
   const powerFeed = powerFeedState(powerData, powerStatus);
   const usgsCurrent = seismic.mode === 'live' && Math.abs(now - seismic.fetchedAt) <= LIVE_MAX_AGE_MS;
   const lastPowerCheck = powerData?.sources.map((s) => s.last_success_at).filter((s): s is string => !!s).sort().at(-1);
@@ -44,6 +46,22 @@ export function Settings() {
       <Txt size={type.hero - 10} weight="bold" style={{ paddingHorizontal: space.xs }} accessibilityRole="header">
         {t('settings')}
       </Txt>
+      <Card style={{ gap: space.sm }}>
+        <Txt size={type.title} weight="semibold" accessibilityRole="header">{t('where')}</Txt>
+        <Txt size={type.label} tone="muted">{t('areaHelp')}</Txt>
+        <View accessibilityRole="radiogroup" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.xs }}>
+          {CORREGIMIENTOS.map((name) => {
+            const active = area === name;
+            return (
+              <PressScale key={name} accessibilityRole="radio" accessibilityState={{ selected: active }} accessibilityLabel={name}
+                onPress={() => setArea(name)}
+                style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: space.md, borderRadius: radius.pill, backgroundColor: active ? c.navActive : c.tile }}>
+                <Txt size={type.label} weight="semibold" style={{ color: active ? c.navActiveInk : c.ink }}>{name}</Txt>
+              </PressScale>
+            );
+          })}
+        </View>
+      </Card>
       <Card>
         <Txt size={type.body} weight="semibold">
           {t('language')}

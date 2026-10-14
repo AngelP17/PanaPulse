@@ -15,7 +15,7 @@ import { radius, space, type } from '../theme/tokens';
  * scopes fictional service information, and the last-known USGS panel is REAL.
  */
 export function PreviewHome({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
-  const { c, t, lang, now, demoScenario, demoReports, demoCommuteSaved, seismic, go } = useApp();
+  const { c, t, lang, now, demoScenario, demoReports, demoCommuteSaved, seismic, go, area } = useApp();
   const scene = makeDemoScene(now, demoScenario);
   const latest = seismic.earthquakes.length
     ? [...seismic.earthquakes].sort((a, b) => b.time - a.time)[0]
@@ -35,7 +35,7 @@ export function PreviewHome({ onOpenQuake }: { onOpenQuake: (id: string) => void
     <View style={{ gap: space.md }}>
       <View style={{ paddingHorizontal: space.xs, gap: 3 }}>
         <Txt size={type.label} tone="muted">{t('areaEyebrow')}</Txt>
-        <Txt size={type.hero} weight="bold" accessibilityRole="header" style={{ letterSpacing: -1 }}>Pueblo Nuevo</Txt>
+        <Txt size={type.hero} weight="bold" accessibilityRole="header" style={{ letterSpacing: -1 }}>{area}</Txt>
         <Txt size={type.label} tone="muted">{t('previewHomeCaption')}</Txt>
       </View>
 
