@@ -7,6 +7,7 @@ import type { DemoScene } from '../data/demo';
 import type { PowerChatContext } from './quick';
 import type { Lang } from '../i18n/strings';
 import { quickAnswer } from './quick';
+import { API_ORIGIN } from '../config/buildMode';
 import { buildTools, SYSTEM_PROMPT } from './tools';
 
 export const MAX_INPUT = 400;
@@ -25,7 +26,7 @@ export interface Answer {
 
 export type Transport = 'artifact' | 'server' | 'none';
 
-const API_URL: string | undefined = process.env.EXPO_PUBLIC_API_URL;
+const API_URL: string | undefined = API_ORIGIN || undefined;
 
 function claudeRuntime(): { use: (name: string) => Promise<any> } | null {
   const w = typeof window !== 'undefined' ? (window as any) : null;

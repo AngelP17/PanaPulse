@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { API_ORIGIN } from '../config/buildMode';
 
 /** Scheduled-power notices from the PanaPulse API, not live outage telemetry. */
 export interface MaintenanceSource {
@@ -30,7 +31,7 @@ export interface MaintenanceResult {
   scope: 'scheduled_maintenance_only';
   note: string;
 }
-const API = (process.env.EXPO_PUBLIC_API_URL ?? '').replace(/\/$/, '');
+const API = API_ORIGIN;
 export async function fetchMaintenance(zone: string, signal: AbortSignal): Promise<MaintenanceResult> {
   if (!API) throw new Error('not_configured');
   const res = await fetch(`${API}/v0/power-maintenance?corregimiento=${encodeURIComponent(zone)}`, {

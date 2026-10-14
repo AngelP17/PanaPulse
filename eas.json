@@ -8,6 +8,21 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "ALLOW_NO_BACKEND": "1",
+        "EXPO_PUBLIC_APP_MODE": "showcase",
+        "EXPO_PUBLIC_API_URL": ""
+      }
+    },
+    "connected-preview": {
+      "distribution": "internal",
+      "environment": "preview",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_APP_MODE": "connected"
       }
     }
   }
