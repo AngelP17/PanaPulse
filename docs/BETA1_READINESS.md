@@ -1,3 +1,5 @@
+> **App-first override (October 13):** Finish the installable offline-first showcase in [APP_FIRST_BETA.md](APP_FIRST_BETA.md) before working on production integrations. The backend-heavy gates below apply to a subsequent *connected beta*, not to building and privately testing the app itself.
+
 # PanaPulse Beta 1 readiness / release gates
 Date: 2026-10-13. Owner review required. This document is a release checklist, **not an assertion that the app is ready**.
 

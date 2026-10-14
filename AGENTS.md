@@ -13,3 +13,8 @@ Read `DESIGN.md`, `docs/BRAND.md`, `src/theme/tokens.ts`, `docs/ANTISLOP-RN.md`,
 **Behavior:** Do not invent transit ETAs, outages, forecast numbers or service states. Missing data is unknown, never normal. Keep Spanish / English and light / dark / auto. Preserve USGS/OAF, cautious utilities adapters and read-only guarded chat.
 
 **Delivery:** Work in small commits. Run `python -m pytest backend/tests -q`, `npm run typecheck` after npm ci, screenshot-check on Android/iOS, and document unverified third-party feeds.
+
+
+## Immediate priority: complete the installable app BEFORE backend/API work
+
+Read `docs/APP_FIRST_BETA.md`. The default `eas build --profile preview --platform android` must build a **deliberately offline-first showcase APK**; it needs Expo credentials, not a PanaPulse server. Do not reintroduce a mandatory `EXPO_PUBLIC_API_URL` for this profile. The strict `connected-preview` profile is reserved for a later stage. Complete the device UI, cross-tab scenarios, local reports, navigation, accessibility and visual QA first. Keep source truth and the persistent preview indicator. No new scraper, paid LLM integration, hosted API or product rebrand without explicit user approval.

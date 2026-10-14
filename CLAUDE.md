@@ -16,3 +16,8 @@ Read `DESIGN.md`, `docs/BRAND.md`, `src/theme/tokens.ts`, `docs/ANTISLOP-RN.md` 
 - Do not commit API keys, `.env` or user location/report data.
 
 Use `npm run typecheck` after dependencies are installed and `python -m pytest backend/tests -q` for Python tests. For SDK 57 / TypeScript 6 stack issues use `node --stack-size=8000 node_modules/typescript/bin/tsc --noEmit`.
+
+
+## Immediate priority: complete the installable app BEFORE backend/API work
+
+Read `docs/APP_FIRST_BETA.md`. The default `eas build --profile preview --platform android` must build a **deliberately offline-first showcase APK**; it needs Expo credentials, not a PanaPulse server. Do not reintroduce a mandatory `EXPO_PUBLIC_API_URL` for this profile. The strict `connected-preview` profile is reserved for a later stage. Complete the device UI, cross-tab scenarios, local reports, navigation, accessibility and visual QA first. Keep source truth and the persistent preview indicator. No new scraper, paid LLM integration, hosted API or product rebrand without explicit user approval.
