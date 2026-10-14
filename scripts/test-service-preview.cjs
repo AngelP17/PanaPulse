@@ -5,9 +5,9 @@ const source = fs.readFileSync('src/data/previewNotices.ts', 'utf8');
 const code = ts.transpileModule(source, {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
 }).outputText;
-const module = { exports: {} };
-new Function('module', 'exports', code)(module, module.exports);
-const { previewServiceNotices } = module.exports;
+const moduleObject = { exports: {} };
+new Function('module', 'exports', code)(moduleObject, moduleObject.exports);
+const { previewServiceNotices } = moduleObject.exports;
 const now = Date.UTC(2026, 9, 14, 1, 0);
 for (const scenario of ['everyday','disruption','recovery']) {
   const list = previewServiceNotices(now, scenario, 'Betania');
