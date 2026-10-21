@@ -172,8 +172,10 @@ class USGSIngestor:
                     health = SourceHealth(source="usgs")
                     session.add(health)
                 health.last_attempt_at = utcnow()
-                health.last_success_at = utcnow()
-                health.last_error = None
+                # HTTP 200 with rejected records is not a healthy complete catalog.
+                if not stats.invalid:
+                    health.last_success_at = utcnow()
+                health.last_error = f"invalid_records:{stats.invalid}" if stats.invalid else None
                 health.last_event_count = len(feed["features"])
         return stats
 

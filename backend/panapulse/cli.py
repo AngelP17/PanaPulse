@@ -11,11 +11,13 @@ from .client import USGSClient
 from .config import Settings
 from .ingest import USGSIngestor, mark_source_failure
 from .models import Base, SourceSnapshot, make_session_factory
+from .reports import purge, hide
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="PanaPulse USGS v0")
-    parser.add_argument("command", choices=["init-db", "ingest", "replay", "utilities"])
+    parser.add_argument("command", choices=["init-db", "ingest", "replay", "utilities", "purge-reports", "hide-report"])
+    parser.add_argument("--report-id")
     parser.add_argument("--source", choices=["ensa", "naturgy"], help="Utility source for the utilities command")
     parser.add_argument("--snapshot-id", type=int, help="Snapshot ID for replay (required with replay)")
     parser.add_argument("--no-details", action="store_true", help="Disable OAF product lookups")
@@ -30,13 +32,22 @@ def main() -> None:
         print("Created or verified prototype schema")
         return
     Base.metadata.create_all(engine)
+    if args.command == "purge-reports":
+        purge(sessions)
+        return
+    if args.command == "hide-report":
+        if not args.report_id:
+            parser.error("hide-report requires --report-id")
+        hide(sessions, args.report_id)
+        return
     if args.command == "utilities":
         from .utilities import UtilityIngestor
         sources = [args.source] if args.source else ["ensa", "naturgy"]
         failed = False
         for src in sources:
             try:
-                print(json.dumps(UtilityIngestor(sessions).run(src)))
+                with UtilityIngestor(sessions) as collector:
+                    print(json.dumps(collector.run(src)))
             except Exception:
                 logging.exception("%s failed; existing notices retained", src)
                 failed = True
