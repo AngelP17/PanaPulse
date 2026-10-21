@@ -122,3 +122,49 @@ def test_power_endpoint_respects_original_zone_and_source(sessions):
     assert data["service_state"] == "unknown"
     assert any(x["place"] == "Ciudad Radial" for x in data["notices"])
     assert all(x["verification"] == "official_scheduled" and x["source_url"] == ENSA_URL for x in data["notices"])
+
+
+def test_naturgy_live_markup_noon_alias_and_archive_filter():
+    html = '''<div class="elementor-accordion-item"><a class="elementor-accordion-title">PANAMÁ</a>
+    <table><tr><th>Corregimiento</th><th>Día</th><th>Horario</th><th>Zonas</th></tr>
+    <tr><td>La Exposición o Calidonia</td><td>13 de octubre</td><td>De 8:00 a.m. a 12:00 m.</td><td>Avenida Perú</td></tr>
+    <tr><td>Santa Ana</td><td>1 de marzo</td><td>old unparseable archive time</td><td>Archive</td></tr></table></div>'''
+    rows = parse_naturgy(html, NOW, upcoming_only=True)
+    assert len(rows) == 1 and rows[0].district == 'PANAMÁ' and rows[0].ends_at.hour == 12
+    assert provider_for(rows[0].corregimiento)['provider'] == 'naturgy'
+    overnight = parse_ensa(ENSA_HTML.replace('09:00 AM – 01:00 PM', '11:00 PM – 01:00 AM'))[0]
+    assert overnight.ends_at - overnight.starts_at == timedelta(hours=2)
+
+
+def test_malformed_current_rows_are_not_silently_empty():
+    with pytest.raises(SourceFormatChanged):
+        parse_naturgy(NATURGY_HTML.replace('5 de octubre', 'unknown date'), NOW, upcoming_only=True)
+    with pytest.raises(SourceFormatChanged):
+        parse_ensa(ENSA_HTML.replace('<td>2</td></tr>', '</tr>'))
+
+
+def test_canonical_area_matches_api_and_chat_without_cross_province(sessions):
+    from fastapi.testclient import TestClient
+    from panapulse.api import create_app
+    from panapulse.models import SourceHealth
+    now = datetime.now(timezone.utc)
+    with sessions.begin() as s:
+        s.add(SourceHealth(source='naturgy', last_success_at=now))
+        for province in ('Panamá', 'Panamá Oeste'):
+            s.add(UtilityNotice(id=province, provider='Naturgy', district=province,
+                corregimiento='La Exposición o Calidonia', place=province,
+                starts_at=now + timedelta(hours=1), ends_at=now + timedelta(hours=2),
+                source_url=NATURGY_URL, last_seen_at=now))
+    api = TestClient(create_app(sessions)).get('/v0/power-maintenance', params={'corregimiento': 'Calidonia'}).json()
+    chat = DataTools(sessions).service_status({'service': 'electricity', 'corregimiento': 'Calidonia'})
+    assert [x['place'] for x in api['notices']] == ['Panamá']
+    assert [x['place'] for x in chat['scheduled_cuts']] == ['Panamá']
+
+
+def test_naturgy_weekdays_multiple_dates_and_year_rollover():
+    current = NATURGY_HTML.replace('5 de octubre', 'Lunes 18 y 19 de feb.')
+    rows = parse_naturgy(current, datetime(2027, 2, 18, tzinfo=PAN), upcoming_only=True)
+    assert [r.starts_at.day for r in rows] == [18, 19, 18, 19]
+    january = NATURGY_HTML.replace('5 de octubre', '5 de enero')
+    rows = parse_naturgy(january, datetime(2026, 12, 28, tzinfo=PAN), upcoming_only=True)
+    assert all(r.starts_at.year == 2027 for r in rows)

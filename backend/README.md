@@ -1,137 +1,92 @@
-# PanaPulse USGS adapter v0
+# PanaPulse backend 0.3.0
 
-A **small, testable Python component** for a Panama-first situational awareness app. It consumes USGS earthquake GeoJSON, stores source snapshots, maintains current events **and their full revision history**, detects listed/confirmed `oaf` products, and exposes a read-only FastAPI service.
+FastAPI and SQLAlchemy power the connected Expo native/web app. The backend ingests genuine USGS/OAF and official scheduled power notices, persists anonymous observations, and supplies optional source-grounded Ask. It is not an emergency authority, earthquake-warning system or live utility/transit telemetry service.
 
-This is **not an earthquake-warning service** and does **not** predict earthquakes, assert an active tsunami warning, or present probabilities without a verified forecast file. It is intentionally much smaller than the full PanaPulse product spec.
+Start with the [API contract](../docs/API_CONTRACT.md), [architecture diagrams](../docs/architecture/PANAPULSE_TECHNICAL_ARCHITECTURE.md), [operations runbook](../docs/CONNECTED_BETA_RUNBOOK.md) and [acceptance checklist](../docs/BETA_ACCEPTANCE.md). Repository verification is separate from public deployment and physical-device acceptance.
 
-## What ships in this repo
+## Modules and responsibilities
 
-- USGS FDSN GeoJSON query, filtered to a configurable Panama-area bounding box.
-- Event normalization with location, magnitude, origin time, update time, USGS event ID, USGS alert color, review status and `oaf` availability.
-- Immutable numbered revisions: if USGS changes M7.6 to M7.7, preserve both versions; older fetched snapshots cannot undo newer updates.
-- Compressed original API responses in `source_snapshots` for debugging/replay.
-- Limited detail calls for events with an advertised `oaf` product; separate `listed` vs `confirmed` statuses.
-- Source-health endpoint that returns `stale_or_unavailable` if the last successful poll is older than 30 minutes (or no poll happened).
-- Read-only FastAPI endpoints for events and revisions. No public ingestion endpoint.
-- Offline tests, including the Oct 9 Panama **us6000u18k** event, its revised M7.7 magnitude, and separate M6.6/M6.0 earthquakes.
+| Module | Responsibility |
+|---|---|
+| `client.py`, `normalize.py`, `ingest.py` | Bounded USGS requests, normalized events, immutable material revisions, compressed evidence and validated published OAF |
+| `utilities.py` | ENSA/Naturgy schedules, source freshness, explicit place/provider matching and parser errors |
+| `models.py` | Official source records, revisions, forecasts, snapshots and health |
+| `reports.py` | Owner receipts, epoch/observation-time validation, dedupe, withdrawal, aggregation, persistent limits and retention |
+| `budgets.py` | Durable HMAC-keyed model request budgets; failed calls still consume reservations |
+| `ask.py` | Guarded read-only source tools and optional model execution |
+| `api.py`, `request_limits.py` | Public source reads, bounded community mutations, capability/readiness endpoints and request-body limits |
+| `worker.py`, `cli.py` | Scheduled ingestion, bounded retries, cleanup and trusted operator actions |
+| `backup.py`, `smoke.py` | Verified source-only SQLite backup/restore and read-only operational checks |
 
-**Not included:** mobile frontend, utility scraper, live traffic, notifications, accounts, ads, payments, forecasts parsing, official warning dissemination, review/moderation or automatic process scheduling. Add each *after* validating retention and data quality.
+The supported closed-beta topology is **one API worker plus one collector sharing durable SQLite**. Report and budget mutation locks are process-local. Do not scale replicas or switch databases without a reviewed concurrency/migration plan. The optional Postgres driver remains in package metadata; it does not establish verified scale-out readiness.
 
-## Quick start: local SQLite development
+## Local setup
 
-Requirements: Python 3.11 or newer.
+From the repository root, using Python 3.12 (the pinned container/CI runtime):
 
-```bash
-cd panapulse-usgs-v0
-python -m venv .venv
-source .venv/bin/activate       # Windows: .venv\\Scripts\\activate
-pip install -e '.[test]'
-python -m pytest -q
+```sh
+python -m venv backend/.venv
+. backend/.venv/bin/activate
+python -m pip install -r backend/requirements.lock -e './backend[test]'
 python -m panapulse.cli init-db
 python -m panapulse.cli ingest
-uvicorn panapulse.api:app --reload --host 127.0.0.1 --port 8000
+python -m pytest backend/tests -q
 ```
 
-On a system with outbound internet, `ingest` requests USGS FDSN data in the configured bounding box for the most recent 30 days. It is safe to rerun: unchanged events do not create revisions, and a USGS "updated" timestamp bump with no material change (e.g. a DYFI refresh) does not either. Repeated polls with identical content store one snapshot.
+All processes must use the same `DATABASE_URL`. Environment files are not automatically read by Python; export settings in the shell or use the protected Compose environment file described in the runbook. Reports and paid model calls stay disabled until explicitly configured.
 
-The tests do **not** require internet access. The current package was tested offline; the code's network behavior has **not** been validated against live USGS responses in this environment.
-
-Interactive API documentation: <http://127.0.0.1:8000/docs>
-
-Examples:
-
-```bash
-curl http://127.0.0.1:8000/v0/source-health
-curl http://127.0.0.1:8000/v0/earthquakes
-curl http://127.0.0.1:8000/v0/earthquakes/us6000u18k
-curl http://127.0.0.1:8000/v0/earthquakes/us6000u18k/revisions
+```sh
+python -m uvicorn panapulse.api:app --host 127.0.0.1 --port 8000 --workers 1 --no-access-log
 ```
 
-`GET /healthz` is **process liveness only**. Always check `/v0/source-health` before presenting status/freshness to users.
+In another terminal, with the same settings:
 
-## Use Supabase Postgres
-
-For a Supabase Postgres connection, install the optional driver:
-
-```bash
-pip install -e '.[postgres]'
-export DATABASE_URL='postgresql+psycopg://USER:PASSWORD@HOST:5432/postgres?sslmode=require'
-python -m panapulse.cli init-db
-python -m panapulse.cli ingest
-uvicorn panapulse.api:app --host 127.0.0.1 --port 8000
+```sh
+PANAPULSE_UTILITY_SOURCES=ensa,naturgy python -m panapulse.worker
 ```
 
-Load `DATABASE_URL` from a secret manager or protected environment file, **not your mobile application**. Do not commit credentials or expose database credentials through public endpoints. For production, use a least-privileged DB role, TLS, backups and migrations (Alembic); `create_all` is only a bootstrap helper.
+Do not run an additional collector against the same database simultaneously. `init-db` creates missing tables, including the new report runtime and model budget tables. It is not a replacement for versioned migrations when future changes alter existing columns.
 
-This iteration stores longitude and latitude as numeric columns. Introduce PostGIS point/geography types once there is a genuine geospatial query requirement.
+Interactive documentation is at `http://127.0.0.1:8000/docs`; schema is at `/openapi.json`. `/healthz` is liveness, `/readyz` checks required tables, and `/v0/source-health` reports USGS freshness. No HTTP endpoint performs source ingestion.
 
-## Scheduling
+## Source integrity
 
-Run `python -m panapulse.cli ingest` from an external scheduler every **10–15 minutes** to start. Example cron:
+- The worker polls USGS every two minutes and utility pages every six hours, with bounded backoff. USGS becomes stale after 20 minutes, a failed latest attempt or invalid input. Utility freshness uses 36 hours and the latest error/success. These thresholds describe collection health, never public safety.
+- Unchanged events do not create material revisions. Older snapshots cannot overwrite newer source records. Source responses are retained compressed for provenance/replay; monitor disk growth and preserve source evidence under the operator's retention policy.
+- OAF availability distinguishes `none`, `listed` and `confirmed`. Published forecast JSON is fetched and schema-validated separately; stored issuance/validity windows govern current versus historical display. Probabilities are never estimated from a model or neighboring quakes.
+- ENSA/Naturgy notices are scheduled work, with original URLs and explicit areas. They do not confirm whether power is currently on. A missing or empty feed remains unknown.
+- `python -m panapulse.cli replay --snapshot-id ID` replays a stored FeatureCollection without marking the source freshly fetched. Historical OAF detail snapshots are evidence, not an independent replay pipeline.
 
-```cron
-*/15 * * * * cd /path/to/panapulse-usgs-v0 && /path/to/.venv/bin/python -m panapulse.cli ingest >> /var/log/panapulse-usgs.log 2>&1
-```
+The audit successfully fetched real USGS, ENSA and Naturgy data. Fixture tests remain offline and do not guarantee provider uptime or data reuse rights. See the audit for observed counts and verification limits.
 
-Run only **one active ingestion worker** against a database until concurrency locking is implemented. Use a lock (`flock`) around cron if ingestion intervals could overlap. Avoid hitting USGS excessively; production backoff and HTTP caching deserve a real-world soak test. The data is delayed observational reporting, **not** advance earthquake detection.
-
-The source-health endpoint considers the feed stale after 30 minutes. If the UI shows no recent events, report **“Sin eventos registrados en esta fuente”**, never **“No hay sismos”** or **“Todo normal”**.
-
-## OAF handling: important nuance
-
-The summary feed's `properties.types` value may contain `oaf`. That means **product listed**, not that aftershock odds have been extracted. The adapter then attempts the event-detail URL and looks for an active `properties.products.oaf` item:
-
-- `none`: no OAF advertised in the latest summary.
-- `listed`: summary references an OAF, but an active product was not confirmed from detail.
-- `confirmed`: active `oaf` product metadata was observed in detail.
-
-The endpoint exposes `oaf_product_updated_at` as the product's **last update**, not necessarily the forecast's own issue time. `oaf_forecast_url`, when present, is a URL for the official `forecast.json` asset, not a parsed numerical forecast. The next adapter iteration must fetch it, **validate its schema, locate forecast issuance and period explicitly, and display probabilities only as published by USGS**. Never derive odds from magnitude, neighboring quakes or an LLM.
-
-The Oct 9 regression fixture advertises `oaf` but deliberately contains **no probabilities**. It is a minimized snapshot of source values, not a fake complete forecast payload.
-
-## Reliability/failure behavior
-
-- All selected events and their associated revisions are written in a SQL transaction. Unexpected failures roll back that transaction.
-- Transient network errors retry up to three times with short exponential delays; long-term upstream failure is recorded in `source_health.last_error`.
-- A failing OAF detail call does not erase a valid earthquake record. The record stays `listed` until details can be confirmed.
-- Snapshot retention currently has no automated expiry. Decide a storage retention window, backups and replay policy before deployment.
-- `source_snapshots` stores gzip-compressed full JSON responses. The API does **not** expose raw snapshots to end users.
-- Replay a stored FeatureCollection without any network calls:
-
-  ```bash
-  python -m panapulse.cli replay --snapshot-id 1
-  ```
-
-  Replay does not mark the source freshly polled and cannot roll an event's `updated` timestamp backward. Historical OAF detail snapshots are saved but not yet independently replayed.
-- There is no concurrency lock, automatic retention purge, metrics exporter or persistent dead-letter queue yet. Don't call this production hardened.
-
-## Panama bounding box (configurable)
+## Runtime defaults
 
 | Variable | Default |
-|---|---:|
-| `PANAPULSE_MIN_LAT` | `5.5` |
-| `PANAPULSE_MAX_LAT` | `11.5` |
-| `PANAPULSE_MIN_LON` | `-84` |
-| `PANAPULSE_MAX_LON` | `-76` |
-| `PANAPULSE_MIN_MAGNITUDE` | `2.5` |
-| `PANAPULSE_LOOKBACK_DAYS` | `7` |
-| `DATABASE_URL` | `sqlite:///./panapulse.db` |
+|---|---|
+| `DATABASE_URL` | `sqlite:///./panapulse.db` for local development |
+| `PANAPULSE_MIN_LAT` / `PANAPULSE_MAX_LAT` | `5.5` / `11.5` |
+| `PANAPULSE_MIN_LON` / `PANAPULSE_MAX_LON` | `-84` / `-76` |
+| `PANAPULSE_MIN_MAGNITUDE` | `2.5` at ingestion; app bundle filters M4.5+ |
+| `PANAPULSE_LOOKBACK_DAYS` | `30` |
+| `PANAPULSE_UTILITY_SOURCES` | Empty unless explicitly configured |
+| `PANAPULSE_REPORTS_ENABLED` | Disabled unless `1` |
+| `ANTHROPIC_API_KEY` | Absent; paid model calls unavailable |
 
-These bounds include adjacent territory and offshore earthquakes. The UI must not imply all events occurred **inside** Panama. The 30-day lookback keeps magnitude and aftershock-forecast revisions for large events flowing after the first week (the query is still a single cheap request). Use backfill for historical data.
+These geographic bounds include neighboring territory and offshore events. Do not label every event as inside Panama. Secrets, CORS, trusted proxy addresses and budget limits are documented in [`.env.backend.example`](../.env.backend.example); no database or provider secret belongs in the mobile/web bundle.
 
-## Sources / attribution
+## Privacy and recovery
 
-- [USGS Earthquake Catalog API](https://earthquake.usgs.gov/fdsnws/event/1/)
-- [USGS live GeoJSON feeds](https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php)
-- [USGS earthquake products](https://earthquake.usgs.gov/data/products/)
-- [USGS OAF product documentation](https://ghsc.code-pages.usgs.gov/hazdev/pdl/userguide/products/known-types/oaf.html)
-- [Oct 9 event us6000u18k](https://earthquake.usgs.gov/earthquakes/eventpage/us6000u18k)
-- [SINAPROC](https://www.sinaproc.gob.pa/), the emergency-authority reference for Panama. **Do not synthesize tsunami all-clear statements.**
+Community reports accept only service, interruption/restoration, supported area and bounded protocol metadata. A random installation token establishes receipt ownership; no verified account is implied. Public aggregates suppress exact counts below three installation identities. Reports expire two hours after observation and are removed after seven days; withdrawals and moderation affect aggregates immediately.
 
-**Suggested user-facing disclaimer:** “Datos sísmicos del USGS. PanaPulse no es una autoridad de emergencias. Para instrucciones oficiales, consulta SINAPROC.”
+Only source data is backed up. The restore command rejects existing destination paths, verifies schema/integrity, creates a new report epoch and guards paid model calls until the next UTC day. Old pending reports are rejected rather than silently restored. Rehearse the documented procedure on staging and monitor the worker so retention continues even when no visitors or model calls arrive.
 
-## Next 3 steps, not 30 features
+Read-only operational checks:
 
-1. Deploy the ingestion job and monitor a full week of USGS fetches/revisions/failures.
-2. Evaluate **one** utility feed (ENSA *or* Naturgy) for two weeks, including actual notice coverage and last-update semantics.
-3. Build the smallest possible Android view: earthquake card, official notice card, and “¿Se fue solo a mí?” prototype for 2–3 corregimientos. No ads or subscriptions before repeated use is demonstrated.
+```sh
+python -m panapulse.smoke --url https://api.example.com \
+  --web-origin https://beta.example.com --require-fresh --require-reports
+```
+
+Replace example origins with the reviewed deployment. This command does not create public observations. Synthetic report lifecycle tests use only the isolated database started by `scripts/qa/run-connected.sh`.
+
+Source references: [USGS catalog](https://earthquake.usgs.gov/fdsnws/event/1/), [OAF documentation](https://ghsc.code-pages.usgs.gov/hazdev/pdl/userguide/products/known-types/oaf.html), and [SINAPROC](https://www.sinaproc.gob.pa/) for official emergency instructions.

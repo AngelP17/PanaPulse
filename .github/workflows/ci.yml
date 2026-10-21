@@ -13,7 +13,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install backend and test tools
-        run: python -m pip install -e '.[test]'
+        run: python -m pip install -r requirements.lock -e '.[test]'
         working-directory: backend
       - name: Run offline tests
         run: python -m pytest tests -q
@@ -46,3 +46,49 @@ jobs:
         run: node scripts/test-local-store.cjs
       - name: Reports view
         run: node scripts/test-reports-view.cjs
+
+      - name: Validate connected data contract
+        run: node scripts/test-seismic-contract.cjs
+  connected-web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      - run: python -m pip install -r backend/requirements.lock -e ./backend
+      - name: Export connected browser client for isolated integration test
+        run: npx expo export -p web --output-dir dist
+        env:
+          EXPO_PUBLIC_APP_MODE: connected
+          EXPO_PUBLIC_API_URL: http://127.0.0.1:8000
+      - name: Install pinned browser test runner
+        run: npm install --prefix /tmp/panapulse-playwright playwright@1.64.1
+      - run: /tmp/panapulse-playwright/node_modules/.bin/playwright install --with-deps chromium
+      - name: Real HTTP report lifecycle and offline recovery
+        run: bash scripts/qa/run-connected.sh
+        env:
+          PW_MODULE: /tmp/panapulse-playwright/node_modules/
+  backend-container:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build API image and verify migrated readiness
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker build -t panapulse-api ./backend
+          docker volume create panapulse-ci
+          docker run --rm -v panapulse-ci:/data panapulse-api python -m panapulse.cli init-db
+          docker run -d --name panapulse-api -p 127.0.0.1:8000:8000 -v panapulse-ci:/data panapulse-api
+          trap 'docker logs panapulse-api; docker rm -f panapulse-api; docker volume rm panapulse-ci' EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:8000/readyz; then exit 0; fi
+            sleep 1
+          done
+          exit 1

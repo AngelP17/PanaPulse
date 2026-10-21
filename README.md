@@ -1,66 +1,63 @@
-**Current priority:** finish and visually verify the local app experience before APK builds or APIs. See [Feature Complete handoff](docs/FEATURE_COMPLETE_HANDOFF.md). This repository is **not** yet a device-verified Beta 1 release.
+# PanaPulse
 
-# PanaPulse v0.2.1 (Brand integration)
+Spanish-first civic companion for Panama City, built with Expo SDK 57 / React Native 0.86 and FastAPI. The same application runs on Android/iOS and in desktop or mobile browsers, preserving Porcelana, Manrope, ES/EN and Auto/Light/Dark.
 
-**Active Beta 1 proposal:** See CLAUDE_HANDOFF_BETA1.md (exact handoff), design/ART_DIRECTION_BETA1.md (approved-brand art direction) and docs/BETA1_READINESS.md (strict GO/NO-GO). This does not change the app version or claim Beta 1 is released.
+**Current scope (October 21, 2026):** finish and verify the connected application in the repository first. Deployment and tester distribution follow the owner's review. Implemented code and local test evidence do not establish a publicly reachable service, an installable beta, or native-device acceptance.
 
-Spanish-first civic dashboard for Panama City. Expo SDK 57 (React Native 0.86), Android-first,
-premium atmospheric design in the PanaPulse "Porcelana" palette (see `docs/BRAND.md`), ES/EN, Auto/Light/Dark.
+Start with the [connected beta audit](docs/CONNECTED_BETA_AUDIT.md), [architecture diagrams](docs/architecture/PANAPULSE_TECHNICAL_ARCHITECTURE.md), [operations runbook](docs/CONNECTED_BETA_RUNBOOK.md) and [browser beta guide](docs/WEB_BETA.md). Earlier local-only handoffs remain historical context; they do not describe the connected implementation below.
 
-## What's real
-- **Sismos + pronóstico de réplicas:** USGS. Native builds fetch live every 5 min and fall back to the
-  bundled snapshot (labeled with its real timestamp). Web builds use the snapshot.
-- **Chat:** answers only from app data through 4 read-only tools. Native → backend `/v0/ask`
-  (Claude Haiku 5.5). In the Claude artifact → the viewer's Claude via the `sample` capability.
-- **Luz, agua, Metro, MiBus:** shown as "Sin datos" with the official channel. See `docs/DATA_SOURCES.md`.
-- **¿Se fue solo a mí?:** saves reports on the device only (no report server yet).
+## Connected functionality
 
-## Run the app
-```bash
-npm install
-npx expo start            # press a for Android, or scan with Expo Go
-npm run export:web        # static web build in dist/
+| Area | Repository implementation | Boundary |
+| --- | --- | --- |
+| Earthquakes and aftershocks | Backend-ingested USGS observations and published OAF; native and web read `/v0/seismic` | Genuine source times; expired forecasts remain historical. This is not earthquake early warning. |
+| Electricity | ENSA/Naturgy scheduled-maintenance collectors and area-filtered notices | A schedule or its absence does not establish current electricity availability. |
+| Community | Structured electricity/water observations, server receipts, retry, withdrawal and coarse aggregates | Unverified community information; no names, free text or exact coordinates. Installation identities are not verified people. |
+| Water, Metro and MiBus | Honest unavailable states and official channel links | No authorized live service feed or fabricated vehicle ETA. |
+| Ask | Deterministic answers from app data plus an optional guarded `/v0/ask` transport | Model credentials, provider/model availability and budget controls require separate operational acceptance. |
+| Browser | Shared Expo app with responsive reading column and shareable `/#/…` destinations | Private report ownership and preferences belong to each browser/app installation. |
+
+Connected mode disables fictional preview scenarios and bundled seismic substitution. On refresh failure, only previously received, dated seismic data may remain, marked stale. A first launch without API data shows an unavailable state. The older explicitly labeled showcase remains a separate development flow.
+
+## Run locally
+
+```sh
+npm ci
+python -m pip install -r backend/requirements.lock -e './backend[test]'
+python -m panapulse.cli init-db
+python -m panapulse.cli ingest --verbose
 ```
-Point the app at your backend for chat: `EXPO_PUBLIC_API_URL=http://<your-lan-ip>:8000 npx expo start`
 
-## Run the backend
-```bash
-cd backend
-python -m venv .venv && source .venv/bin/activate
-pip install -e '.[test]'
-pytest                                   # 20 tests, no network or API key needed
-python -m panapulse.cli ingest --verbose # live USGS + aftershock forecast
-export ANTHROPIC_API_KEY=...             # only for /v0/ask
-uvicorn panapulse.api:app --host 0.0.0.0 --port 8000
+Run the API and collector in separate terminals using the same `DATABASE_URL`. Configure local settings from `.env.backend.example`; environment files are not automatically loaded by these commands. Reports require the feature flag and a private hash key. See the runbook for exact configuration, retention and moderation.
+
+```sh
+python -m uvicorn panapulse.api:app --host 127.0.0.1 --port 8000
+python -m panapulse.worker
+EXPO_PUBLIC_APP_MODE=connected EXPO_PUBLIC_API_URL=http://127.0.0.1:8000 npm run web
 ```
-Chat env: `PANAPULSE_CHAT_MODEL` (default `claude-haiku-5-5`), `PANAPULSE_ASK_PER_MINUTE` (6),
-`PANAPULSE_ASK_PER_DAY` (60), `PANAPULSE_ASK_GLOBAL_PER_DAY` (5000), `PANAPULSE_CORS_ORIGINS`.
 
-### Chat guardrails
-Model only sees tool output from PanaPulse's DB (no browsing) · system prompt restricts scope and
-forbids predictions · 400-char input, 6-turn window · per-client and global daily limits · 4 tool
-rounds max · 400 output tokens · prompt caching on system + tools. Haiku 5.5 is $0.10/M input,
-$0.50/M output, so a typical answer costs well under a tenth of a cent.
+For web development, set `PANAPULSE_CORS_ORIGINS` on the API to the exact origin printed by Expo. For a physical phone, use a reachable development host address instead of the phone's loopback address. Public beta exports require HTTPS; never publish a loopback build.
 
-## Design system
-`DESIGN.md` (direction), `src/theme/tokens.ts` (values), `docs/ANTISLOP-RN.md` (RN rules),
-`.claude/skills/` (vetted MIT skills: Expo official, anti-slop core/copy/UI, avoid-ai-design,
-no-slop-ui). `scripts/fetch-reference-skills.sh` clones the reviewed-but-not-vendored ones.
+See the [API contract](docs/API_CONTRACT.md) and [owner acceptance checklist](docs/BETA_ACCEPTANCE.md) for exact behavior and a reproducible walkthrough.
 
-## Notes
-- Navigation is in-app state (Hark-style pill nav), not expo-router, so the same build runs in a
-  sandboxed web frame. Android back closes the sheet, then returns Home.
-- `node --stack-size=8000 node_modules/typescript/bin/tsc --noEmit` to typecheck (TS 6 stack quirk).
+## Verify before review
 
+```sh
+python -m pytest backend/tests -q
+npm run typecheck
+node scripts/test-seismic-contract.cjs
+```
 
-## Brand and design preservation
+GitHub CI additionally runs source/preview/local-state regressions, a connected browser report lifecycle against an isolated real HTTP API, offline retry checks, and a Docker build/readiness job. Inspect the exact commit's CI results; the workflow definition is not evidence that a run passed. `npm run test:connected` expects the exported local test client and Playwright setup described in `scripts/qa/run-connected.sh`.
 
-`DESIGN.md` is the binding visual direction. `docs/BRAND.md` contains logo/color rules. `assets/` includes icon and wordmark files. The feature branch preserves the original atmosphere and all v0.2 functional improvements; it is not a rebuild. `no-slop-ui` is reference-only.
+For a future connected web release, set the reviewed API's public HTTPS origin and run `npm run export:web:connected`. Its guard rejects missing, HTTP or showcase configuration and clears Metro's cache before export. `vercel.json` is optional static-host configuration; it does not host the Python API or publish anything by itself.
 
-Git history has the original (`v0.2` tag), the functional recovery branch (`recovery`), the rejected flat direction (`v0.3-parked`) and a non-destructive intermediate B refinement (`preview/b-refinement`). The current implementation branch is `feature/brand-integration`.
+## Architecture and design contracts
 
-## Publish to GitHub from a computer with GitHub authentication
+- [Technical architecture and Mermaid flows](docs/architecture/PANAPULSE_TECHNICAL_ARCHITECTURE.md): clients, source policy, report persistence, recovery and verification gates.
+- [Operations runbook](docs/CONNECTED_BETA_RUNBOOK.md): one API process, one collector, durable SQLite, trusted proxy, source-only backup/restore and rollback.
+- [Backend documentation](backend/README.md): source ingestion and API implementation.
+- [DESIGN.md](DESIGN.md), [brand](docs/BRAND.md), [tokens](src/theme/tokens.ts), [React Native rules](docs/ANTISLOP-RN.md): binding visual and accessibility decisions.
+- [Connected audit](docs/CONNECTED_BETA_AUDIT.md): roadmap reconciliation, completed work, evidence and remaining gates. PRs #22–25 were merged; do not recreate them.
 
-GitHub target: `https://github.com/AngelP17/PanaPulse` (private, initially empty). From this directory run `bash scripts/publish-to-github.sh`. The script refuses to overwrite a nonempty `main`. It publishes the current branch to `main` and preserves historical references for recovery and comparison.
-
-The CI workflow runs offline backend tests and the TypeScript check. Production provider data still requires network validation.
+Preserve the existing in-app navigation and Android back behavior. Web hash navigation is a small platform adapter, not a second app or a router rewrite. No merge, deployment or beta-readiness claim follows automatically from this documentation.

@@ -1,3 +1,4 @@
+import { apiJson } from '../data/runtime';
 // Chat transport. Two backends, same guardrails:
 //  1. Inside a Claude artifact viewer: the `sample` capability, with page-side tools.
 //  2. In the native app: POST to the PanaPulse backend (/v0/ask), which runs the same
@@ -44,7 +45,9 @@ function getSample(): Promise<any> {
 
 export async function detectTransport(): Promise<Transport> {
   if (await getSample()) return 'artifact';
-  if (API_URL) return 'server';
+  if (API_URL) {
+    try { if ((await apiJson('/v0/capabilities')).chat === true) return 'server'; } catch { /* unavailable */ }
+  }
   return 'none';
 }
 
@@ -86,22 +89,26 @@ export async function ask(
       );
       return { text, quick: false };
     } catch (e: any) {
+      if (opts.signal?.aborted) throw new ChatError('cancelled');
       throw new ChatError(e?.code ?? 'failed', e?.message);
     }
   }
 
   if (API_URL) {
-    const res = await fetch(`${API_URL.replace(/\/$/, '')}/v0/ask`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: turns, lang }),
-      signal: opts.signal,
-    });
-    if (res.status === 429) throw new ChatError('rate_limited');
-    if (!res.ok) throw new ChatError('failed', `HTTP ${res.status}`);
-    const body = await res.json();
-    opts.onText?.(body.answer);
-    return { text: body.answer as string, quick: false };
+    try {
+      const body = await apiJson('/v0/ask', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: turns, lang, zone: opts.zone }), signal: opts.signal,
+      }, 30000);
+      if (typeof body.answer !== 'string' || !body.answer.trim()) throw new ChatError('failed');
+      opts.onText?.(body.answer);
+      return { text: body.answer, quick: false };
+    } catch (error) {
+      if (opts.signal?.aborted) throw new ChatError('cancelled');
+      if (error instanceof Error && error.message === 'HTTP_429') throw new ChatError('rate_limited');
+      if (error instanceof Error && error.message === 'HTTP_503') throw new ChatError('unavailable');
+      throw new ChatError('failed');
+    }
   }
 
   throw new ChatError('unavailable');

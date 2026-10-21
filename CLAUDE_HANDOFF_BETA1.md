@@ -1,4 +1,7 @@
 # CLAUDE HANDOFF: PanaPulse premium Beta 1
+
+> **Historical milestone, superseded scope (October 21, 2026):** The local-only/deferred-backend scope below records earlier owner decisions. The current request is to finish and verify the connected native + desktop/mobile web application in the repository, then let the owner review before deployment. Shared structured reports, backend collectors and connected web are now implemented in the review branch. See the [connected audit](docs/CONNECTED_BETA_AUDIT.md), [current architecture](docs/architecture/PANAPULSE_TECHNICAL_ARCHITECTURE.md), and [operations runbook](docs/CONNECTED_BETA_RUNBOOK.md) for current status. Historical completion statements are not fresh CI, public-service or native-device evidence. Preserve all still-applicable design and data-integrity requirements.
+
 Prepared 2026-10-13 as a binding implementation brief **after** the verified seismic visual pass.
 
 ## Start here: why this exists

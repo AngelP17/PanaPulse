@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "panapulse-usgs"
-version = "0.1.0"
-description = "USGS seismic ingestion prototype for PanaPulse"
+version = "0.3.0"
+description = "PanaPulse connected beta API and source collectors"
 requires-python = ">=3.11"
 dependencies = [
   "sqlalchemy>=2.0,<3",

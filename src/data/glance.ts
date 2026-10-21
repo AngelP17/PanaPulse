@@ -26,7 +26,7 @@ export type SeismicHero =
  * `severe` is true only for a USGS PAGER orange/red alert: a catalog entry alone is not an emergency.
  */
 export function seismicHero(d: SeismicData, now: number): SeismicHero {
-  const fresh = d.mode === 'live' && now - d.fetchedAt <= LIVE_MAX_AGE_MS;
+  const fresh = d.mode === 'live' && now >= d.fetchedAt && now - d.fetchedAt <= LIVE_MAX_AGE_MS;
   if (!fresh) return { kind: 'stale' };
   const notable = d.earthquakes
     .filter((q) => NOTABLE_RULES.some((r) => q.mag >= r.minMag && now - q.time >= 0 && now - q.time <= r.withinHours * 3600 * 1000))

@@ -71,7 +71,7 @@ export function Home({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
         place: place(latestRecorded.place, lang),
         when: dayStamp(latestRecorded.time, lang),
       }) : undefined,
-      provenance: t('heroStaleProvenance', { time: dayStamp(seismic.fetchedAt, lang) }),
+      provenance: seismic.fetchedAt ? t('heroStaleProvenance', { time: dayStamp(seismic.fetchedAt, lang) }) : t('connectedNoData'),
       action: t('heroStaleAction'),
       onAction: () => go('quakes'),
     };

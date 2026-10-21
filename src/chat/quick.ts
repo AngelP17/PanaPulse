@@ -84,7 +84,7 @@ function zoneIn(q: string, fallback: string): string {
 export function quickAnswer(question: string, data: SeismicData, lang: Lang, zone = 'Pueblo Nuevo', now = Date.now(), preview: DemoScene | null = null, powerFeed?: PowerChatContext): QuickAnswer | null {
   const q = norm(question);
   const es = lang === 'es';
-  const asOf = dayStamp(data.fetchedAt, lang);
+  const asOf = data.fetchedAt ? dayStamp(data.fetchedAt, lang) : (lang === 'es' ? 'sin datos recibidos' : 'no data received');
   const day = data.earthquakes.filter((e) => e.time >= data.fetchedAt - 24 * 3600 * 1000);
   const archived = data.mode !== 'live' || now - data.fetchedAt > 20 * 60 * 1000;
   // One shared decision with Home and Services: a real current or stale feed is always what Ask reports.

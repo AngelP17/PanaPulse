@@ -1,0 +1,44 @@
+# Closed beta: one API process + one collector, sharing one durable SQLite volume.
+# Bind only to loopback; terminate HTTPS with the host's reverse proxy.
+services:
+  migrate:
+    image: ${PANAPULSE_IMAGE:-panapulse-backend:local}
+    build: ./backend
+    env_file: .env.backend
+    volumes: ["panapulse-data:/data"]
+    command: ["python", "-m", "panapulse.cli", "init-db"]
+  api:
+    image: ${PANAPULSE_IMAGE:-panapulse-backend:local}
+    build: ./backend
+    env_file: .env.backend
+    volumes: ["panapulse-data:/data"]
+    ports: ["127.0.0.1:${PANAPULSE_API_PORT:-8000}:8000"]
+    restart: unless-stopped
+    stop_grace_period: 30s
+    read_only: true
+    tmpfs: ["/tmp"]
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/readyz', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+  worker:
+    image: ${PANAPULSE_IMAGE:-panapulse-backend:local}
+    build: ./backend
+    env_file: .env.backend
+    volumes: ["panapulse-data:/data"]
+    command: ["python", "-m", "panapulse.worker"]
+    restart: unless-stopped
+    stop_grace_period: 60s
+    read_only: true
+    tmpfs: ["/tmp"]
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+volumes:
+  panapulse-data:

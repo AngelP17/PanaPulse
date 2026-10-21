@@ -26,6 +26,7 @@ export const Chat = React.forwardRef<ChatHandle, { onBusy: (b: boolean) => void 
   const [error, setError] = useState<string | null>(null);
   const [transport, setTransport] = useState<Transport | null>(null);
   const ctl = useRef<AbortController | null>(null);
+  const inFlight = useRef(false);
 
   useEffect(() => {
     detectTransport().then(setTransport);
@@ -36,12 +37,13 @@ export const Chat = React.forwardRef<ChatHandle, { onBusy: (b: boolean) => void 
 
   const submit = useCallback(
     async (q: string) => {
-      if (busy) return;
+      if (inFlight.current || !q.trim()) return;
       if (q.length > MAX_INPUT) {
         setError(t('chatTooLong', { n: MAX_INPUT }));
         return;
       }
       setError(null);
+      inFlight.current = true;
       const context = demoEnabled ? 'preview' as const : 'real' as const;
       const when = Date.now();
       const meta = { at: when, context, scenario: demoEnabled ? demoScenario : undefined };
@@ -57,13 +59,16 @@ export const Chat = React.forwardRef<ChatHandle, { onBusy: (b: boolean) => void 
           signal: ctl.current.signal, onText: setDraft, zone: area, preview,
           powerFeed: { data: maintenance, state: powerFeedState(maintenance, maintenanceState) },
         });
+        if (ctl.current.signal.aborted) return;
         setTurns([...history, { role: 'assistant', content: answer.text, quick: answer.quick, ...meta }]);
       } catch (e) {
         const code = e instanceof ChatError ? e.code : 'failed';
         if (code === 'cancelled') return;
-        setError(code === 'unavailable' || code === 'not_granted' ? t('chatUnavailable') : t('chatError'));
+        setError(code === 'unavailable' || code === 'not_granted' ? t('chatUnavailable')
+          : code === 'rate_limited' ? t('chatRateLimited') : t('chatError'));
         setTurns(history);
       } finally {
+        inFlight.current = false;
         setDraft(null);
         setBusy(false);
       }
@@ -91,7 +96,7 @@ export const Chat = React.forwardRef<ChatHandle, { onBusy: (b: boolean) => void 
         <ShieldCheck size={16} color={c.muted} />
         <Txt size={type.caption + 1} tone="muted">
           {demoEnabled ? t('previewChatScope')
-            : transport === 'server' ? t('chatScope', { model: 'Haiku 5.5' })
+            : transport === 'server' ? t('chatScope', { model: t('chatBackendModel') })
             : transport === 'artifact' ? t('chatScope', { model: 'Haiku 5.5 / Claude' })
             : t('chatScopeDevice')}
         </Txt>

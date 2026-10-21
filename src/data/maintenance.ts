@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { AppState } from 'react-native';
+import { API_URL as API, apiJson } from './runtime';
 
 /** Scheduled-power notices from the PanaPulse API, not live outage telemetry. */
 export interface MaintenanceSource {
@@ -30,18 +32,12 @@ export interface MaintenanceResult {
   scope: 'scheduled_maintenance_only';
   note: string;
 }
-// Standalone Android showcase cannot use an inherited/stale API URL.
-const API = process.env.EXPO_PUBLIC_APP_MODE === 'showcase'
-  ? '' : (process.env.EXPO_PUBLIC_API_URL ?? '').replace(/\/$/, '');
 export async function fetchMaintenance(zone: string, signal: AbortSignal): Promise<MaintenanceResult> {
-  if (!API) throw new Error('not_configured');
-  const res = await fetch(`${API}/v0/power-maintenance?corregimiento=${encodeURIComponent(zone)}`, {
-    signal, headers: { Accept: 'application/json' },
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const value: MaintenanceResult = await res.json();
+  const value: MaintenanceResult = await apiJson(`/v0/power-maintenance?corregimiento=${encodeURIComponent(zone)}`, { signal });
   if (value.scope !== 'scheduled_maintenance_only' || value.service_state !== 'unknown' ||
-      !Array.isArray(value.sources) || !Array.isArray(value.notices)) {
+      value.corregimiento !== zone || !Array.isArray(value.sources) || !Array.isArray(value.notices) ||
+      value.notices.some(n => !n || !Number.isFinite(Date.parse(n.start)) || !Number.isFinite(Date.parse(n.end)) ||
+        n.verification !== 'official_scheduled' || !['ENSA', 'Naturgy'].includes(n.provider))) {
     throw new Error('invalid_maintenance_data');
   }
   return value;
@@ -50,24 +46,28 @@ export function usePowerMaintenance(zone: string) {
   const [data, setData] = useState<MaintenanceResult | null>(null);
   const [state, setState] = useState<'unconfigured' | 'loading' | 'ready' | 'error'>(API ? 'loading' : 'unconfigured');
   useEffect(() => {
+    setData(null);
+    setState(API ? 'loading' : 'unconfigured');
     if (!API) return;
     let disposed = false;
     let controller: AbortController | undefined;
     const refresh = async () => {
       controller?.abort();
-      controller = new AbortController();
+      const request = new AbortController();
+      controller = request;
       try {
-        const value = await fetchMaintenance(zone, controller.signal);
-        if (!disposed) { setData(value); setState('ready'); }
+        const value = await fetchMaintenance(zone, request.signal);
+        if (!disposed && !request.signal.aborted) { setData(value); setState('ready'); }
       } catch {
-        if (!disposed && !controller.signal.aborted) setState('error');
+        if (!disposed && !request.signal.aborted) setState('error');
       }
     };
     void refresh();
     const id = setInterval(refresh, 15 * 60 * 1000);
-    return () => { disposed = true; controller?.abort(); clearInterval(id); };
+    const resume = AppState.addEventListener('change', state => { if (state === 'active') void refresh(); });
+    return () => { resume.remove(); disposed = true; controller?.abort(); clearInterval(id); };
   }, [zone]);
-  return { data, state };
+  return { data: data?.corregimiento === zone ? data : null, state };
 }
 
 /**
@@ -79,6 +79,7 @@ export function usePowerMaintenance(zone: string) {
  */
 export type PowerFeedState = 'none' | 'stale' | 'scheduled';
 export function powerFeedState(data: MaintenanceResult | null, state: ReturnType<typeof usePowerMaintenance>['state']): PowerFeedState {
-  if (state !== 'ready' || !data) return 'none';
+  if (!data) return 'none';
+  if (state !== 'ready') return 'stale';
   return data.sources.length > 0 && data.sources.every((s) => s.freshness === 'current') ? 'scheduled' : 'stale';
 }

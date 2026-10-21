@@ -52,3 +52,9 @@ backend/*.egg-info
 *.sqlite*
 __pycache__/
 *.pyc
+
+.env.backend
+.env.local
+backend/.venv/
+
+!.env.backend.example

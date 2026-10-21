@@ -25,7 +25,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
 from .models import AftershockForecast, Earthquake, SourceHealth, UtilityNotice
-from .utilities import key as norm_key, provider_for
+from .utilities import key as norm_key, corregimiento_key, provider_for
 
 logger = logging.getLogger(__name__)
 
@@ -131,6 +131,13 @@ class DataTools:
         h = s.get(SourceHealth, "usgs")
         return _local(h.last_success_at) if h else None
 
+    def _freshness(self, s: Session) -> str:
+        h = s.get(SourceHealth, "usgs")
+        last = h.last_success_at if h else None
+        if last is not None and last.tzinfo is None:
+            last = last.replace(tzinfo=timezone.utc)
+        return "current" if last and not h.last_error and timedelta(0) <= self.now() - last < timedelta(minutes=20) else "stale_or_unavailable"
+
     def recent_earthquakes(self, args: dict) -> dict:
         try:
             hours = min(720.0, max(1.0, float(args.get("hours") or 24)))
@@ -150,7 +157,9 @@ class DataTools:
             strongest = max(rows, key=lambda r: r.magnitude or 0, default=None)
             fmt = lambda r: {"id": r.id, "magnitude": r.magnitude, "place": r.place,
                              "time_local": _local(r.event_time), "depth_km": r.depth_km, "usgs_url": r.event_url}
-            return {"source": "USGS", "data_as_of": self._as_of(s), "window_hours": hours, "count": len(rows),
+            return {"source": "USGS", "data_as_of": self._as_of(s), "freshness": self._freshness(s),
+                    "instruction": "A stale or unavailable catalog cannot confirm that no earthquakes occurred.",
+                    "window_hours": hours, "count": len(rows),
                     "strongest": fmt(strongest) if strongest else None, "events": [fmt(r) for r in rows[:15]]}
 
     def aftershock_forecast(self, args: dict) -> dict:
@@ -160,8 +169,12 @@ class DataTools:
                 return {"available": False, "note": "USGS has not published an aftershock forecast in PanaPulse data."}
             return {
                 "available": True, "source": "USGS Operational Aftershock Forecast", "mainshock_id": f.event_id,
+                "source_freshness": self._freshness(s),
+                "freshness": "current" if f.next_forecast_time and (f.next_forecast_time if f.next_forecast_time.tzinfo else f.next_forecast_time.replace(tzinfo=timezone.utc)) > self.now() else "historical",
+                "instruction": "Expired forecast windows are historical, never predictions for today.",
                 "issued_local": _local(f.creation_time), "next_update_local": _local(f.next_forecast_time), "url": f.url,
-                "windows": [{"period": w["label"], "bins": [
+                "windows": [{"period": w["label"], "time_start": w["time_start"], "time_end": w["time_end"],
+                    "expired": w["time_end"] <= self.now().timestamp() * 1000, "bins": [
                     {"magnitude_at_least": b["magnitude"], "probability_percent": round(b["probability"] * 100, 1),
                      "expected_count_median": b["median"], "expected_count_95pct_range": [b["p95min"], b["p95max"]]}
                     for b in w["bins"] if 5 <= b["magnitude"] <= 7]} for w in f.windows],
@@ -178,11 +191,20 @@ class DataTools:
             aware = lambda d: d if d.tzinfo else d.replace(tzinfo=timezone.utc)
             with self.sessions() as s:
                 rows = [r for r in s.scalars(select(UtilityNotice)).all()
-                        if norm_key(r.corregimiento) == norm_key(corr) and aware(r.ends_at) >= now]
+                        if corregimiento_key(r.corregimiento) == corregimiento_key(corr) and norm_key(r.district or "") == "panama" and aware(r.ends_at) >= now]
                 health = {src: s.get(SourceHealth, src) for src in ("ensa", "naturgy")}
+            providers = ["ensa", "naturgy"] if p["provider"] == "border" else [p["provider"]]
+            rows = [row for row in rows if row.provider.lower() in providers
+                    and health.get(row.provider.lower()) and row.last_seen_at
+                    and health[row.provider.lower()].last_success_at
+                    and aware(row.last_seen_at) == aware(health[row.provider.lower()].last_success_at)]
             rows.sort(key=lambda r: aware(r.starts_at))
             return {
-                "service": "electricity", "corregimiento": corr, "provider": p["name"], "provider_basis": p["basis"],
+                "service": "electricity", "service_state": "unknown", "corregimiento": corr,
+                "source_health": {src: {"last_error": health[src].last_error if health.get(src) else "never_fetched",
+                    "freshness": "current" if health.get(src) and health[src].last_success_at
+                        and timedelta(0) <= now - aware(health[src].last_success_at) < timedelta(hours=36)
+                        and not health[src].last_error else "stale_or_unavailable"} for src in providers}, "provider": p["name"], "provider_basis": p["basis"],
                 "scheduled_cuts": [{"provider": r.provider, "place": r.place, "starts_local": _local(r.starts_at),
                                     "ends_local": _local(r.ends_at), "task": r.task, "customers_affected": r.affected}
                                    for r in rows[:5]],
@@ -196,9 +218,10 @@ class DataTools:
                                 else "One sentence: no connected data yet, then the official channel(s). Do not guess status.")}
 
     def app_help(self, args: dict) -> dict:
-        return {"sources": {"earthquakes_and_forecast": "USGS (official)",
-                            "electricity_water_metro_mibus": "not connected yet",
-                            "community_reports": "never shown as official"},
+        return {"sources": {"earthquakes_and_forecast": "USGS (official); consult source freshness",
+                            "electricity": "ENSA/Naturgy scheduled notices; consult get_service_status for source freshness",
+                            "water_metro_mibus": "not connected yet",
+                            "community_reports": "Unverified observations, never official service status"},
                 "report_outage": "Tap + at the top left, pick the service and corregimiento.",
                 "emergencies": f"Follow SINAPROC guidance: {SINAPROC_URL}"}
 
@@ -275,10 +298,10 @@ class Asker:
             client = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY
         self.client = client
 
-    def ask(self, messages: list[dict], lang: str = "es") -> AskResult:
+    def ask(self, messages: list[dict], lang: str = "es", zone: str | None = None) -> AskResult:
         turns = validate_messages(messages)
         system = [{"type": "text", "text": SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}},
-                  {"type": "text", "text": f"User app language: {'Spanish' if lang == 'es' else 'English'}."}]
+                  {"type": "text", "text": f"User app language: {'Spanish' if lang == 'es' else 'English'}. Saved corregimiento: {zone or 'unknown'}."}]
         tools = [dict(t) for t in TOOLS]
         tools[-1] = {**tools[-1], "cache_control": {"type": "ephemeral"}}
         convo: list[dict] = list(turns)

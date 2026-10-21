@@ -1,4 +1,6 @@
 import snapshotJson from './usgs_snapshot.json';
+import { CONNECTED, apiJson } from './runtime';
+import { validateSeismic } from './seismicContract';
 
 export interface Quake {
   id: string;
@@ -46,6 +48,7 @@ const BBOX = { minlatitude: 5.5, maxlatitude: 11.5, minlongitude: -84, maxlongit
 const USGS = 'https://earthquake.usgs.gov';
 
 export function loadSnapshot(): SeismicData {
+  if (CONNECTED) return { earthquakes: [], forecast: null, fetchedAt: 0, mode: 'snapshot' };
   const s = snapshotJson as unknown as {
     fetchedAt: number;
     earthquakes: Quake[];
@@ -70,6 +73,7 @@ async function getJson(url: string, signal: AbortSignal): Promise<any> {
  * the last known data and label it with its real age. Never fabricates values.
  */
 export async function loadLive(timeoutMs = 9000): Promise<SeismicData> {
+  if (CONNECTED) return validateSeismic(await apiJson('/v0/seismic', {}, timeoutMs));
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
@@ -125,7 +129,7 @@ export async function loadLive(timeoutMs = 9000): Promise<SeismicData> {
         };
       }
     }
-    return { earthquakes, forecast, fetchedAt: Date.now(), mode: 'live' };
+    return validateSeismic({ earthquakes, forecast, fetchedAt: Date.now(), mode: 'live' });
   } finally {
     clearTimeout(timer);
   }
