@@ -1,3 +1,5 @@
+**Proof of concept:** see [docs/POC.md](docs/POC.md) for what runs and is verified with nothing deployed, plus architecture diagrams (Mermaid, rendered by GitHub). Deeper provenance and flow diagrams: [docs/architecture](docs/architecture/PANAPULSE_TECHNICAL_ARCHITECTURE.md).
+
 **Current priority:** finish and visually verify the local app experience before APK builds or APIs. See [Feature Complete handoff](docs/FEATURE_COMPLETE_HANDOFF.md). This repository is **not** yet a device-verified Beta 1 release.
 
 # PanaPulse v0.2.1 (Brand integration)
@@ -12,7 +14,7 @@ premium atmospheric design in the PanaPulse "Porcelana" palette (see `docs/BRAND
   bundled snapshot (labeled with its real timestamp). Web builds use the snapshot.
 - **Chat:** answers only from app data through 4 read-only tools. Native → backend `/v0/ask`
   (Claude Haiku 5.5). In the Claude artifact → the viewer's Claude via the `sample` capability.
-- **Luz, agua, Metro, MiBus:** shown as "Sin datos" with the official channel. See `docs/DATA_SOURCES.md`.
+- **Luz, agua, Metro, MiBus:** scheduled ENSA/Naturgy maintenance notices are parsed by the backend (fixture-tested, live endpoints not verified here); everything else without a real feed shows "Sin datos" with the official channel. Preview mode adds clearly labeled fictional scenarios. See `docs/DATA_SOURCES.md`.
 - **¿Se fue solo a mí?:** saves reports on the device only (no report server yet).
 
 ## Run the app
@@ -28,7 +30,7 @@ Point the app at your backend for chat: `EXPO_PUBLIC_API_URL=http://<your-lan-ip
 cd backend
 python -m venv .venv && source .venv/bin/activate
 pip install -e '.[test]'
-pytest                                   # 20 tests, no network or API key needed
+pytest                                   # 30 tests, no network or API key needed
 python -m panapulse.cli ingest --verbose # live USGS + aftershock forecast
 export ANTHROPIC_API_KEY=...             # only for /v0/ask
 uvicorn panapulse.api:app --host 0.0.0.0 --port 8000
