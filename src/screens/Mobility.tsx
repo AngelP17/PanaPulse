@@ -1,3 +1,4 @@
+import { PREVIEW_ALLOWED } from '../data/runtime';
 import { ArrowUpRight, Bus, TrainFront } from 'lucide-react-native';
 import React from 'react';
 import { View } from 'react-native';
@@ -43,7 +44,7 @@ export function Mobility() {
         <SourceLine source="Metro de Panamá · MiBus" kind="unavailable"
           detail={t('mobilityProviderScope')} />
       </Card>
-      <Card style={{ gap: space.sm }}>
+      {PREVIEW_ALLOWED ? <Card style={{ gap: space.sm }}>
         <View style={[styles.row, { gap: space.sm }]}>
           <Bus size={19} color={c.ink} />
           <Txt size={type.title} weight="semibold" style={{ flex: 1 }}>
@@ -55,7 +56,7 @@ export function Mobility() {
         </Txt>
         <Button label={t('mobilityPreviewAction')} variant="solid"
           onPress={() => setDemoEnabled(true)} />
-      </Card>
+      </Card> : null}
     </View>
   );
 }

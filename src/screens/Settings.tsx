@@ -1,4 +1,5 @@
 import React from 'react';
+import { PREVIEW_ALLOWED } from '../data/runtime';
 import { Alert, Platform, Pressable, View } from 'react-native';
 import { Lang } from '../i18n/strings';
 import { ThemePref, useApp } from '../state/AppContext';
@@ -99,7 +100,7 @@ export function Settings() {
           ]}
         />
       </Card>
-      <Card>
+      {PREVIEW_ALLOWED ? <Card>
         <Txt size={type.title} weight="semibold">{t('demoSettingsTitle')}</Txt>
         <Txt size={type.body} tone="muted">{t('demoSettingsDescription')}</Txt>
         <Segmented<'on' | 'off'>
@@ -122,7 +123,7 @@ export function Settings() {
 
           </>
         ) : null}
-      </Card>
+      </Card> : null}
       <Card style={{ gap: space.md }}>
         <Txt size={type.title} weight="semibold" accessibilityRole="header">{t('dataSources')}</Txt>
         <Txt size={type.label} tone="muted">{t('sourceActualOnly')}</Txt>
@@ -132,7 +133,7 @@ export function Settings() {
             <StatusChip kind={usgsCurrent ? 'official' : 'stale'} />
           </View>
           <Txt size={type.label} tone="muted">
-            {t(usgsCurrent ? 'sourceUsgsLive' : 'sourceUsgsArchive', { time: dayStamp(seismic.fetchedAt, lang) })}
+            {seismic.fetchedAt ? t(usgsCurrent ? 'sourceUsgsLive' : 'sourceUsgsArchive', { time: dayStamp(seismic.fetchedAt, lang) }) : t('connectedNoData')}
           </Txt>
         </View>
         <View style={{ gap: space.xs, borderRadius: radius.tile, backgroundColor: c.tile, padding: space.md }}>
@@ -163,6 +164,7 @@ export function Settings() {
       <Card style={{ gap: space.sm }}>
         <Txt size={type.title} weight="semibold" accessibilityRole="header">{t('settingsPrivacyTitle')}</Txt>
         <Txt size={type.body} tone="muted">{t('settingsPrivacyBody')}</Txt>
+        {!PREVIEW_ALLOWED ? <Txt size={type.body} tone="muted">{t('sharedSettingsPrivacy')}</Txt> : null}
         <Button label={t('settingsClearLocal')} onPress={confirmClear} />
       </Card>
     </View>

@@ -163,6 +163,7 @@ export function Button({
   variant = 'soft',
   accessibilityLabel,
   style,
+  disabled = false,
 }: {
   label: string;
   onPress: () => void;
@@ -170,15 +171,18 @@ export function Button({
   variant?: 'soft' | 'solid';
   accessibilityLabel?: string;
   style?: ViewStyle;
+  disabled?: boolean;
 }) {
   const { c } = useApp();
   const solid = variant === 'solid';
   return (
     <PressScale
       onPress={onPress}
+      disabled={disabled}
+      accessibilityState={{ disabled }}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
-      style={[styles.button, { backgroundColor: solid ? c.accent : c.tileStrong }, style]}
+      style={[styles.button, { backgroundColor: solid ? c.accent : c.tileStrong, opacity: disabled ? 0.5 : 1 }, style]}
     >
       {icon}
       <Txt size={type.body} weight="semibold" style={{ color: solid ? c.accentInk : c.ink }}>

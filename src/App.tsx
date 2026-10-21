@@ -2,7 +2,7 @@ import { Manrope_400Regular, Manrope_500Medium, Manrope_600SemiBold, Manrope_700
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { BackHandler, KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { BottomNav, Composer, Header } from './components/chrome';
 import { Scene, Txt } from './components/ui';
 import { PressScale } from './components/motion';
@@ -17,10 +17,11 @@ import { Settings } from './screens/Settings';
 import { Services } from './screens/Services';
 import { AppProvider, useApp } from './state/AppContext';
 import { space } from './theme/tokens';
+import { useBrowserNavigation } from './navigation/useBrowserNavigation';
 
 function Shell() {
   const { tab, go, theme, askFromHome, demoEnabled, demoScenario, t, c, hydrated, onboarded } = useApp();
-  const insets = useSafeAreaInsets();
+  useBrowserNavigation();
   const [quakeId, setQuakeId] = useState<string | null>(null);
   const [chatBusy, setChatBusy] = useState(false);
   const chatRef = useRef<ChatHandle>(null);

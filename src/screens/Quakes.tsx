@@ -17,7 +17,7 @@ import { Button, Card, SourceLine, Tile, TileGrid, Txt, styles } from '../compon
  * issued forecast windows, and a browsable event catalog. No invented events.
  */
 export function Quakes({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
-  const { c, t, lang, seismic, now } = useApp();
+  const { c, t, lang, seismic, now, refreshSeismic } = useApp();
   const [minimum, setMinimum] = useState<SeismicMagnitudeFilter>('all');
   const filtered = useMemo(() => filterQuakes(seismic.earthquakes, minimum),
     [seismic.earthquakes, minimum]);
@@ -42,7 +42,7 @@ export function Quakes({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
     && now - seismic.fetchedAt <= LIVE_MAX_AGE_MS;
   // Catalog ingestion freshness and USGS OAF issuance freshness are independent.
   const forecastRecent = !!forecast && isCurrent && now >= forecast.creationTime
-    && now - forecast.creationTime <= 24 * 60 * 60 * 1000;
+    && forecast.nextForecastTime !== null && now < forecast.nextForecastTime;
   const dataTime = dayStamp(seismic.fetchedAt, lang);
   const options: { value: SeismicMagnitudeFilter; label: string }[] = [
     { value: 'all', label: t('seismicFilterAll') },
@@ -52,12 +52,13 @@ export function Quakes({ onOpenQuake }: { onOpenQuake: (id: string) => void }) {
 
   return (
     <View style={{ gap: space.md }}>
+      <Button label={t('connectedRefresh')} onPress={() => { void refreshSeismic(); }} />
       <View style={{ gap: space.xs, paddingHorizontal: space.xs }}>
         <Txt size={type.hero - 10} weight="bold" accessibilityRole="header">
           {t('quakesTitle')}
         </Txt>
         <Txt size={type.label} tone="muted">
-          {t(isCurrent ? 'seismicLiveDataset' : 'seismicArchivedDataset', { time: dataTime })}
+          {seismic.fetchedAt ? t(isCurrent ? 'seismicLiveDataset' : 'seismicArchivedDataset', { time: dataTime }) : t('connectedNoData')}
         </Txt>
       </View>
 

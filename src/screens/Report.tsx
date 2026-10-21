@@ -1,4 +1,6 @@
 import * as Haptics from 'expo-haptics';
+import { CONNECTED } from '../data/runtime';
+import { ConnectedReports } from './ConnectedReports';
 import { CheckCircle2, ChevronLeft, Droplets, Zap } from 'lucide-react-native';
 import React, { useMemo, useState } from 'react';
 import { Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
@@ -16,6 +18,10 @@ import { Button, Card, Txt, styles } from '../components/ui';
 type Tab = 'feed' | 'new';
 
 export function Report() {
+  return CONNECTED ? <ConnectedReports /> : <LocalReports />;
+}
+
+function LocalReports() {
   const { c, t, lang, now, demoEnabled, demoScenario, area, reports, addReport, removeReport } = useApp();
   const [tab, setTab] = useState<Tab>('feed');
   const [filterService, setFilterService] = useState<ServiceFilter>('all');

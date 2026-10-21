@@ -17,7 +17,7 @@ export function Header() {
   const insets = useSafeAreaInsets();
   return (
     <View style={[s.header, { paddingTop: insets.top + space.xs }]}>
-      <Pressable accessibilityRole="button" accessibilityLabel="PanaPulse" onPress={() => go('home')} style={[ui.row, { flex: 1, gap: space.xs }]}>
+      <Pressable accessibilityRole="button" accessibilityLabel="PanaPulse" onPress={() => go('home')} style={[ui.row, { flex: 1, gap: space.xs, minHeight: 48 }]}>
         <PulseMark />
         <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
           <Txt size={type.title + 1} weight="bold">Pana</Txt>
@@ -68,6 +68,7 @@ export function BottomNav() {
               accessibilityRole="tab"
               accessibilityLabel={label}
               accessibilityState={{ selected: active }}
+              aria-selected={active}
               onPress={() => go(id)}
               style={({ pressed }) => [s.tab, active && { backgroundColor: c.navActive }, { opacity: pressed ? 0.8 : 1 }]}
             >
@@ -122,13 +123,13 @@ export function Composer({ onSubmit, disabled }: { onSubmit: (text: string) => v
 }
 
 const s = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', gap: space.xs, paddingHorizontal: space.md, paddingBottom: space.xs },
-  ask: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 48, paddingHorizontal: 16, borderRadius: radius.pill },
+  header: { maxWidth: 560, width: '100%', alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: space.xs, paddingHorizontal: space.md, paddingBottom: space.xs },
+  ask: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 48, paddingHorizontal: 16, borderRadius: radius.pill },
   round: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
-  navWrap: { paddingHorizontal: space.md, paddingTop: space.xs },
+  navWrap: { maxWidth: 560, width: '100%', alignSelf: 'center', paddingHorizontal: space.md, paddingTop: space.xs },
   nav: { flexDirection: 'row', borderRadius: radius.pill, padding: 6, height: 72, alignItems: 'center' },
   tab: { flex: 1, height: 60, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', gap: 2 },
   composer: { flexDirection: 'row', alignItems: 'center', borderRadius: radius.pill, paddingLeft: space.lg, paddingRight: 6, height: 60, marginTop: space.sm },
-  input: { flex: 1, fontSize: type.body + 1, height: 56, outlineStyle: 'none' as any },
+  input: { flex: 1, fontSize: type.body + 1, height: 56 },
   send: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
 });

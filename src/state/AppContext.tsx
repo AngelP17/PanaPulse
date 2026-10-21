@@ -1,6 +1,9 @@
 import { getLocales } from 'expo-localization';
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState } from 'react';
-import { useColorScheme } from 'react-native';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import { AppState as NativeAppState, useColorScheme } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL, PREVIEW_ALLOWED } from '../data/runtime';
+import { validateSeismic } from '../data/seismicContract';
 import { format, Lang, StringKey, strings } from '../i18n/strings';
 import { palettes, Palette, ThemeName } from '../theme/tokens';
 import { loadLive, loadSnapshot, SeismicData } from '../data/usgs';
@@ -48,6 +51,7 @@ interface AppState {
   tab: Tab;
   go: (tab: Tab) => void;
   seismic: SeismicData;
+  refreshSeismic: () => Promise<void>;
   now: number;
   pendingQuestion: string | null;
   askFromHome: (q: string) => void;
@@ -68,11 +72,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const showcase = process.env.EXPO_PUBLIC_APP_MODE === 'showcase';
   const [local, dispatch] = useReducer(reduce, undefined, () => defaultState(deviceLang(), showcase));
   const [hydrated, setHydrated] = useState(false);
-  const { lang, themePref, demoEnabled, demoScenario, area, onboarded, commute } = local;
+  const { lang, themePref, demoScenario, area, onboarded, commute } = local;
+  const demoEnabled = PREVIEW_ALLOWED && local.demoEnabled;
   const [tab, setTab] = useState<Tab>('home');
   const [seismic, setSeismic] = useState<SeismicData>(() => loadSnapshot());
   const [now, setNow] = useState(() => Date.now());
   const [pendingQuestion, setPending] = useState<string | null>(null);
+  const cacheKey = `panapulse.seismic.v1:${API_URL || 'usgs'}`;
+  const refreshFlight = useRef<Promise<void> | null>(null);
+  const refreshSeismic = useCallback(() => {
+    if (refreshFlight.current) return refreshFlight.current;
+    refreshFlight.current = (async () => {
+    try {
+      const data = await loadLive();
+      setSeismic(data);
+      // A cache write failure does not make a successful source response stale.
+      await AsyncStorage.setItem(cacheKey, JSON.stringify(data)).catch(() => {});
+    } catch {
+      // Preserve actual last-success time and immediately stop calling a failed refresh current.
+      setSeismic(previous => ({ ...previous, mode: 'snapshot' }));
+    } finally { refreshFlight.current = null; }
+    })();
+    return refreshFlight.current;
+  }, [cacheKey]);
 
   useEffect(() => {
     let alive = true;
@@ -84,21 +106,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => { alive = false; };
   }, [showcase]);
 
-  // Every build tries live USGS data; on failure (offline, or a sandbox that blocks outside requests)
-  // the bundled snapshot stays, labeled with its real time and never presented as live.
+  // Connected builds cache only observed backend data, never bundled demonstration records.
   useEffect(() => {
     let alive = true;
-    const refresh = () =>
-      loadLive()
-        .then((d) => alive && setSeismic(d))
-        .catch(() => {});
-    refresh();
-    const id = setInterval(refresh, 5 * 60 * 1000);
+    const start = async () => {
+      try {
+        const raw = await AsyncStorage.getItem(cacheKey);
+        if (raw && alive) setSeismic({ ...validateSeismic(JSON.parse(raw)), mode: 'snapshot' });
+      } catch { /* Invalid cache is not data. */ }
+      if (alive) await refreshSeismic();
+    };
+    void start();
+    const id = setInterval(refreshSeismic, 5 * 60 * 1000);
+    const resume = NativeAppState.addEventListener('change', state => {
+      if (state === 'active') void refreshSeismic();
+    });
     return () => {
       alive = false;
       clearInterval(id);
+      resume.remove();
     };
-  }, []);
+  }, [cacheKey, refreshSeismic]);
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 60 * 1000);
@@ -112,7 +140,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const setLang = useCallback((l: Lang) => dispatch({ type: 'setLang', lang: l }), []);
   const setThemePref = useCallback((tp: ThemePref) => dispatch({ type: 'setTheme', themePref: tp }), []);
-  const setDemoEnabled = useCallback((value: boolean) => dispatch({ type: 'setDemoEnabled', value }), []);
+  const setDemoEnabled = useCallback((value: boolean) => dispatch({ type: 'setDemoEnabled', value: PREVIEW_ALLOWED && value }), []);
   const setDemoScenario = useCallback((scenario: DemoScenario) => dispatch({ type: 'setScenario', scenario }), []);
   const setArea = useCallback((a: string) => dispatch({ type: 'setArea', area: a }), []);
   const completeOnboarding = useCallback(() => dispatch({ type: 'completeOnboarding' }), []);
@@ -170,6 +198,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       tab,
       go: setTab,
       seismic,
+      refreshSeismic,
       now,
       pendingQuestion,
       askFromHome: (q) => {
@@ -182,7 +211,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         return q;
       },
     }),
-    [lang, setLang, themePref, setThemePref, demoEnabled, setDemoEnabled, demoScenario, setDemoScenario, area, setArea, onboarded, completeOnboarding, local.reports, addReport, removeReport, commute, setCommute, local.chat, setChatHistory, clearChatHistory, clearLocalActivity, demoReports, demoSubmittedReports, demoCommuteSaved, setDemoCommuteSaved, hydrated, theme, tab, seismic, now, pendingQuestion],
+    [lang, setLang, themePref, setThemePref, demoEnabled, setDemoEnabled, demoScenario, setDemoScenario, area, setArea, onboarded, completeOnboarding, local.reports, addReport, removeReport, commute, setCommute, local.chat, setChatHistory, clearChatHistory, clearLocalActivity, demoReports, demoSubmittedReports, demoCommuteSaved, setDemoCommuteSaved, hydrated, theme, tab, seismic, refreshSeismic, now, pendingQuestion],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
