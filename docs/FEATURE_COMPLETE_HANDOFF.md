@@ -1,5 +1,8 @@
 # PanaPulse Feature Complete: local app milestone (2026-10-13)
 
+> **Historical milestone, superseded scope (October 21, 2026):** The local-only/deferred-backend scope below records earlier owner decisions. The current request is to finish and verify the connected native + desktop/mobile web application in the repository, then let the owner review before deployment. Shared structured reports, backend collectors and connected web are now implemented in the review branch. See the [connected audit](CONNECTED_BETA_AUDIT.md), [current architecture](architecture/PANAPULSE_TECHNICAL_ARCHITECTURE.md), and [operations runbook](CONNECTED_BETA_RUNBOOK.md) for current status. Historical completion statements are not fresh CI, public-service or native-device evidence. Preserve all still-applicable design and data-integrity requirements.
+
+
 This milestone is **application functionality**, not a Beta 1 APK release, not an API launch and not a claim that all Panama services are live.
 
 ## What was merged, in order

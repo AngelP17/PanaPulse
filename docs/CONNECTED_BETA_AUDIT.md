@@ -1,6 +1,6 @@
 # Connected beta audit, October 21, 2026
 
-The owner has reopened connected Android and browser beta work. The October 14 standalone-only deferral is superseded. This document records implementation and evidence, not release approval.
+The owner has reopened connected Android and browser beta work and then prioritized completing the repository before their checks and any deployment. The October 14 standalone-only deferral is superseded. This document records implementation and evidence, not release approval.
 
 ## Repository baseline
 
@@ -26,19 +26,21 @@ The original MVP calls for real USGS/OAF, a verified utility notice source and p
 | Shared reports | Real database receipts, reload, withdrawal, dedupe, two-hour expiry, seven-day purge, coarse areas, moderation and persistent abuse limits | Public deployment smoke test and operational moderation ownership |
 | Browser access | Same Expo application, phone/desktop layouts, hash navigation, refresh/history, guarded static export | Hosted URL, mobile Safari and real browser/device acceptance |
 | Android distribution | Existing connected EAS profile retained; added dependency bundles successfully for Android | Expo account/project, actual HTTPS backend, signed APK and clean-install QA |
-| Ask | Source-grounded deterministic answers remain; capabilities gate paid model chat; stale data context and bounded requests | Real model credentials, durable spending controls and live model verification before enabling |
+| Ask | Source-grounded deterministic answers remain; capabilities gate paid model chat; stale data context, bounded requests and durable budgets | Real model credentials, provider cost limits and live model verification before enabling |
 | IDAAN, Metro, MiBus | Honest unavailable states and official links retained | Authorized live integrations; no invented status or ETA |
 
 ## Verification completed locally
 
-- Backend regression suite, including concurrency, idempotency, ownership, report withdrawal/retry, TTL, moderation, geography, parsing and database readiness.
+- 56 backend tests pass, including concurrency, idempotency, ownership, report withdrawal/retry, observation TTL, recovery epochs, durable model budgets, source-only restore, moderation, geography, parsing and database readiness.
 - TypeScript and all nine `scripts/test-*.cjs` checks pass, including build guards and seismic payload rejection.
 - Actual upstream fetches: USGS 101 events with zero invalid records and one OAF product; ENSA 17 notices; Naturgy 50 notices. These are observations from the audit, not uptime guarantees. The M4.5+/30-day API query returned 80 records during browser review.
-- Real HTTP browser test against an isolated FastAPI/SQLite instance, without mocked routes: submit, reload, withdraw, withdrawn-request retry (410), offline pending persistence, reconnect/retry and no duplicate. A saved preview preference is ignored in connected mode.
+- Real HTTP browser test against an isolated FastAPI/SQLite instance, without mocked routes: submit, reload, withdraw, withdrawn-request retry (410), offline pending persistence, reconnect/retry, no duplicate, expired observations and pre-recovery epoch rejection. A saved preview preference is ignored in connected mode.
 - Browser navigation/layout checks at 360, 393, 412 and 1440 CSS pixels, ES/EN and light/dark: direct links, refresh, back/forward, document language, keyboard focus, no document overflow, no page errors. Screenshots of cached USGS data correctly show stale status.
 - Expo web export and Android JavaScript/assets export pass. Android export is not an APK, installation, emulator or native-device test. The Android packaging check uses an example API origin and must not be distributed.
 
-CI now repeats backend tests, TypeScript/contracts, isolated connected HTTP browser tests and Docker packaging/readiness. Do not infer that CI has passed from this configuration; inspect the PR's actual checks.
+All four CI jobs passed on the initial PR #28 head `9fd35a185eeab483ba6b6fe865ca7c3d34010c1a` in [run 39535406069](https://github.com/AngelP17/PanaPulse/actions/runs/39535406069), including Docker image/migrated readiness. The follow-up recovery/budget/documentation changes require the latest commit's checks to pass too. Inspect the PR's actual checks.
+
+Nine Mermaid architecture diagrams were parsed and rendered. See [API_CONTRACT.md](API_CONTRACT.md) for the synchronized report contract and [BETA_ACCEPTANCE.md](BETA_ACCEPTANCE.md) for the owner walkthrough and separate future launch gates.
 
 ## Release gates, in order
 

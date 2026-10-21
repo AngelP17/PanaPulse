@@ -1,5 +1,8 @@
 # PanaPulse Beta 1 readiness / release gates
 
+> **Historical milestone, superseded scope (October 21, 2026):** The local-only/deferred-backend scope below records earlier owner decisions. The current request is to finish and verify the connected native + desktop/mobile web application in the repository, then let the owner review before deployment. Shared structured reports, backend collectors and connected web are now implemented in the review branch. See the [connected audit](CONNECTED_BETA_AUDIT.md), [current architecture](architecture/PANAPULSE_TECHNICAL_ARCHITECTURE.md), and [operations runbook](CONNECTED_BETA_RUNBOOK.md) for current status. Historical completion statements are not fresh CI, public-service or native-device evidence. Preserve all still-applicable design and data-integrity requirements.
+
+
 > **October 21, 2026 continuation:** The owner explicitly reopened connected API, installable Android and desktop/mobile web work. The older standalone-only scope and build deferral below are historical. Current implementation evidence and remaining release gates are in [CONNECTED_BETA_AUDIT.md](CONNECTED_BETA_AUDIT.md), [WEB_BETA.md](WEB_BETA.md) and [CONNECTED_BETA_RUNBOOK.md](CONNECTED_BETA_RUNBOOK.md). No public release or native acceptance is claimed.
 Date: 2026-10-13. Owner review required. This document is a release checklist, **not an assertion that the app is ready**.
 

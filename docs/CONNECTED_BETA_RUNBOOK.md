@@ -9,8 +9,8 @@ This runbook preserves Expo / React Native Web, FastAPI, one collector and one d
 - One API process (`--workers 1`) and one worker, on one host with a persistent volume. Do not scale replicas; report limits/deduplication use a process lock plus durable database rows.
 - USGS is a regional catalog and OAF source. ENSA/Naturgy are scheduled-maintenance notices, not real-time power status. Water, Metro and MiBus remain unavailable until verified source integrations exist. Never interpret an empty feed as normal service.
 - Anonymous community observations have no name, free text or exact coordinates. Aggregation requires three installation identities, which are not verified distinct people. Reports expire after two hours; inactive records, limits and audits are purged after seven days. A withdrawal deletes the observation immediately and retains only an opaque withdrawal receipt in the seven-day audit to reject delayed retries.
-- Model chat stays disabled by leaving `ANTHROPIC_API_KEY` empty. The existing model limiter is in memory and resets on restart. Before enabling it, verify the actual provider/model, timeout behavior and an external spending cap or durable budget. A configured key is not proof of a functioning model.
-- No community data is included in the source-only backup described below. Restoring a backup intentionally loses submission history, withdrawal tombstones and rate budgets; the restore itself imports no observations. Keep reports disabled after a restore until the operator has reviewed the recovery and rate-limit reset.
+- Model chat stays disabled by leaving `ANTHROPIC_API_KEY` empty. Durable HMAC-keyed client minute/day budgets and a global UTC-day request allowance survive restarts. Each accepted request reserves budget before contacting the provider; failed provider calls still count. Before enabling it, verify the actual provider/model, timeout behavior and an independent provider spending cap. Request counts are not dollar budgets. A configured key is not proof of a functioning model.
+- No community data is included in the source-only backup described below. Restoring a backup intentionally loses submission history, withdrawal tombstones and rate budgets; the restore itself imports no observations. It also clears `report_runtime`, so the first configuration request establishes a fresh epoch and pre-recovery pending reports are rejected. Model calls are blocked until the next UTC day after restoration to prevent a second daily allowance. Keep reports disabled during recovery until fresh-source and new-epoch checks pass.
 
 ## 1. Prepare an isolated staging deployment
 
@@ -36,6 +36,8 @@ Edit `.env.backend` locally:
 | `PANAPULSE_UTILITY_SOURCES` | `ensa,naturgy` for the verified source adapters |
 | `FORWARDED_ALLOW_IPS` | Only the actual reverse proxy connection IP; see section 2 |
 | `ANTHROPIC_API_KEY` | Empty until model release gates are met |
+| `PANAPULSE_ASK_HASH_KEY` | Optional separate secret, at least 32 characters; otherwise the report hash key is used |
+| `PANAPULSE_ASK_PER_MINUTE`, `PANAPULSE_ASK_PER_DAY`, `PANAPULSE_ASK_GLOBAL_PER_DAY` | Fixed UTC request windows; example limits 6 / 60 / 100 |
 
 Generate the report hash key directly into the local file without printing it:
 
@@ -116,6 +118,8 @@ The check requires reports to be enabled/configured, correct readiness, source f
 
 ## 4. Verify shared flows, web and native
 
+New observations first read `/v0/community/config` for the current epoch, server time and two-hour maximum age. Pending requests preserve `epoch` and timezone-aware `observed_at` across retries. Wrong epoch returns HTTP 410 `report_epoch_expired`; observations older than two hours or more than five minutes in the future return 410 `report_observation_expired`. Existing exact receipts remain retryable until seven-day retention; after purge the observation age rejects recreation. Withdrawal retries return 410 `report_withdrawn`. These errors require a new user-confirmed observation, never automatic timestamp/epoch replacement.
+
 Run the repository's connected HTTP E2E suite against its isolated temporary database (`npm run test:connected`), after installing its documented Playwright prerequisites. It exercises submission, receipt after reload, withdrawal, failed submission and retry without route mocks. Synthetic observations belong only in this isolated test environment.
 
 Then use staging from a physical phone and desktop. Verify ES/EN; light/dark/auto; onboarding; area selection; source links; keyboard navigation; large text; scrolling; offline/reconnect; duplicate taps; reload/app resume; a report receipt; withdrawal and delayed retry; and another installation's aggregate visibility. Mark staged observations as test evidence in the release record and discard the staging volume when finished. In production, submit only genuine observations.
@@ -133,7 +137,7 @@ For Android, authenticate the intended Expo account, link the intended EAS proje
 
 ## 5. Source-only online backup and restoration
 
-The backup uses SQLite's online backup API to take a consistent snapshot even when WAL writes exist. It filters the snapshot **in memory**, removes community tables' rows and vacuums deleted bytes before creating a disk artifact. Allow available RAM above the database's on-disk size. Final files are owner-only and existing paths are never overwritten. Transfer backups to access-controlled off-host storage; a second file in the same Docker volume does not protect against disk loss.
+The backup uses SQLite's online backup API to take a consistent snapshot even when WAL writes exist. It filters the snapshot **in memory**, removes community rows, the report epoch and private model-budget counters, and vacuums deleted bytes before creating a disk artifact. Allow available RAM above the database's on-disk size. Final files are owner-only and existing paths are never overwritten. Transfer backups to access-controlled off-host storage; a second file in the same Docker volume does not protect against disk loss.
 
 ```sh
 docker compose exec -T api python -m panapulse.backup backup \
@@ -152,9 +156,9 @@ docker compose run --rm --no-deps api python -m panapulse.backup restore \
   --source /data/backups/sources-RELEASE-UTC.db --destination /data/restored-RELEASE.db
 ```
 
-Set `DATABASE_URL=sqlite:////data/restored-RELEASE.db`, `PANAPULSE_REPORTS_ENABLED=0`, and recreate API/worker. Run initialization, readiness and fresh-source checks before enabling reports again. An old restored source timestamp stays stale until the collector succeeds. Report history is intentionally empty and never interpreted as all-clear. Offline clients may still hold an old unconfirmed request and can retry after the service returns. Because withdrawal tombstones are also absent, a previously withdrawn request could be accepted if a client retries it after reporting resumes. Keep reporting disabled until the recovery policy has addressed pending requests. A future recovery epoch or bounded observation timestamp is needed to reject all pre-recovery retries automatically.
+Set `DATABASE_URL=sqlite:////data/restored-RELEASE.db`, `PANAPULSE_REPORTS_ENABLED=0`, and recreate API/worker. Run initialization, readiness and fresh-source checks before enabling reports again. An old restored source timestamp stays stale until the collector succeeds. Report history is intentionally empty and never interpreted as all-clear. Offline clients may still hold old requests, but their epoch no longer matches and the API returns 410 without recreating an observation. Confirm this with the recovery regression test and a staging pending request before enabling reports. A new observation requires current configuration and a fresh user action. The restore command also installs a model-budget recovery guard through the next UTC midnight; paid requests receive 503 `chat_budget_recovery` during that interval, even if a key remains configured.
 
-Do not retain an abandoned former live database beyond its seven-day community retention policy. After verifying the new deployment, remove retired database copies through the host's controlled maintenance procedure. Backup/restore regression tests prove WAL consistency, no community bytes in the resulting snapshot, refusal to overwrite, schema/integrity checks and restored API readiness. They do not prove that your off-host storage or host recovery works; rehearse this procedure in staging.
+Do not retain an abandoned former live database beyond its seven-day community retention policy. After verifying the new deployment, remove retired database copies through the host's controlled maintenance procedure. Backup/restore regression tests prove WAL consistency, no community bytes in the resulting snapshot, refusal to overwrite, schema/integrity checks, restored API readiness, rejection of old pending reports and the model-budget recovery guard. They do not prove that your off-host storage or host recovery works; rehearse this procedure in staging.
 
 ## 6. Moderation, incident stop and rollback
 

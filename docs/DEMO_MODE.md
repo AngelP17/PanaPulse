@@ -1,5 +1,7 @@
 # PanaPulse interactive product preview
 
+**Scope:** This document describes the separate showcase/development mode. Connected native and web beta builds disable preview scenarios and bundled seismic substitution. See [current architecture](architecture/PANAPULSE_TECHNICAL_ARCHITECTURE.md).
+
 The preview showcases the **finished-product interaction model** using coherent, locally generated scenarios, not a debugging screen.
 
 ## Product behavior
