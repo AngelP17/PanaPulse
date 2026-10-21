@@ -56,6 +56,18 @@ flowchart LR
 
 Solid lines run in the proof of concept today. Dotted lines are optional runtime links that are **not** required and **not** claimed as deployed.
 
+## 3b. What it looks like (WEB captures, not native)
+
+Chromium captures of the react-native-web export at 393dp, offline-deterministic. They are not Android or iOS captures and are not native QA evidence. Full before/after sets live in [`design/review/beta1/2026-10-14/`](../design/review/beta1/2026-10-14/).
+
+| Onboarding (ES, light) | Onboarding (EN, dark) | Home (ES, light) | Home (EN, dark) |
+|---|---|---|---|
+| <img src="../design/review/beta1/2026-10-14/onboarding/after/es_light.png" width="200"> | <img src="../design/review/beta1/2026-10-14/onboarding/after/en_dark.png" width="200"> | <img src="../design/review/beta1/2026-10-14/home-source-line/after_es_light_WEB393.png" width="200"> | <img src="../design/review/beta1/2026-10-14/home-source-line/after_en_dark_WEB393.png" width="200"> |
+
+| Mobility (EN, dark) | Services in preview | Ask (live, no preview) |
+|---|---|---|
+| <img src="../design/review/beta1/2026-10-14/audit-fixes/mobility_en_dark_WEB.png" width="200"> | <img src="../design/review/beta1/2026-10-14/audit-fixes/services_preview_393_WEB.png" width="200"> | <img src="../design/review/beta1/2026-10-14/audit-fixes/ask_live_WEB.png" width="200"> |
+
 ## 4. Local state: one typed model behind every screen
 
 Every screen reads and writes the same reducer (`src/data/localModel.ts`), persisted under one versioned key (`src/state/persist.ts`). Changing area, scenario, a report or the saved commute updates every screen at once and survives a restart.
@@ -170,7 +182,7 @@ Not an earthquake early-warning system. No predictions. A missing feed is never 
 
 ## 9. Not on `main`
 
-An unmerged branch, `codex/connected-web-beta-20261021`, explores a connected web beta (persisted anonymous reports on the backend, connected HTTP CI, a `vercel.json`). It is not part of this proof of concept and nothing here depends on it.
+Open PR [#28](https://github.com/AngelP17/PanaPulse/pull/28) (`codex/connected-web-beta-20261021`) adds a connected beta: shared native and browser app, backend-persisted anonymous reports, connected builds that cannot enable fictional scenarios or bundled-data substitutes, Docker packaging, a Vercel config and an owner acceptance checklist. Its CI is green. It is unmerged and undeployed, so nothing on this page depends on it.
 
 ## Keeping this current
 
