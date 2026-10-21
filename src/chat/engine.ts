@@ -89,6 +89,7 @@ export async function ask(
       );
       return { text, quick: false };
     } catch (e: any) {
+      if (opts.signal?.aborted) throw new ChatError('cancelled');
       throw new ChatError(e?.code ?? 'failed', e?.message);
     }
   }
@@ -103,7 +104,9 @@ export async function ask(
       opts.onText?.(body.answer);
       return { text: body.answer, quick: false };
     } catch (error) {
+      if (opts.signal?.aborted) throw new ChatError('cancelled');
       if (error instanceof Error && error.message === 'HTTP_429') throw new ChatError('rate_limited');
+      if (error instanceof Error && error.message === 'HTTP_503') throw new ChatError('unavailable');
       throw new ChatError('failed');
     }
   }

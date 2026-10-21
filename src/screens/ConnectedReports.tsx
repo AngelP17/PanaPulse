@@ -4,7 +4,8 @@ import { Button, Card, Txt } from '../components/ui';
 import { useApp } from '../state/AppContext';
 import { CORREGIMIENTOS } from '../data/services';
 import { communitySummary, myObservations, newSubmission, loadPending, Receipt, Submission,
-  submitObservation, Summary, withdrawObservation } from '../data/community';
+  submitObservation, Summary, withdrawObservation, refreshReportConfig } from '../data/community';
+import { ApiError } from '../data/runtime';
 import { dayStamp } from '../data/format';
 import { radius, space, type } from '../theme/tokens';
 
@@ -18,41 +19,51 @@ export function ConnectedReports() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [pending, setPending] = useState<Submission | null>(null);
   const mutation = useRef(false);
+  const refreshVersion = useRef(0);
   const [withdrawn, setWithdrawn] = useState(false);
+  const [expired, setExpired] = useState(false);
   const [busy, setBusy] = useState(false);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState(false);
   const [saved, setSaved] = useState(false);
-  const refresh = async () => {
+  const refresh = async (afterMutation = false) => {
+    if (mutation.current && !afterMutation) return;
+    const version = ++refreshVersion.current;
     try {
-      const [mine, group] = await Promise.all([myObservations(), communitySummary(area)]);
+      const [mine, group] = await Promise.all([myObservations(), communitySummary(area), refreshReportConfig()]);
+      if (version !== refreshVersion.current) return;
       setItems(mine); setSummary(group); setError(false);
-    } catch { setError(true); setSummary(null); }
+    } catch { if (version === refreshVersion.current) { setError(true); setSummary(null); } }
   };
   useEffect(() => {
     let alive = true;
-    loadPending().then(body => {
-      if (alive) setPending(body);
+    loadPending().then(({ body, discarded }) => {
+      if (alive) { setPending(body); setExpired(discarded); }
       if (alive) setReady(true);
     }).catch(() => { if (alive) setError(true); });
     void refresh();
     const timer = setInterval(refresh, 60000);
     const resume = AppState.addEventListener('change', state => { if (state === 'active') void refresh(); });
-    return () => { alive = false; clearInterval(timer); resume.remove(); };
+    return () => { alive = false; ++refreshVersion.current; clearInterval(timer); resume.remove(); };
   }, [area]);
   const send = async () => {
     if (mutation.current || !ready) return;
     mutation.current = true;
-    setBusy(true); setSaved(false); setWithdrawn(false); setError(false);
-    const body = pending ?? newSubmission({ area: where, service, observation });
-    setPending(body);
+    ++refreshVersion.current;
+    setBusy(true); setSaved(false); setWithdrawn(false); setExpired(false); setError(false);
     try {
+      const body = pending ?? await newSubmission({ area: where, service, observation });
+      setPending(body);
       const receipt = await submitObservation(body);
       setPending(null); setSaved(true);
       setItems(old => [receipt, ...old.filter(r => r.id !== receipt.id)]);
-      await refresh();
+      await refresh(true);
     } catch (failure) {
-      if (failure instanceof Error && failure.message === 'HTTP_410') { setPending(null); setWithdrawn(true); }
+      if (failure instanceof ApiError && failure.status === 410) {
+        setPending(null);
+        if (failure.detail === 'report_withdrawn') setWithdrawn(true);
+        else setExpired(true);
+      }
       else setError(true);
     }
     finally { mutation.current = false; setBusy(false); }
@@ -60,13 +71,15 @@ export function ConnectedReports() {
   const withdraw = async (id: string) => {
     if (mutation.current) return;
     mutation.current = true;
-    setBusy(true); setError(false); setSaved(false); setWithdrawn(false);
-    try { await withdrawObservation(id); setItems(old => old.filter(r => r.id !== id)); await refresh(); }
+    ++refreshVersion.current;
+    setBusy(true); setError(false); setSaved(false); setWithdrawn(false); setExpired(false);
+    try { await withdrawObservation(id); setItems(old => old.filter(r => r.id !== id)); await refresh(true); }
     catch { setError(true); }
     finally { mutation.current = false; setBusy(false); }
   };
   const chip = (label: string, selected: boolean, action: () => void) => (
     <Pressable key={label} accessibilityRole="radio" accessibilityLabel={label}
+      aria-checked={selected}
       accessibilityState={{ selected, disabled: busy || !!pending }} disabled={busy || !!pending} onPress={action}
       style={{ minHeight: 48, justifyContent: 'center', borderRadius: radius.pill, paddingHorizontal: space.md,
         backgroundColor: selected ? c.navActive : c.tile }}>
@@ -79,6 +92,7 @@ export function ConnectedReports() {
     {error ? <Card><Txt accessibilityRole="alert">{t('sharedError')}</Txt>
       <Button label={t('connectedRefresh')} disabled={busy} onPress={() => { void refresh(); }} /></Card> : null}
     {withdrawn ? <Card><Txt accessibilityRole="alert">{t('sharedAlreadyWithdrawn')}</Txt></Card> : null}
+    {expired ? <Card><Txt accessibilityRole="alert">{t('sharedExpired')}</Txt></Card> : null}
     {saved ? <Card><Txt accessibilityRole="alert">{t('sharedSaved')}</Txt></Card> : null}
     <Card>
       <Txt size={type.title} weight="semibold" accessibilityRole="header">{t('sharedSummary', { area })}</Txt>

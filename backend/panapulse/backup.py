@@ -10,11 +10,12 @@ import os
 from pathlib import Path
 import sqlite3
 import tempfile
+from datetime import datetime, timedelta, timezone
 
-COMMUNITY_TABLES = {"community_reports", "report_rate_buckets", "report_audit"}
+COMMUNITY_TABLES = {"community_reports", "report_rate_buckets", "report_audit", "report_runtime"}
 REQUIRED_TABLES = COMMUNITY_TABLES | {
     "source_health", "earthquakes", "earthquake_revisions", "aftershock_forecasts",
-    "utility_notices", "source_snapshots",
+    "utility_notices", "source_snapshots", "ask_budget_buckets",
 }
 
 
@@ -34,9 +35,11 @@ def verify(connection, *, source_only=False):
     if source_only and any(connection.execute(f'SELECT 1 FROM "{table}" LIMIT 1').fetchone()
                            for table in COMMUNITY_TABLES):
         raise ValueError("Backup contains community data")
+    if source_only and connection.execute("SELECT 1 FROM ask_budget_buckets WHERE id != 'recovery' LIMIT 1").fetchone():
+        raise ValueError("Backup contains private model budget data")
 
 
-def snapshot(source, destination):
+def snapshot(source, destination, *, recovery=False):
     """Online consistent copy, with community data removed before touching disk."""
     target = Path(destination).resolve()
     if target.exists():
@@ -47,6 +50,11 @@ def snapshot(source, destination):
         verify(clean)
         for table in COMMUNITY_TABLES:
             clean.execute(f'DELETE FROM "{table}"')
+        clean.execute('DELETE FROM ask_budget_buckets')
+        if recovery:
+            tomorrow = (datetime.now(timezone.utc) + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+            clean.execute("INSERT INTO ask_budget_buckets(id,count,expires_at) VALUES ('recovery',0,?)",
+                          (tomorrow.replace(tzinfo=None).isoformat(sep=' '),))
         clean.commit()
         clean.execute("VACUUM")  # remove deleted bytes before writing the snapshot
         verify(clean, source_only=True)
@@ -74,7 +82,7 @@ def restore(backup, destination):
     """Restore only to a new path; never replace a database an API may be using."""
     with closing(_open_readonly(backup)) as source:
         verify(source, source_only=True)
-    return snapshot(backup, destination)
+    return snapshot(backup, destination, recovery=True)
 
 
 def main():

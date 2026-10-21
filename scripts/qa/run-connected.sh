@@ -32,4 +32,5 @@ for endpoint in ('http://127.0.0.1:8000/readyz', 'http://127.0.0.1:8081'):
             if attempt == 49: raise
             time.sleep(.2)
 PY
+python -m panapulse.smoke --url http://127.0.0.1:8000 --web-origin http://127.0.0.1:8081 --require-reports
 node scripts/qa/connected-e2e.mjs

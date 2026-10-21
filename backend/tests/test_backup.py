@@ -60,3 +60,40 @@ def test_backup_refuses_missing_and_incomplete_databases(tmp_path):
     with pytest.raises(ValueError, match='Incomplete'):
         snapshot(incomplete, tmp_path / 'output.db')
     assert not (tmp_path / 'output.db').exists()
+
+
+def test_restored_database_rejects_old_pending_reports_and_blocks_paid_budget(tmp_path, monkeypatch):
+    from uuid import uuid4
+    from panapulse.budgets import AskBudgetBucket, DurableRateLimiter
+    monkeypatch.setenv('PANAPULSE_REPORTS_ENABLED', '1')
+    monkeypatch.setenv('PANAPULSE_REPORT_HASH_KEY', 'recovery-test-only-key-' * 3)
+    original, archive, restored = [tmp_path / name for name in ('live.db', 'snapshot.db', 'restored.db')]
+    engine, sessions = make_session_factory(f'sqlite:///{original}')
+    Base.metadata.create_all(engine)
+    headers = {'X-Installation-Token': '1' * 64}
+    with TestClient(create_app(sessions)) as c:
+        config = c.get('/v0/community/config').json()
+        payload = {'request_id': str(uuid4()), 'area': 'Ancón', 'service': 'water', 'observation': 'interruption',
+                   'epoch': config['epoch'], 'observed_at': config['server_time']}
+        rid = c.post('/v0/community/reports', json=payload, headers=headers).json()['id']
+        assert c.delete(f'/v0/community/reports/{rid}', headers=headers).status_code == 200
+    assert DurableRateLimiter(sessions, 6, 60, 100).allow('private-client-ip')[0]
+    snapshot(original, archive)
+    assert b'private-client-ip' not in archive.read_bytes()
+    restore(archive, restored)
+    restored_engine, restored_sessions = make_session_factory(f'sqlite:///{restored}')
+    with TestClient(create_app(restored_sessions)) as c:
+        new_config = c.get('/v0/community/config').json()
+        assert new_config['epoch'] != config['epoch']
+        result = c.post('/v0/community/reports', json=payload, headers=headers)
+        assert result.status_code == 410 and result.json()['detail'] == 'report_epoch_expired'
+        assert c.get('/v0/community/mine', headers=headers).json()['items'] == []
+        new_observation = {**payload, 'request_id': str(uuid4()), 'epoch': new_config['epoch'],
+                           'observed_at': new_config['server_time']}
+        assert c.post('/v0/community/reports', json=new_observation, headers=headers).status_code == 201
+    limiter = DurableRateLimiter(restored_sessions, 6, 60, 100)
+    assert limiter.allow('private-client-ip') == (False, 'chat_budget_recovery')
+    tomorrow = (datetime.now(timezone.utc) + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+    assert limiter.allow('private-client-ip', tomorrow.timestamp()) == (True, 'ok')
+    restored_engine.dispose()
+    engine.dispose()

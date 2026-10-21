@@ -64,6 +64,22 @@ try {
   assert.equal(await page.getByRole('button', { name: 'Retirar y eliminar reporte', exact: true }).count(), 1);
   await page.getByRole('button', { name: 'Retirar y eliminar reporte', exact: true }).click();
   await page.getByText('Todavía no hay reportes enviados desde esta instalación.', { exact: true }).waitFor();
+  // Old queued observations and pre-recovery epochs cannot create fresh reports.
+  for (const kind of ['expired', 'old_epoch']) {
+    await page.evaluate(([body, kind]) => {
+      const identityKey = Object.keys(localStorage).find(k => k.startsWith('panapulse.community.v1:') && k.endsWith(':identity'));
+      const invalid = { ...body, request_id: crypto.randomUUID() };
+      if (kind === 'expired') invalid.observed_at = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
+      else invalid.epoch = '0'.repeat(32);
+      localStorage.setItem(identityKey.replace(/:identity$/, ':pending'), JSON.stringify(invalid));
+    }, [lastSubmission, kind]);
+    await page.reload();
+    await page.getByRole('tab', { name: 'Reportes', exact: true }).click();
+    await page.getByRole('button', { name: 'Reintentar el mismo reporte', exact: true }).click();
+    await page.getByText('Este envío ya no se puede confirmar porque venció o cambió el servicio. Consulta tus reportes enviados antes de crear una nueva observación actual.', { exact: true }).waitFor();
+    assert.equal(await page.getByRole('button', { name: 'Retirar y eliminar reporte', exact: true }).count(), 0);
+    await page.getByRole('button', { name: 'Enviar reporte anónimo', exact: true }).waitFor();
+  }
   assert.deepEqual(errors, []);
-  console.log('Connected E2E passed: real HTTP submission, restart, withdrawal, withdrawn retry, offline pending, retry, preview disabled. WEB ONLY.');
+  console.log('Connected E2E passed: real HTTP submission, restart, withdrawal, withdrawn retry, offline pending, retry, expired/recovery submissions rejected, preview disabled. WEB ONLY.');
 } finally { await browser.close(); }

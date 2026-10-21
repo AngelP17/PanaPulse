@@ -1,12 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Crypto from 'expo-crypto';
-import { API_URL, apiJson } from './runtime';
+import { API_URL, apiJson, ApiError } from './runtime';
 import { CORREGIMIENTOS } from './services';
 
 export interface Submission {
   request_id: string; area: string; service: 'electricity' | 'water'; observation: 'interruption' | 'restored';
+  epoch: string; observed_at: string;
 }
-export interface Receipt extends Submission {
+export interface Receipt extends Omit<Submission, 'epoch' | 'observed_at'> {
   id: string; created_at: string; expires_at: string;
   status: 'active' | 'expired' | 'hidden' | 'superseded'; verification: 'community_unverified';
 }
@@ -18,6 +19,14 @@ export interface Summary {
 const PREFIX = `panapulse.community.v1:${API_URL}`;
 export const PENDING_KEY = `${PREFIX}:pending`;
 let tokenPromise: Promise<string> | null = null;
+let reportConfig: { epoch: string; offset: number } | null = null;
+export async function refreshReportConfig(): Promise<void> {
+  const value = await apiJson('/v0/community/config');
+  const serverTime = Date.parse(value.server_time);
+  if (!/^[a-f0-9]{32}$/.test(value.epoch) || !Number.isFinite(serverTime) ||
+      value.max_submission_age_seconds !== 7200) throw new Error('invalid_report_config');
+  reportConfig = { epoch: value.epoch, offset: serverTime - Date.now() };
+}
 async function identity(): Promise<string> {
   const key = `${PREFIX}:identity`;
   const saved = await AsyncStorage.getItem(key);
@@ -31,8 +40,11 @@ async function headers() {
   tokenPromise ??= identity().catch(e => { tokenPromise = null; throw e; });
   return { 'Content-Type': 'application/json', 'X-Installation-Token': await tokenPromise };
 }
-export function newSubmission(input: Omit<Submission, 'request_id'>): Submission {
-  return { ...input, request_id: Crypto.randomUUID() };
+export async function newSubmission(input: Omit<Submission, 'request_id' | 'epoch' | 'observed_at'>): Promise<Submission> {
+  if (!reportConfig) await refreshReportConfig();
+  const config = reportConfig!;
+  return { ...input, request_id: Crypto.randomUUID(), epoch: config.epoch,
+    observed_at: new Date(Date.now() + config.offset).toISOString() };
 }
 function receipt(value: any): Receipt {
   if (!value || !/^[a-f0-9]{64}$/.test(value.id) || value.verification !== 'community_unverified' ||
@@ -41,17 +53,18 @@ function receipt(value: any): Receipt {
       !Number.isFinite(Date.parse(value.created_at)) || !Number.isFinite(Date.parse(value.expires_at))) throw new Error('invalid_receipt');
   return value;
 }
-export async function loadPending(): Promise<Submission | null> {
+export async function loadPending(): Promise<{ body: Submission | null; discarded: boolean }> {
   const raw = await AsyncStorage.getItem(PENDING_KEY);
-  if (!raw) return null;
+  if (!raw) return { body: null, discarded: false };
   try {
     const v = JSON.parse(raw);
     if (v && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v.request_id) &&
         CORREGIMIENTOS.includes(v.area) && ['electricity', 'water'].includes(v.service) &&
-        ['interruption', 'restored'].includes(v.observation)) return v;
+        ['interruption', 'restored'].includes(v.observation) && /^[a-f0-9]{32}$/.test(v.epoch) &&
+        typeof v.observed_at === 'string' && Number.isFinite(Date.parse(v.observed_at))) return { body: v, discarded: false };
   } catch { /* Corrupt local data must not strand the form or be submitted. */ }
   await AsyncStorage.removeItem(PENDING_KEY);
-  return null;
+  return { body: null, discarded: true };
 }
 export async function submitObservation(body: Submission): Promise<Receipt> {
   await AsyncStorage.setItem(PENDING_KEY, JSON.stringify(body));
@@ -59,7 +72,10 @@ export async function submitObservation(body: Submission): Promise<Receipt> {
   try {
     result = receipt(await apiJson('/v0/community/reports', { method: 'POST', headers: await headers(), body: JSON.stringify(body) }));
   } catch (error) {
-    if (error instanceof Error && error.message === 'HTTP_410') await AsyncStorage.removeItem(PENDING_KEY);
+    if (error instanceof Error && error.message === 'HTTP_410') {
+      if (error instanceof ApiError && error.detail === 'report_epoch_expired') reportConfig = null;
+      await AsyncStorage.removeItem(PENDING_KEY);
+    }
     throw error;
   }
   await AsyncStorage.removeItem(PENDING_KEY);

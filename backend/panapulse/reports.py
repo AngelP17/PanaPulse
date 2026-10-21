@@ -8,12 +8,13 @@ from hashlib import sha256
 import hmac
 import os
 import re
+import secrets
 import threading
 from typing import Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Header, HTTPException, Request
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy import DateTime, Integer, String, UniqueConstraint, delete, select
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -53,9 +54,18 @@ class ReportAudit(Base):
     at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class ReportRuntime(Base):
+    """Excluded from backups so restoring cannot accept pre-recovery pending requests."""
+    __tablename__ = "report_runtime"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    epoch: Mapped[str] = mapped_column(String(32))
+
+
 class Submission(BaseModel):
     model_config = ConfigDict(extra="forbid")
     request_id: UUID
+    epoch: str = Field(pattern=r"^[a-f0-9]{32}$")
+    observed_at: AwareDatetime
     area: str
     service: Literal["electricity", "water"]
     observation: Literal["interruption", "restored"]
@@ -84,9 +94,29 @@ def router(sessions, clock=utcnow):
     r = APIRouter(prefix="/v0/community")
     lock = threading.Lock()
 
-    def owner(token):
+    def require_configured():
         if os.getenv("PANAPULSE_REPORTS_ENABLED") != "1":
             raise HTTPException(503, "reports_disabled")
+        if len(os.getenv("PANAPULSE_REPORT_HASH_KEY", "")) < 32:
+            raise HTTPException(503, "reports_not_configured")
+
+    def current_epoch(s):
+        state = s.get(ReportRuntime, 1)
+        if state is None:
+            state = ReportRuntime(id=1, epoch=secrets.token_hex(16))
+            s.add(state)
+            s.flush()
+        return state.epoch
+
+    @r.get("/config")
+    def config():
+        require_configured()
+        with lock, sessions.begin() as s:
+            return {"epoch": current_epoch(s), "server_time": clock().isoformat(),
+                    "max_submission_age_seconds": 7200}
+
+    def owner(token):
+        require_configured()
         if not token or not re.fullmatch(r"[a-f0-9]{64}", token):
             raise HTTPException(401, "installation_token_required")
         return sha256(token.encode()).hexdigest()
@@ -102,9 +132,12 @@ def router(sessions, clock=utcnow):
         ip = request.client.host if request.client else "unknown"
         ip_hash = hmac.new(secret.encode(), ip.encode(), "sha256").hexdigest()
         with lock, sessions.begin() as s:
+            if not hmac.compare_digest(body.epoch, current_epoch(s)):
+                raise HTTPException(410, "report_epoch_expired")
             previous = s.get(CommunityReport, rid)
             if previous:
-                if (previous.area, previous.service, previous.observation) != (body.area, body.service, body.observation):
+                if ((previous.area, previous.service, previous.observation) != (body.area, body.service, body.observation)
+                        or aware(previous.expires_at) - timedelta(hours=2) != body.observed_at):
                     raise HTTPException(409, "idempotency_conflict")
                 return receipt(previous, now)
             # A delayed network retry must not recreate a report the user withdrew.
@@ -112,6 +145,8 @@ def router(sessions, clock=utcnow):
             if s.scalar(select(ReportAudit.id).where(ReportAudit.report_id == rid,
                                                     ReportAudit.action == "withdrawn").limit(1)):
                 raise HTTPException(410, "report_withdrawn")
+            if not -timedelta(minutes=5) <= now - body.observed_at < timedelta(hours=2):
+                raise HTTPException(410, "report_observation_expired")
             # Fixed windows, token and IP plus global budget, all surviving process restarts.
             checks = [("device", identity, 3600, 6), ("ip", ip_hash, 3600, 30),
                       ("global", "all", 86400, 2000)]
@@ -132,7 +167,7 @@ def router(sessions, clock=utcnow):
                 old.status = "superseded"
             row = CommunityReport(id=rid, owner_hash=identity, request_id=str(body.request_id), area=body.area,
                 service=body.service, observation=body.observation, created_at=now,
-                expires_at=now + timedelta(hours=2), status="active")
+                expires_at=body.observed_at + timedelta(hours=2), status="active")
             s.add(row)
             s.add(ReportAudit(report_id=rid, action="submitted", at=now))
             s.flush()
@@ -184,11 +219,13 @@ def router(sessions, clock=utcnow):
 
 
 def purge(sessions, now=None):
+    from .budgets import AskBudgetBucket
     now = now or utcnow()
     with sessions.begin() as s:
         s.execute(delete(CommunityReport).where(CommunityReport.created_at < now - timedelta(days=7)))
         s.execute(delete(ReportRateBucket).where(ReportRateBucket.expires_at < now))
         s.execute(delete(ReportAudit).where(ReportAudit.at < now - timedelta(days=7)))
+        s.execute(delete(AskBudgetBucket).where(AskBudgetBucket.expires_at <= now))
 
 
 def hide(sessions, report_id):

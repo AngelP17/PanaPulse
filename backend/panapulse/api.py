@@ -9,9 +9,10 @@ from sqlalchemy.orm import sessionmaker, Session
 
 from .config import Settings
 from .ask import Asker, AskError, DataTools, RateLimiter
+from .budgets import AskBudgetBucket, DurableRateLimiter
 from .models import AftershockForecast, Base, Earthquake, EarthquakeRevision, SourceHealth, UtilityNotice, make_session_factory
 from .utilities import ENSA_URL, NATURGY_URL, key, corregimiento_key, provider_for
-from .reports import CommunityReport, ReportAudit, ReportRateBucket, router as report_router
+from .reports import CommunityReport, ReportAudit, ReportRateBucket, ReportRuntime, router as report_router
 from .request_limits import RequestBodyLimit
 
 
@@ -53,12 +54,12 @@ class AskBody(BaseModel):
 
 
 def create_app(sessions: sessionmaker[Session], asker: Asker | None = None,
-               limiter: RateLimiter | None = None) -> FastAPI:
+               limiter: RateLimiter | DurableRateLimiter | None = None) -> FastAPI:
     app = FastAPI(title="PanaPulse API", version="0.3.0")
     app.add_middleware(RequestBodyLimit)
     app.include_router(report_router(sessions))
     tools = DataTools(sessions)
-    limiter = limiter or RateLimiter(
+    limiter = limiter or DurableRateLimiter(sessions,
         per_minute=int(os.getenv("PANAPULSE_ASK_PER_MINUTE", 6)),
         per_day=int(os.getenv("PANAPULSE_ASK_PER_DAY", 60)),
         global_per_day=int(os.getenv("PANAPULSE_ASK_GLOBAL_PER_DAY", 5000)),
@@ -79,13 +80,14 @@ def create_app(sessions: sessionmaker[Session], asker: Asker | None = None,
 
     @app.post("/v0/ask")
     def ask(body: AskBody, request: Request):
+        configured_asker = get_asker()
         # Behind a proxy, set the real client IP via the proxy's trusted header instead.
         client = request.client.host if request.client else "unknown"
         ok, why = limiter.allow(client)
         if not ok:
-            raise HTTPException(429, why)
+            raise HTTPException(503 if why.startswith("chat_budget_") else 429, why)
         try:
-            result = get_asker().ask(body.messages, body.lang, body.zone)
+            result = configured_asker.ask(body.messages, body.lang, body.zone)
         except AskError as e:
             raise HTTPException(400, e.code)
         return {"answer": result.answer, "model": result.model, "tools": result.tool_calls,
@@ -97,7 +99,8 @@ def create_app(sessions: sessionmaker[Session], asker: Asker | None = None,
 
     @app.get("/v0/capabilities")
     def capabilities():
-        return {"chat": bool(os.getenv("ANTHROPIC_API_KEY")) or state["asker"] is not None,
+        return {"chat": (bool(os.getenv("ANTHROPIC_API_KEY")) or state["asker"] is not None)
+                    and (not isinstance(limiter, DurableRateLimiter) or limiter.configured()),
                 "reports": os.getenv("PANAPULSE_REPORTS_ENABLED") == "1"
                     and len(os.getenv("PANAPULSE_REPORT_HASH_KEY", "")) >= 32}
 
@@ -127,7 +130,7 @@ def create_app(sessions: sessionmaker[Session], asker: Asker | None = None,
         try:
             with sessions() as s:
                 for model in (SourceHealth, Earthquake, AftershockForecast, UtilityNotice,
-                              CommunityReport, ReportRateBucket, ReportAudit):
+                              CommunityReport, ReportRateBucket, ReportAudit, ReportRuntime, AskBudgetBucket):
                     s.execute(select(model).limit(1))
         except Exception:
             raise HTTPException(503, "database_unavailable")

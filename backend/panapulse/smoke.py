@@ -2,6 +2,8 @@
 import argparse
 import json
 import secrets
+import re
+from datetime import datetime
 from urllib.parse import urlencode, urlsplit
 from urllib.request import Request, urlopen
 
@@ -30,10 +32,14 @@ def check(base, zone, origin=None, require_fresh=False, require_reports=False):
     power = get('/v0/power-maintenance?' + urlencode({'corregimiento': zone}))
     assert power['service_state'] == 'unknown' and power['scope'] == 'scheduled_maintenance_only'
     if require_fresh:
-        assert all(source['freshness'] == 'current' for source in power['sources']), 'Power collector is not current'
+        assert power['sources'] and all(source['freshness'] == 'current' for source in power['sources']), 'Power collector is not current'
     if require_reports:
         assert capabilities['reports'], 'Shared reports are disabled/unconfigured'
     if capabilities['reports']:
+        config = get('/v0/community/config')
+        assert re.fullmatch(r'[a-f0-9]{32}', config['epoch']), 'Invalid report runtime epoch'
+        assert config['max_submission_age_seconds'] == 7200
+        assert datetime.fromisoformat(config['server_time']).tzinfo is not None
         summary = get('/v0/community/summary?' + urlencode({'area': zone}))
         assert summary['verification'] == 'community_unverified' and summary['service_state'] == 'unknown'
         # Ephemeral installation, only GET. No user token or observation is logged/stored.

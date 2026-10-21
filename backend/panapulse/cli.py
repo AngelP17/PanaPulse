@@ -12,6 +12,7 @@ from .config import Settings
 from .ingest import USGSIngestor, mark_source_failure
 from .models import Base, SourceSnapshot, make_session_factory
 from .reports import purge, hide
+from .budgets import AskBudgetBucket  # register the durable budget table for init-db
 
 
 def main() -> None:
